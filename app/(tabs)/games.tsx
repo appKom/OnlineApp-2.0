@@ -5,7 +5,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.title}>Spill</Text>
       </View>
     </SafeAreaView>
   );
