@@ -1,19 +1,9 @@
 import { withLayoutContext } from "expo-router";
-import {
-  createNativeBottomTabNavigator,
-  NativeBottomTabNavigationOptions,
-  NativeBottomTabNavigationEventMap,
-} from "@bottom-tabs/react-navigation";
-import { ParamListBase, TabNavigationState } from "@react-navigation/native";
+import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
 
 const BottomTabNavigator = createNativeBottomTabNavigator().Navigator;
 
-const Tabs = withLayoutContext<
-  NativeBottomTabNavigationOptions,
-  typeof BottomTabNavigator,
-  TabNavigationState<ParamListBase>,
-  NativeBottomTabNavigationEventMap
->(BottomTabNavigator);
+const Tabs = withLayoutContext(BottomTabNavigator);
 
 export default function TabLayout() {
   return (
@@ -26,7 +16,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="games"
+        name="(games)"
         options={{
           title: "Spill",
           tabBarIcon: () => ({ sfSymbol: "dice" }),

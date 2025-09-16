@@ -3,10 +3,10 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
-  Pressable,
 } from "react-native";
 
 import { EventAttendanceBundle } from "../../../types/event";
@@ -34,38 +34,45 @@ const AllEvents: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ flex: 1 }} />;
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
   }
 
   if (error) {
-    return <Text style={{ color: "red" }}>{error}</Text>;
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: "red" }}>{error}</Text>
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={events}
-        keyExtractor={(bundle) => bundle.event.id}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.item}
-            onPress={() =>
-              router.push({
-                pathname: "/event-details",
-                params: { eventId: item.event.id },
-              })
-            }
-          >
-            <Text>{item.event.title ?? "NULL"}</Text>
-          </Pressable>
-        )}
-      />
-    </View>
+    <FlatList
+      data={events}
+      keyExtractor={(bundle) => bundle.event.id}
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ flex: 1 }}
+      renderItem={({ item }) => (
+        <Pressable
+          style={styles.item}
+          onPress={() =>
+            router.push({
+              pathname: "/event-details",
+              params: { eventId: item.event.id },
+            })
+          }
+        >
+          <Text>{item.event.title ?? "NULL"}</Text>
+        </Pressable>
+      )}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
   item: { padding: 12, borderBottomWidth: 1, borderColor: "#ececec" },
 });
 

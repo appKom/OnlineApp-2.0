@@ -1,27 +1,28 @@
-import { Stack, useLocalSearchParams } from "expo-router";
-import AttendanceCard from "components/EventDetails/AttendanceCard";
-import DescriptionCard from "components/EventDetails/DescriptionCard";
-import RegistrationCard from "components/EventDetails/RegistrationCard";
+import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   Image,
   LayoutAnimation,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { getEvent } from "utils/trpc";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { getEvent } from "../utils/trpc";
+import AttendanceCard from "./EventDetails/AttendanceCard";
+import DescriptionCard from "./EventDetails/DescriptionCard";
+import RegistrationCard from "./EventDetails/RegistrationCard";
+
+type EventDetailsRouteProp = RouteProp<any, "EventDetails">;
 
 // Main EventDetails Page Component
 const EventDetails: React.FC = () => {
-  const { eventId } = useLocalSearchParams<{ eventId: string }>();
+  const route = useRoute<EventDetailsRouteProp>();
+  const { eventId } = route.params;
   const screenWidth = Dimensions.get("window").width;
-  const insets = useSafeAreaInsets();
 
   const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,62 +118,49 @@ const EventDetails: React.FC = () => {
   const registrationPeriod = formatRegistrationPeriod();
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerTitle: event?.event?.title || "Arrangement",
-          headerBackTitle: "",
-        }}
-      />
-      <View style={styles.container}>
-        <ScrollView
-          style={styles.scrollContainer}
-          // contentContainerStyle={{
-          //   paddingTop: Platform.OS === "ios" ? insets.top : 0,
-          // }}
-        >
-          {/* Full width image with proper aspect ratio */}
-          <Image
-            source={{ uri: event.event.imageUrl }}
-            style={[
-              styles.image,
-              {
-                width: screenWidth,
-                height: imageHeight,
-              },
-            ]}
-            resizeMode="contain"
-          />
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollContainer}>
+        {/* Full width image with proper aspect ratio */}
+        <Image
+          source={{ uri: event.event.imageUrl }}
+          style={[
+            styles.image,
+            {
+              width: screenWidth,
+              height: imageHeight,
+            },
+          ]}
+          resizeMode="contain"
+        />
 
-          {/* Title */}
-          {/* <Text style={styles.title}>{event.event.title}</Text> */}
+        {/* Title */}
+        <Text style={styles.title}>{event.event.title}</Text>
 
-          {/* Attendance Card */}
-          <AttendanceCard
-            event={event}
-            formatNorwegianDate={formatNorwegianDate}
-          />
+        {/* Attendance Card */}
+        <AttendanceCard
+          event={event}
+          formatNorwegianDate={formatNorwegianDate}
+        />
 
-          {/* Description Card */}
-          <DescriptionCard
-            description={event.event.description}
-            screenWidth={screenWidth}
-            descriptionExpanded={descriptionExpanded}
-            onToggleDescription={toggleDescription}
-          />
+        {/* Description Card */}
+        <DescriptionCard
+          description={event.event.description}
+          screenWidth={screenWidth}
+          descriptionExpanded={descriptionExpanded}
+          onToggleDescription={toggleDescription}
+        />
 
-          {/* Registration Card */}
-          <RegistrationCard
-            attendance={event.attendance}
-            registrationStatus={registrationStatus}
-            registrationPeriod={registrationPeriod}
-          />
+        {/* Registration Card */}
+        <RegistrationCard
+          attendance={event.attendance}
+          registrationStatus={registrationStatus}
+          registrationPeriod={registrationPeriod}
+        />
 
-          {/* Bottom padding */}
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      </View>
-    </>
+        {/* Bottom padding */}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 };
 
