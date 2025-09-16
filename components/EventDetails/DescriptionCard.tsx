@@ -1,6 +1,13 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 import HTML from "react-native-render-html";
+import { LiquidGlassView } from "@callstack/liquid-glass";
 
 interface DescriptionCardProps {
   description: string;
@@ -15,7 +22,20 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   descriptionExpanded,
   onToggleDescription,
 }) => {
-  // Strip HTML tags for preview
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  // Theme-aware colors
+  const colors = {
+    cardBackground: isDark
+      ? "rgba(255, 255, 255, 0.1)"
+      : "rgba(255, 255, 255, 0.8)",
+    textPrimary: isDark ? "#ffffff" : "#333333",
+    textSecondary: isDark ? "#cccccc" : "#666666",
+    toggleText: isDark ? "#64B5F6" : "#007AFF",
+  };
+
+  // Strip HTML tags for length check
   const stripHtml = (html: string) => {
     return html.replace(/<[^>]*>/g, "").replace(/&[^;]+;/g, " ");
   };
@@ -24,60 +44,50 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   const shouldShowToggle = descriptionText.length > 256;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={shouldShowToggle ? onToggleDescription : undefined}
+    <LiquidGlassView
+      style={[styles.card, { backgroundColor: colors.cardBackground }]}
     >
-      <Text style={styles.cardTitle}>Beskrivelse</Text>
-
-      {descriptionExpanded ? (
-        <HTML
-          source={{ html: description }}
-          contentWidth={screenWidth - 88}
-          baseStyle={styles.htmlBase}
-        />
-      ) : (
-        <Text style={styles.descriptionPreview}>
-          {shouldShowToggle
-            ? descriptionText.substring(0, 256) + "..."
-            : descriptionText}
+      <TouchableOpacity
+        onPress={shouldShowToggle ? onToggleDescription : undefined}
+        activeOpacity={shouldShowToggle ? 0.7 : 1}
+        style={styles.touchableContent}
+      >
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+          Beskrivelse
         </Text>
-      )}
 
-      {shouldShowToggle && (
-        <Text style={styles.toggleText}>
-          {descriptionExpanded ? "Vis mindre" : "Les mer..."}
-        </Text>
-      )}
-    </TouchableOpacity>
+        <View
+          style={[
+            styles.contentContainer,
+            !descriptionExpanded && shouldShowToggle && styles.collapsedContent,
+          ]}
+        >
+          <HTML
+            source={{ html: description }}
+            contentWidth={screenWidth - 88}
+            baseStyle={{
+              ...styles.htmlBase,
+              color: colors.textSecondary,
+            }}
+          />
+        </View>
+
+        {shouldShowToggle && (
+          <Text style={[styles.toggleText, { color: colors.toggleText }]}>
+            {descriptionExpanded ? "Vis mindre" : "Les mer..."}
+          </Text>
+        )}
+      </TouchableOpacity>
+    </LiquidGlassView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  image: {
-    backgroundColor: "#f0f0f0",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginHorizontal: 24,
-    marginVertical: 20,
-    color: "#333",
-  },
   card: {
-    backgroundColor: "#f8f9fa",
     marginHorizontal: 24,
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -86,99 +96,29 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  touchableContent: {
+    // No additional padding needed since parent handles it
+  },
   cardTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
     marginBottom: 16,
   },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
+  contentContainer: {
+    // No constraints when expanded - content decides height
   },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 16,
-    color: "#333",
-    flex: 2,
-    textAlign: "right",
-  },
-  descriptionPreview: {
-    fontSize: 16,
-    color: "#666",
-    lineHeight: 24,
-    marginBottom: 8,
+  collapsedContent: {
+    maxHeight: 120, // Adjust this value as needed
+    overflow: "hidden",
   },
   toggleText: {
     fontSize: 16,
-    color: "#007AFF",
     fontWeight: "600",
     marginTop: 8,
   },
   htmlBase: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#666",
-  },
-  registrationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    minWidth: 60,
-    alignItems: "center",
-  },
-  statusOpen: {
-    backgroundColor: "#D4F6D4",
-  },
-  statusClosed: {
-    backgroundColor: "#FFE4E4",
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  statusOpenText: {
-    color: "#2D7D32",
-  },
-  statusClosedText: {
-    color: "#C62828",
-  },
-  registrationButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  registrationButtonDisabled: {
-    backgroundColor: "#E0E0E0",
-  },
-  registrationButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  registrationButtonTextDisabled: {
-    color: "#999",
-  },
-  noRegistrationText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    fontStyle: "italic",
   },
 });
 

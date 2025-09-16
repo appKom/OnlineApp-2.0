@@ -46,7 +46,7 @@ interface Role {
   name: string;
 }
 
-interface Attendance {
+export interface Attendance {
   id?: string;
   registerStart?: string;
   registerEnd?: string;
@@ -55,5 +55,16 @@ interface Attendance {
   createdAt?: string;
   updatedAt?: string;
   attendancePrice?: number;
+  pools: Pool[];
   // TODO: Much more info can be found in here
+}
+
+interface Pool {
+  id: string;
+  attendanceId: string;
+  title: string;
+  mergeDelayHours: number | null;
+  capacity: number | null;
+  createdAt: string;
+  updatedAt: string;
 }

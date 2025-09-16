@@ -1,8 +1,16 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
+import { LiquidGlassView } from "@callstack/liquid-glass";
+import { Attendance } from "types/event";
 
 interface RegistrationCardProps {
-  attendance: any;
+  attendance: Attendance;
   registrationStatus: string;
   registrationPeriod: string | null;
 }
@@ -13,24 +21,91 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   registrationStatus,
   registrationPeriod,
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  // Theme-aware colors
+  const colors = {
+    cardBackground: isDark
+      ? "rgba(255, 255, 255, 0.1)"
+      : "rgba(255, 255, 255, 0.8)",
+    textPrimary: isDark ? "#ffffff" : "#333333",
+    textSecondary: isDark ? "#cccccc" : "#555555",
+    textTertiary: isDark ? "#aaaaaa" : "#666666",
+    badgeBackground: isDark
+      ? "rgba(255, 255, 255, 0.1)"
+      : "rgba(0, 0, 0, 0.05)",
+    buttonBackground: isDark
+      ? "rgba(100, 181, 246, 0.2)"
+      : "rgba(0, 122, 255, 0.2)",
+    buttonText: isDark ? "#64B5F6" : "#007AFF",
+    statusOpenBg: isDark ? "rgba(76, 175, 80, 0.3)" : "#D4F6D4",
+    statusOpenText: isDark ? "#A5D6A7" : "#2D7D32",
+    statusClosedBg: isDark ? "rgba(244, 67, 54, 0.3)" : "#FFE4E4",
+    statusClosedText: isDark ? "#EF9A9A" : "#C62828",
+  };
+
+  // Format date-time helper (converts ISO to "DD.MM, HH:MM")
+  const formatDateTime = (dateString?: string): string => {
+    if (!dateString) return "—";
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "—";
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      return `${day}.${month}, ${hours}:${minutes}`;
+    } catch {
+      return "—";
+    }
+  };
+
+  // TODO: Figure out pool index based on your class
+  const poolIndex = 0;
+
+  // Extract real data from attendance object
+  const attendeesCount = attendance?.attendees?.length || 0;
+  const maxCapacity = attendance?.pools[poolIndex]?.capacity || null;
+  const waitingListCount = attendance?.waitingListCount || 0;
+
+  // Format registration dates from attendance data
+  const registrationStart = formatDateTime(attendance?.registerStart);
+  const registrationEnd = formatDateTime(attendance?.registerEnd);
+  const unregistrationDeadline = formatDateTime(attendance?.deregisterDeadline);
+
   return (
-    <View style={styles.card}>
+    <LiquidGlassView
+      style={[styles.card, { backgroundColor: colors.cardBackground }]}
+    >
+      {/* Header with title and status */}
       <View style={styles.registrationHeader}>
-        <Text style={styles.cardTitle}>Registrering</Text>
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+          Registrering
+        </Text>
         <View
           style={[
             styles.statusBadge,
-            registrationStatus === "Åpen"
-              ? styles.statusOpen
-              : styles.statusClosed,
+            {
+              backgroundColor:
+                registrationStatus === "Åpen"
+                  ? colors.statusOpenBg
+                  : colors.statusClosedBg,
+            },
           ]}
         >
           <Text
             style={[
               styles.statusText,
-              registrationStatus === "Åpen"
-                ? styles.statusOpenText
-                : styles.statusClosedText,
+              {
+                color:
+                  registrationStatus === "Åpen"
+                    ? colors.statusOpenText
+                    : colors.statusClosedText,
+              },
             ]}
           >
             {registrationStatus}
@@ -40,86 +115,122 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
 
       {attendance ? (
         <View>
-          {registrationPeriod && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Periode:</Text>
-              <Text style={styles.detailValue}>{registrationPeriod}</Text>
-            </View>
-          )}
-
-          {attendance.maxCapacity && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Kapasitet:</Text>
-              <Text style={styles.detailValue}>
-                {attendance.attendees?.length || 0} / {attendance.maxCapacity}
-              </Text>
-            </View>
-          )}
-
-          {attendance.waitingList && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Venteliste:</Text>
-              <Text style={styles.detailValue}>
-                {attendance.waitingListCount || 0}
-              </Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.registrationButton,
-              registrationStatus !== "Åpen" &&
-                styles.registrationButtonDisabled,
-            ]}
-            disabled={registrationStatus !== "Åpen"}
-          >
-            <Text
+          {/* Attendance badges */}
+          <View style={styles.badgeRow}>
+            <View
               style={[
-                styles.registrationButtonText,
-                registrationStatus !== "Åpen" &&
-                  styles.registrationButtonTextDisabled,
+                styles.infoBadge,
+                { backgroundColor: colors.badgeBackground },
               ]}
             >
-              {registrationStatus === "Åpen"
-                ? "Registrer deg"
-                : "Registrering stengt"}
-            </Text>
-          </TouchableOpacity>
+              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
+                Påmeldte: {attendeesCount}
+                {maxCapacity ? `/${maxCapacity}` : ""}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.infoBadge,
+                { backgroundColor: colors.badgeBackground },
+              ]}
+            >
+              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
+                Venteliste: {waitingListCount}
+              </Text>
+            </View>
+          </View>
+
+          {/* Three column date layout */}
+          <View style={styles.dateColumns}>
+            <View style={styles.dateColumn}>
+              <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+                Start
+              </Text>
+              <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                {registrationStart}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.dateColumn,
+                {
+                  borderLeftWidth: 1,
+                  borderRightWidth: 1,
+                  borderColor: colors.badgeBackground,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.dateLabel,
+                  {
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                Slutt
+              </Text>
+              <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                {registrationEnd}
+              </Text>
+            </View>
+            <View style={styles.dateColumn}>
+              <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+                Avmelding
+              </Text>
+              <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                {unregistrationDeadline}
+              </Text>
+            </View>
+          </View>
+
+          {/* Registration button - only show if open */}
+          {registrationStatus === "Åpen" && (
+            <TouchableOpacity
+              style={styles.registrationButtonWrapper}
+              activeOpacity={0.7}
+            >
+              <LiquidGlassView
+                style={[
+                  styles.registrationButton,
+                  {
+                    backgroundColor: colors.buttonBackground,
+                    borderWidth: 1,
+                    borderRadius: 25,
+                    overflow: "hidden",
+                    borderColor: colors.buttonBackground,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.registrationButtonText,
+                    { color: colors.buttonText },
+                  ]}
+                >
+                  Registrer deg
+                </Text>
+              </LiquidGlassView>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
-        <Text style={styles.noRegistrationText}>
+        <Text
+          style={[styles.noRegistrationText, { color: colors.textTertiary }]}
+        >
           Ingen registrering tilgjengelig for dette arrangementet
         </Text>
       )}
-    </View>
+    </LiquidGlassView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  image: {
-    backgroundColor: "#f0f0f0",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginHorizontal: 24,
-    marginVertical: 20,
-    color: "#333",
-  },
   card: {
-    backgroundColor: "#f8f9fa",
     marginHorizontal: 24,
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -131,43 +242,6 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 16,
-    color: "#333",
-    flex: 2,
-    textAlign: "right",
-  },
-  descriptionPreview: {
-    fontSize: 16,
-    color: "#666",
-    lineHeight: 24,
-    marginBottom: 8,
-  },
-  toggleText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "600",
-    marginTop: 8,
-  },
-  htmlBase: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#666",
   },
   registrationHeader: {
     flexDirection: "row",
@@ -182,43 +256,60 @@ const styles = StyleSheet.create({
     minWidth: 60,
     alignItems: "center",
   },
-  statusOpen: {
-    backgroundColor: "#D4F6D4",
-  },
-  statusClosed: {
-    backgroundColor: "#FFE4E4",
-  },
   statusText: {
     fontSize: 14,
     fontWeight: "600",
   },
-  statusOpenText: {
-    color: "#2D7D32",
+  badgeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    gap: 12,
   },
-  statusClosedText: {
-    color: "#C62828",
-  },
-  registrationButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 10,
+  infoBadge: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: "center",
+  },
+  badgeText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  dateColumns: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  dateColumn: {
+    flex: 1,
+    alignItems: "center",
+  },
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  dateValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  registrationButtonWrapper: {
     marginTop: 8,
   },
-  registrationButtonDisabled: {
-    backgroundColor: "#E0E0E0",
+  registrationButton: {
+    paddingVertical: 14,
+    alignItems: "center",
   },
   registrationButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },
-  registrationButtonTextDisabled: {
-    color: "#999",
-  },
   noRegistrationText: {
     fontSize: 16,
-    color: "#666",
     textAlign: "center",
     fontStyle: "italic",
   },

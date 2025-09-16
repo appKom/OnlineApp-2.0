@@ -1,7 +1,7 @@
-import { Stack, useLocalSearchParams } from "expo-router";
 import AttendanceCard from "components/EventDetails/AttendanceCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
 import RegistrationCard from "components/EventDetails/RegistrationCard";
+import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,16 +12,19 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from "react-native";
-import { getEvent } from "utils/trpc";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getEvent } from "utils/trpc";
 
 // Main EventDetails Page Component
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const screenWidth = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
+
+  const colorScheme = useColorScheme();
 
   const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,12 +104,24 @@ const EventDetails: React.FC = () => {
   }, [eventId]);
 
   if (loading) {
-    return <ActivityIndicator style={{ flex: 1 }} />;
+    return (
+      <ActivityIndicator
+        style={{
+          flex: 1,
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        }}
+      />
+    );
   }
 
   if (error || !event) {
     return (
-      <Text style={{ color: "red" }}>
+      <Text
+        style={{
+          color: "red",
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        }}
+      >
         {error ?? "Could not load event details"}
       </Text>
     );
@@ -120,16 +135,21 @@ const EventDetails: React.FC = () => {
     <>
       <Stack.Screen
         options={{
-          headerTitle: event?.event?.title || "Arrangement",
-          headerBackTitle: "",
+          headerTitle: event?.event?.title || "",
         }}
       />
-      <View style={styles.container}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        }}
+      >
         <ScrollView
           style={styles.scrollContainer}
-          // contentContainerStyle={{
-          //   paddingTop: Platform.OS === "ios" ? insets.top : 0,
-          // }}
+          contentContainerStyle={{
+            // paddingTop: Platform.OS === "ios" ? insets.top : 0,
+            paddingBottom: insets.bottom,
+          }}
         >
           {/* Full width image with proper aspect ratio */}
           <Image
@@ -143,9 +163,6 @@ const EventDetails: React.FC = () => {
             ]}
             resizeMode="contain"
           />
-
-          {/* Title */}
-          {/* <Text style={styles.title}>{event.event.title}</Text> */}
 
           {/* Attendance Card */}
           <AttendanceCard

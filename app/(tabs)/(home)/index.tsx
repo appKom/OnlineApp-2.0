@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from "react-native";
 
@@ -18,6 +19,7 @@ const AllEvents: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     getAllEvents()
@@ -54,10 +56,17 @@ const AllEvents: React.FC = () => {
       data={events}
       keyExtractor={(bundle) => bundle.event.id}
       contentInsetAdjustmentBehavior="automatic"
-      style={{ flex: 1 }}
+      style={{
+        flex: 1,
+        backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+      }}
       renderItem={({ item }) => (
         <Pressable
-          style={styles.item}
+          style={{
+            padding: 12,
+            borderBottomWidth: 1,
+            borderColor: colorScheme === "dark" ? "#222" : "#ececec",
+          }}
           onPress={() =>
             router.push({
               pathname: "/event-details",
@@ -65,15 +74,15 @@ const AllEvents: React.FC = () => {
             })
           }
         >
-          <Text>{item.event.title ?? "NULL"}</Text>
+          <Text
+            style={{ color: colorScheme === "dark" ? "#ffffff" : "#000000" }}
+          >
+            {item.event.title ?? "NULL"}
+          </Text>
         </Pressable>
       )}
     />
   );
 };
-
-const styles = StyleSheet.create({
-  item: { padding: 12, borderBottomWidth: 1, borderColor: "#ececec" },
-});
 
 export default AllEvents;

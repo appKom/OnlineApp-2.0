@@ -1,7 +1,10 @@
 import { Stack } from "expo-router";
-import { Platform } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 
 export default function HomeLayout() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
     <Stack>
       <Stack.Screen
@@ -13,19 +16,26 @@ export default function HomeLayout() {
           headerBlurEffect: undefined,
           headerTransparent: Platform.OS === "ios",
           headerLargeTitleShadowVisible: false,
+          headerTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerLargeTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
         }}
       />
       <Stack.Screen
         name="event-details"
         options={{
-          // headerTitle: "Arrangement",
-          // headerLargeTitle: true,
           headerBackButtonDisplayMode: "minimal",
-          headerShadowVisible: false,
-          headerBlurEffect: undefined,
-          // headerBlurEffect: Platform.OS === "ios" ? "regular" : undefined,
           headerTransparent: Platform.OS === "ios",
-          headerLargeTitleShadowVisible: false,
+          headerTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerLargeTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerTintColor: isDark ? "#ffffff" : "#000000",
         }}
       />
     </Stack>
