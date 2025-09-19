@@ -32,7 +32,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
       : "rgba(255, 255, 255, 0.8)",
     textPrimary: isDark ? "#ffffff" : "#333333",
     textSecondary: isDark ? "#cccccc" : "#666666",
-    toggleText: isDark ? "#64B5F6" : "#007AFF",
+    toggleText: "#fab759", // App accent color
   };
 
   // Strip HTML tags for length check
@@ -48,7 +48,8 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
       style={[styles.card, { backgroundColor: colors.cardBackground }]}
     >
       <TouchableOpacity
-        onPress={shouldShowToggle ? onToggleDescription : undefined}
+        key={`description-${descriptionExpanded}`}
+        onPress={shouldShowToggle ? onToggleDescription : () => {}}
         activeOpacity={shouldShowToggle ? 0.7 : 1}
         style={styles.touchableContent}
       >

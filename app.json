@@ -8,6 +8,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "platforms": ["ios", "android"],
+    "scheme": "ntnu.online.app",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -15,11 +16,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "no.ntnu.online.app",
+      "bundleIdentifier": "ntnu.online.app",
       "buildNumber": "1",
       "infoPlist": {
         "UIStatusBarStyle": "UIStatusBarStyleDefault",
-        "UIViewControllerBasedStatusBarAppearance": false
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "CFBundleURLName": "auth0",
+        "CFBundleURLSchemes": ["ntnu.online.app"]
       }
     },
     "android": {
@@ -29,7 +32,24 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "no.ntnu.online.app"
+      "package": "ntnu.online.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "dev.auth.online.ntnu.no"
+            },
+            {
+              "scheme": "https",
+              "host": "auth.online.ntnu.no"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

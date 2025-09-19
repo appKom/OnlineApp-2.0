@@ -12,11 +12,13 @@ import {
 
 import { EventAttendanceBundle } from "../../../types/event";
 import { getAllEvents } from "../../../utils/trpc";
+import SegmentedControl from "@react-native-segmented-control/segmented-control";
 
 const AllEvents: React.FC = () => {
   const [events, setEvents] = useState<EventAttendanceBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -51,37 +53,61 @@ const AllEvents: React.FC = () => {
     );
   }
 
-  return (
-    <FlatList
-      data={events}
-      keyExtractor={(bundle) => bundle.event.id}
-      contentInsetAdjustmentBehavior="automatic"
+  const renderHeader = () => (
+    <View
       style={{
-        flex: 1,
         backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
       }}
-      renderItem={({ item }) => (
-        <Pressable
-          style={{
-            padding: 12,
-            borderBottomWidth: 1,
-            borderColor: colorScheme === "dark" ? "#222" : "#ececec",
-          }}
-          onPress={() =>
-            router.push({
-              pathname: "/event-details",
-              params: { eventId: item.event.id },
-            })
-          }
-        >
-          <Text
-            style={{ color: colorScheme === "dark" ? "#ffffff" : "#000000" }}
+    >
+      <SegmentedControl
+        values={["Alle", "Mine"]}
+        selectedIndex={selectedIndex}
+        onChange={(event) => {
+          setSelectedIndex(event.nativeEvent.selectedSegmentIndex);
+        }}
+        style={{
+          height: 32,
+        }}
+      />
+    </View>
+  );
+
+  return (
+    <>
+      <FlatList
+        data={events}
+        keyExtractor={(bundle) => bundle.event.id}
+        contentInsetAdjustmentBehavior="automatic"
+        style={{
+          flex: 1,
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        }}
+        ListHeaderComponent={renderHeader}
+        renderItem={({ item }) => (
+          <Pressable
+            style={{
+              padding: 12,
+              borderBottomWidth: 1,
+              borderColor: colorScheme === "dark" ? "#222" : "#ececec",
+            }}
+            onPress={() =>
+              router.push({
+                pathname: "/event-details",
+                params: { eventId: item.event.id },
+              })
+            }
           >
-            {item.event.title ?? "NULL"}
-          </Text>
-        </Pressable>
-      )}
-    />
+            <Text
+              style={{ color: colorScheme === "dark" ? "#ffffff" : "#000000" }}
+            >
+              {item.event.title ?? "NULL"}
+            </Text>
+          </Pressable>
+        )}
+      />
+    </>
   );
 };
 
