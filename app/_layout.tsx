@@ -1,11 +1,9 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Authenticator from "../utils/authenticator";
-import { ActivityIndicator } from "react-native";
-import { getUser } from "utils/trpc";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -17,6 +15,8 @@ export default function RootLayout() {
 
   const initializeAuth = async () => {
     try {
+      // TODO: Use env variables here
+
       // Initialize Auth0
       Authenticator.initialize(
         "auth.online.ntnu.no",
@@ -59,37 +59,3 @@ export default function RootLayout() {
     </>
   );
 }
-
-// // api.ts
-// import Authenticator from './authenticator';
-
-// export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-//   try {
-//     // Get the current access token (automatically refreshed if needed!)
-//     const accessToken = await Authenticator.getAccessToken();
-
-//     if (!accessToken) {
-//       throw new Error('No access token available');
-//     }
-
-//     const response = await fetch(`https://your-api.com${endpoint}`, {
-//       ...options,
-//       headers: {
-//         ...options.headers,
-//         'Authorization': `Bearer ${accessToken}`,
-//         'Content-Type': 'application/json',
-//       },
-//     });
-
-//     if (response.status === 401) {
-//       // Token might be invalid, force logout
-//       await Authenticator.logout();
-//       throw new Error('Authentication failed');
-//     }
-
-//     return response.json();
-//   } catch (error) {
-//     console.error('API call failed:', error);
-//     throw error;
-//   }
-// };
