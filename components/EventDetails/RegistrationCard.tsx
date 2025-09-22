@@ -1,3 +1,4 @@
+import { LiquidGlassView } from "@callstack/liquid-glass";
 import React from "react";
 import {
   StyleSheet,
@@ -6,13 +7,13 @@ import {
   View,
   useColorScheme,
 } from "react-native";
-import { LiquidGlassView } from "@callstack/liquid-glass";
 import { Attendance } from "types/event";
 
 interface RegistrationCardProps {
   attendance: Attendance;
   registrationStatus: string;
   registrationPeriod: string | null;
+  onOpenAttendeesBottomSheet: () => void;
 }
 
 // RegistrationCard Component
@@ -20,6 +21,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   attendance,
   registrationStatus,
   registrationPeriod,
+  onOpenAttendeesBottomSheet,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -78,150 +80,163 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   const unregistrationDeadline = formatDateTime(attendance?.deregisterDeadline);
 
   return (
-    <LiquidGlassView
-      style={[styles.card, { backgroundColor: colors.cardBackground }]}
-    >
-      {/* Header with title and status */}
-      <View style={styles.registrationHeader}>
-        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-          Registrering
-        </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            {
-              backgroundColor:
-                registrationStatus === "Åpen"
-                  ? colors.statusOpenBg
-                  : colors.statusClosedBg,
-            },
-          ]}
-        >
-          <Text
+    <>
+      <LiquidGlassView
+        style={[styles.card, { backgroundColor: colors.cardBackground }]}
+      >
+        {/* Header with title and status */}
+        <View style={styles.registrationHeader}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+            Registrering
+          </Text>
+          <View
             style={[
-              styles.statusText,
+              styles.statusBadge,
               {
-                color:
+                backgroundColor:
                   registrationStatus === "Åpen"
-                    ? colors.statusOpenText
-                    : colors.statusClosedText,
+                    ? colors.statusOpenBg
+                    : colors.statusClosedBg,
               },
             ]}
           >
-            {registrationStatus}
-          </Text>
-        </View>
-      </View>
-
-      {attendance ? (
-        <View>
-          {/* Attendance badges */}
-          <View style={styles.badgeRow}>
-            <View
+            <Text
               style={[
-                styles.infoBadge,
-                { backgroundColor: colors.badgeBackground },
-              ]}
-            >
-              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
-                Påmeldte: {attendeesCount}
-                {maxCapacity ? `/${maxCapacity}` : ""}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.infoBadge,
-                { backgroundColor: colors.badgeBackground },
-              ]}
-            >
-              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
-                Venteliste: {waitingListCount}
-              </Text>
-            </View>
-          </View>
-
-          {/* Three column date layout */}
-          <View style={styles.dateColumns}>
-            <View style={styles.dateColumn}>
-              <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
-                Start
-              </Text>
-              <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
-                {registrationStart}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.dateColumn,
+                styles.statusText,
                 {
-                  borderLeftWidth: 1,
-                  borderRightWidth: 1,
-                  borderColor: colors.badgeBackground,
+                  color:
+                    registrationStatus === "Åpen"
+                      ? colors.statusOpenText
+                      : colors.statusClosedText,
                 },
               ]}
             >
-              <Text
+              {registrationStatus}
+            </Text>
+          </View>
+        </View>
+
+        {attendance ? (
+          <View>
+            {/* Attendance badges */}
+            <View style={styles.badgeRow}>
+              <TouchableOpacity
+                onPress={onOpenAttendeesBottomSheet}
+                activeOpacity={0.7}
                 style={[
-                  styles.dateLabel,
-                  {
-                    color: colors.textSecondary,
-                  },
+                  styles.infoBadge,
+                  { backgroundColor: colors.badgeBackground },
                 ]}
               >
-                Slutt
-              </Text>
-              <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
-                {registrationEnd}
-              </Text>
-            </View>
-            <View style={styles.dateColumn}>
-              <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
-                Avmelding
-              </Text>
-              <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
-                {unregistrationDeadline}
-              </Text>
-            </View>
-          </View>
+                <Text
+                  style={[styles.badgeText, { color: colors.textSecondary }]}
+                >
+                  Påmeldte: {attendeesCount}
+                  {maxCapacity ? `/${maxCapacity}` : ""}
+                </Text>
+              </TouchableOpacity>
 
-          {/* Registration button - only show if open */}
-          {registrationStatus === "Åpen" && (
-            <TouchableOpacity
-              style={styles.registrationButtonWrapper}
-              activeOpacity={0.7}
-            >
-              <LiquidGlassView
+              <View
                 style={[
-                  styles.registrationButton,
+                  styles.infoBadge,
+                  { backgroundColor: colors.badgeBackground },
+                ]}
+              >
+                <Text
+                  style={[styles.badgeText, { color: colors.textSecondary }]}
+                >
+                  Venteliste: {waitingListCount}
+                </Text>
+              </View>
+            </View>
+
+            {/* Three column date layout */}
+            <View style={styles.dateColumns}>
+              <View style={styles.dateColumn}>
+                <Text
+                  style={[styles.dateLabel, { color: colors.textSecondary }]}
+                >
+                  Start
+                </Text>
+                <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                  {registrationStart}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.dateColumn,
                   {
-                    backgroundColor: colors.buttonBackground,
-                    borderWidth: 1,
-                    borderRadius: 25,
-                    overflow: "hidden",
-                    borderColor: colors.buttonBackground,
+                    borderLeftWidth: 1,
+                    borderRightWidth: 1,
+                    borderColor: colors.badgeBackground,
                   },
                 ]}
               >
                 <Text
                   style={[
-                    styles.registrationButtonText,
-                    { color: colors.buttonText },
+                    styles.dateLabel,
+                    {
+                      color: colors.textSecondary,
+                    },
                   ]}
                 >
-                  Registrer deg
+                  Slutt
                 </Text>
-              </LiquidGlassView>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : (
-        <Text
-          style={[styles.noRegistrationText, { color: colors.textTertiary }]}
-        >
-          Ingen registrering tilgjengelig for dette arrangementet
-        </Text>
-      )}
-    </LiquidGlassView>
+                <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                  {registrationEnd}
+                </Text>
+              </View>
+              <View style={styles.dateColumn}>
+                <Text
+                  style={[styles.dateLabel, { color: colors.textSecondary }]}
+                >
+                  Avmelding
+                </Text>
+                <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                  {unregistrationDeadline}
+                </Text>
+              </View>
+            </View>
+
+            {/* Registration button - only show if open */}
+            {registrationStatus === "Åpen" && (
+              <TouchableOpacity
+                style={styles.registrationButtonWrapper}
+                activeOpacity={0.7}
+              >
+                <LiquidGlassView
+                  style={[
+                    styles.registrationButton,
+                    {
+                      backgroundColor: colors.buttonBackground,
+                      borderWidth: 1,
+                      borderRadius: 25,
+                      overflow: "hidden",
+                      borderColor: colors.buttonBackground,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.registrationButtonText,
+                      { color: colors.buttonText },
+                    ]}
+                  >
+                    Registrer deg
+                  </Text>
+                </LiquidGlassView>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <Text
+            style={[styles.noRegistrationText, { color: colors.textTertiary }]}
+          >
+            Ingen registrering tilgjengelig for dette arrangementet
+          </Text>
+        )}
+      </LiquidGlassView>
+    </>
   );
 };
 

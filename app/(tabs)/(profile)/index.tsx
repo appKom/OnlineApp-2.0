@@ -322,10 +322,10 @@ export default function ProfileScreen() {
       >
         <View style={styles.content}>
           <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>
-            Welcome to Online Events
+            Velkommen til Online-Appen!
           </Text>
           <Text style={[styles.subtitle, { color: isDark ? "#ccc" : "#666" }]}>
-            Please log in to view your profile
+            Vennligst logg inn for å se og administrere profilen din.
           </Text>
 
           <TouchableOpacity
@@ -370,7 +370,7 @@ export default function ProfileScreen() {
               onPress={loadUserProfile}
               style={styles.retryButton}
             >
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>Prøv igjen</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -438,7 +438,7 @@ export default function ProfileScreen() {
                     { color: isDark ? "#fff" : "#000" },
                   ]}
                 >
-                  Biography
+                  Biografi
                 </Text>
                 <Text
                   style={[
@@ -464,7 +464,7 @@ export default function ProfileScreen() {
                   { color: isDark ? "#fff" : "#000" },
                 ]}
               >
-                Personal Information
+                Personlig Informasjon
               </Text>
 
               {user.phone && (
@@ -475,7 +475,7 @@ export default function ProfileScreen() {
                       { color: isDark ? "#888" : "#666" },
                     ]}
                   >
-                    Phone:
+                    Telefonnummer:
                   </Text>
                   <Text
                     style={[
@@ -496,7 +496,7 @@ export default function ProfileScreen() {
                       { color: isDark ? "#888" : "#666" },
                     ]}
                   >
-                    Gender:
+                    Kjønn:
                   </Text>
                   <Text
                     style={[
@@ -517,7 +517,7 @@ export default function ProfileScreen() {
                       { color: isDark ? "#888" : "#666" },
                     ]}
                   >
-                    Dietary Restrictions:
+                    Dietære Restriksjoner:
                   </Text>
                   <Text
                     style={[
@@ -538,7 +538,7 @@ export default function ProfileScreen() {
                       { color: isDark ? "#888" : "#666" },
                     ]}
                   >
-                    NTNU Username:
+                    NTNU Brukernavn:
                   </Text>
                   <Text
                     style={[
@@ -566,7 +566,7 @@ export default function ProfileScreen() {
                     { color: isDark ? "#fff" : "#000" },
                   ]}
                 >
-                  Memberships ({user.memberships.length})
+                  Medlemskap ({user.memberships.length})
                 </Text>
 
                 {user.memberships.map((membership, index) => (
@@ -577,12 +577,7 @@ export default function ProfileScreen() {
                       { backgroundColor: isDark ? "#1a1a1a" : "#fff" },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.membershipType,
-                        { color: isDark ? "#4fc3f7" : "#1976d2" },
-                      ]}
-                    >
+                    <Text style={[styles.membershipType, { color: "#fab759" }]}>
                       {formatMembershipType(membership.type)}
                     </Text>
 
@@ -634,12 +629,7 @@ export default function ProfileScreen() {
                         { backgroundColor: isDark ? "#333" : "#e3f2fd" },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.flagText,
-                          { color: isDark ? "#4fc3f7" : "#1976d2" },
-                        ]}
-                      >
+                      <Text style={[styles.flagText, { color: "#fab759" }]}>
                         {flag}
                       </Text>
                     </View>
@@ -661,7 +651,7 @@ export default function ProfileScreen() {
                   { color: isDark ? "#fff" : "#000" },
                 ]}
               >
-                Account Information
+                Kontoinformasjon
               </Text>
 
               <View style={styles.infoRow}>
@@ -671,7 +661,7 @@ export default function ProfileScreen() {
                     { color: isDark ? "#888" : "#666" },
                   ]}
                 >
-                  Member since:
+                  Medlem siden:
                 </Text>
                 <Text
                   style={[
@@ -690,7 +680,7 @@ export default function ProfileScreen() {
                     { color: isDark ? "#888" : "#666" },
                   ]}
                 >
-                  Last updated:
+                  Sist oppdatert:
                 </Text>
                 <Text
                   style={[
@@ -708,7 +698,7 @@ export default function ProfileScreen() {
             <Text
               style={[styles.loadingText, { color: isDark ? "#ccc" : "#666" }]}
             >
-              Loading profile...
+              Laster profil...
             </Text>
           </View>
         )}
@@ -720,7 +710,7 @@ export default function ProfileScreen() {
           disabled={isLoading}
         >
           <Text style={styles.logoutButtonText}>
-            {isLoading ? "Logging Out..." : "Logg Ut"}
+            {isLoading ? "Logger Ut..." : "Logg Ut"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -810,7 +800,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
-    flex: 2,
+    flex: 1,
     textAlign: "right",
   },
   membershipCard: {

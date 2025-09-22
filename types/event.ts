@@ -56,6 +56,7 @@ export interface Attendance {
   updatedAt?: string;
   attendancePrice?: number;
   pools: Pool[];
+  attendees: any[];
   // TODO: Much more info can be found in here
 }
 

@@ -1,8 +1,9 @@
 import AttendanceCard from "components/EventDetails/AttendanceCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
 import RegistrationCard from "components/EventDetails/RegistrationCard";
+import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import BottomSheet from "@gorhom/bottom-sheet";
 import { getEvent } from "utils/trpc";
 
 // Main EventDetails Page Component
@@ -23,14 +25,24 @@ const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const screenWidth = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
-
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+
+  // Bottom sheet ref at the top level
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  // Theme-aware colors
+  const colors = {
+    background: isDark ? "#000000" : "#ffffff",
+    text: isDark ? "#ffffff" : "#333333",
+    error: isDark ? "#ff6b6b" : "#red",
+  };
 
   // Format date for Norwegian timezone
   const formatNorwegianDate = (dateString: string) => {
@@ -51,6 +63,12 @@ const EventDetails: React.FC = () => {
   const toggleDescription = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setDescriptionExpanded(!descriptionExpanded);
+  };
+
+  // Handler to open bottom sheet from child components
+  const handleOpenAttendeesBottomSheet = () => {
+    console.log("🚀 Opening attendees bottom sheet");
+    bottomSheetRef.current?.expand();
   };
 
   // Check if registration is open
@@ -108,22 +126,34 @@ const EventDetails: React.FC = () => {
       <ActivityIndicator
         style={{
           flex: 1,
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+          backgroundColor: colors.background,
         }}
+        color={isDark ? "#ffffff" : "#000000"}
       />
     );
   }
 
   if (error || !event) {
     return (
-      <Text
+      <View
         style={{
-          color: "red",
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.background,
         }}
       >
-        {error ?? "Could not load event details"}
-      </Text>
+        <Text
+          style={{
+            color: colors.error,
+            fontSize: 16,
+            textAlign: "center",
+            marginHorizontal: 20,
+          }}
+        >
+          {error ?? "Could not load event details"}
+        </Text>
+      </View>
     );
   }
 
@@ -136,19 +166,26 @@ const EventDetails: React.FC = () => {
       <Stack.Screen
         options={{
           headerTitle: event?.event?.title || "",
+          headerTransparent: true,
+          // headerStyle: {
+          //   backgroundColor: colors.background,
+          // },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            color: colors.text,
+          },
         }}
       />
       <View
         style={{
           flex: 1,
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+          backgroundColor: colors.background,
         }}
       >
         <ScrollView
           style={styles.scrollContainer}
           contentContainerStyle={{
-            // paddingTop: Platform.OS === "ios" ? insets.top : 0,
-            paddingBottom: insets.bottom,
+            paddingBottom: insets.bottom + 40,
           }}
         >
           {/* Full width image with proper aspect ratio */}
@@ -178,32 +215,35 @@ const EventDetails: React.FC = () => {
             onToggleDescription={toggleDescription}
           />
 
-          {/* Registration Card */}
+          {/* Registration Card with callback */}
           <RegistrationCard
             attendance={event.attendance}
             registrationStatus={registrationStatus}
             registrationPeriod={registrationPeriod}
+            onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
           />
-
-          {/* Bottom padding */}
-          <View style={{ height: 40 }} />
         </ScrollView>
+
+        {/* Bottom Sheet at the root level - OUTSIDE ScrollView */}
+        {event.attendance && (
+          <AttendeesBottomSheet
+            bottomSheetRef={bottomSheetRef}
+            attendance={event.attendance}
+          />
+        )}
       </View>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
   scrollContainer: {
     flex: 1,
   },
   image: {
     backgroundColor: "#f0f0f0",
   },
+  // Keep existing styles for potential future use
   title: {
     fontSize: 28,
     fontWeight: "bold",

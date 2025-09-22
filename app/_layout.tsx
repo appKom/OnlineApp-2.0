@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import Authenticator from "../utils/authenticator";
 import { ActivityIndicator } from "react-native";
 import { getUser } from "utils/trpc";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -32,11 +33,7 @@ export default function RootLayout() {
         storedCredentials ? "✅ User is logged in" : "ℹ️ User needs to log in"
       );
 
-      console.log(storedCredentials?.idToken);
-
       setIsAuthReady(true);
-
-      await getUser();
 
       return removeListener;
     } catch (error) {
@@ -45,18 +42,20 @@ export default function RootLayout() {
     }
   };
 
-  if (!isAuthReady) {
-    return <ActivityIndicator />; // Show loading while checking auth
-  }
+  // if (!isAuthReady) {
+  //   return <ActivityIndicator />; // Show loading while checking auth
+  // }
 
   return (
     <>
-      <SafeAreaProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     </>
   );
 }
