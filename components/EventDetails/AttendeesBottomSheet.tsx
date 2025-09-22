@@ -11,51 +11,6 @@ interface AttendeesBottomSheetProps {
   attendance: Attendance;
 }
 
-// Year calculation utility function
-const calculateYear = (memberships: any[]): string | null => {
-  if (!memberships || memberships.length === 0) return null;
-
-  // Find the most relevant membership (prioritize current active ones)
-  const membership = memberships.find((m) => m.type) || memberships[0];
-
-  if (!membership || !membership.start) return null;
-
-  const startDate = new Date(membership.start);
-  const currentDate = new Date();
-
-  // Ensure valid dates
-  if (isNaN(startDate.getTime())) return null;
-
-  switch (membership.type) {
-    case "BACHELOR_STUDENT":
-      // Calculate years since actual degree start
-      const yearsSinceBachelor =
-        Math.floor(
-          (currentDate.getTime() - startDate.getTime()) /
-            (365.25 * 24 * 60 * 60 * 1000)
-        ) + 2;
-      return Math.min(yearsSinceBachelor, 3).toString(); // Cap at 3 for bachelor
-
-    case "MASTER_STUDENT":
-      // Start is when they began their fourth year, so calculate from there
-      const yearsSinceFourthYear =
-        Math.floor(
-          (currentDate.getTime() - startDate.getTime()) /
-            (365.25 * 24 * 60 * 60 * 1000)
-        ) + 5; // Add 4 because start is beginning of 4th year
-      return Math.min(yearsSinceFourthYear, 5).toString(); // Cap at 5 for master
-
-    case "PHD_STUDENT":
-      return "5"; // Automatically year 5
-
-    case "KNIGHT":
-      return null; // null for year
-
-    default:
-      return null;
-  }
-};
-
 const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   bottomSheetRef,
   attendance,
@@ -83,7 +38,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     index: number;
   }) => {
     const user = item.user || item; // Handle different data structures
-    const year = calculateYear(user.memberships);
+    const year = item.userGrade;
 
     return (
       <View
