@@ -22,7 +22,7 @@ import { getEvent } from "utils/trpc";
 import Authenticator from "utils/authenticator";
 import { User } from "types/user";
 import { UserUtils } from "utils/user-utils";
-import { Attendee } from "types/event";
+import { Attendee, EventAttendanceBundle } from "types/event";
 
 export interface PoolAttendees {
   in: Attendee[];
@@ -38,7 +38,7 @@ const EventDetails: React.FC = () => {
   const isDark = colorScheme === "dark";
   const user = Authenticator.user;
 
-  const [event, setEvent] = useState<any | null>(null);
+  const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
@@ -49,9 +49,10 @@ const EventDetails: React.FC = () => {
 
   const sortedAttendees = useMemo(() => {
     if (event == null) return [];
+    if (event.attendance == null) return [];
 
     const poolAttendees: PoolAttendees[] = Array.from(
-      { length: event.attendance.pools.length },
+      { length: event.attendance.pools.length || 0 },
       () => ({
         in: [] as Attendee[],
         waitlist: [] as Attendee[],
@@ -265,13 +266,15 @@ const EventDetails: React.FC = () => {
           />
 
           {/* Registration Card with callback */}
-          <RegistrationCard
-            attendance={event.attendance}
-            registrationStatus={registrationStatus}
-            registrationPeriod={registrationPeriod}
-            onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
-            sortedAttendees={sortedAttendees}
-          />
+          {event.attendance?.pools && (
+            <RegistrationCard
+              attendance={event.attendance}
+              registrationStatus={registrationStatus}
+              registrationPeriod={registrationPeriod}
+              onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
+              sortedAttendees={sortedAttendees}
+            />
+          )}
         </ScrollView>
 
         {/* Bottom Sheet at the root level - OUTSIDE ScrollView */}

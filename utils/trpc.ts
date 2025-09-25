@@ -19,6 +19,11 @@ export async function getAllEvents() {
   return result;
 }
 
+export async function getAllEventsByAttendingUserId(userId: string) {
+  const result = await client.query("event.allByAttendingUserId", userId);
+  return result;
+}
+
 export async function getEvent(eventId: string) {
   const result = await client.query("event.get", eventId);
   return result;
