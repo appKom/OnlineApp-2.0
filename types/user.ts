@@ -14,24 +14,26 @@ export interface User {
   updatedAt: Date;
   privacyPermissionsId: string | null;
   notificationPermissionsId: string | null;
-  memberships: {
-    id: string;
-    type:
-      | "BACHELOR_STUDENT"
-      | "MASTER_STUDENT"
-      | "PHD_STUDENT"
-      | "KNIGHT"
-      | "SOCIAL_MEMBER"
-      | "OTHER";
-    specialization:
-      | "ARTIFICIAL_INTELLIGENCE"
-      | "DATABASE_AND_SEARCH"
-      | "INTERACTION_DESIGN"
-      | "SOFTWARE_ENGINEERING"
-      | "UNKNOWN"
-      | null;
-    userId: string;
-    start: Date;
-    end: Date;
-  }[];
+  memberships: Membership[];
 }
+
+export type Membership = {
+  type:
+    | "BACHELOR_STUDENT"
+    | "MASTER_STUDENT"
+    | "PHD_STUDENT"
+    | "KNIGHT"
+    | "SOCIAL_MEMBER"
+    | "OTHER";
+  id: string;
+  specialization:
+    | "ARTIFICIAL_INTELLIGENCE"
+    | "DATABASE_AND_SEARCH"
+    | "INTERACTION_DESIGN"
+    | "SOFTWARE_ENGINEERING"
+    | "UNKNOWN"
+    | null;
+  userId: string;
+  start: Date;
+  end: Date;
+};

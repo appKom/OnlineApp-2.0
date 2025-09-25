@@ -19,6 +19,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { getEvent } from "utils/trpc";
+import Authenticator from "utils/authenticator";
+import { User } from "types/user";
+import { UserUtils } from "utils/user-utils";
 
 // Main EventDetails Page Component
 const EventDetails: React.FC = () => {
@@ -27,6 +30,7 @@ const EventDetails: React.FC = () => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const user = Authenticator.user;
 
   const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,6 +165,10 @@ const EventDetails: React.FC = () => {
   const registrationStatus = getRegistrationStatus();
   const registrationPeriod = formatRegistrationPeriod();
 
+  const poolIndex = user
+    ? UserUtils.getUserPoolIndex(user, event.attendance.pools) ?? null
+    : null;
+
   return (
     <>
       <Stack.Screen
@@ -229,6 +237,7 @@ const EventDetails: React.FC = () => {
           <AttendeesBottomSheet
             bottomSheetRef={bottomSheetRef}
             attendance={event.attendance}
+            userPoolIndex={poolIndex}
           />
         )}
       </View>

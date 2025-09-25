@@ -1,5 +1,7 @@
 import Auth0, { Credentials } from "react-native-auth0";
 import { Platform } from "react-native";
+import { User } from "types/user";
+import { getUser } from "./trpc";
 
 type StateListener = (isLoggedIn: boolean) => void;
 
@@ -8,6 +10,7 @@ class Authenticator {
   private static credentials: Credentials | null = null;
   private static _loggedIn: boolean = false;
   private static listeners: StateListener[] = [];
+  public static user: User | null = null;
 
   static get loggedIn(): boolean {
     return this._loggedIn;
@@ -44,28 +47,34 @@ class Authenticator {
     }
 
     try {
-      // This checks if we have valid, non-expired credentials
+      // Checks if we have valid, non-expired credentials
       const hasValidCredentials =
         await this.auth0.credentialsManager.hasValidCredentials();
       console.log(`📋 Has valid credentials: ${hasValidCredentials}`);
 
       if (hasValidCredentials) {
         try {
-          // This automatically refreshes the token if needed!
+          // Automatically refreshes the token if needed
           this.credentials =
             await this.auth0.credentialsManager.getCredentials();
+          this.user = await getUser();
           this.setLoggedIn(true);
+
           console.log("✅ Retrieved stored credentials");
           console.log(
             `🔐 Access token expires: ${new Date(
               this.credentials.expiresAt! * 1000
             )}`
           );
+
           return this.credentials;
         } catch (error) {
           console.log("❌ Error retrieving credentials:", error);
+
           await this.auth0.credentialsManager.clearCredentials();
           this.setLoggedIn(false);
+          this.user = null;
+
           return null;
         }
       }
@@ -106,6 +115,7 @@ class Authenticator {
 
       this.setLoggedIn(true);
       this.credentials = response;
+      this.user = await getUser();
 
       console.log("✅ Login successful!");
       console.log(
@@ -148,13 +158,16 @@ class Authenticator {
 
       this.credentials = null;
       this.setLoggedIn(false);
+      this.user = null;
 
       console.log("✅ Logout successful!");
     } catch (error) {
-      console.log("❌ Logout error:", error);
       // Clear local state even if logout fails
       this.credentials = null;
       this.setLoggedIn(false);
+      this.user = null;
+
+      console.log("❌ Logout error:", error);
     }
   }
 
@@ -181,7 +194,9 @@ class Authenticator {
     if (!this.auth0) return null;
 
     try {
-      const credentials = await this.auth0.credentialsManager.getCredentials();
+      const credentials =
+        this.credentials ??
+        (await this.auth0.credentialsManager.getCredentials());
       this.credentials = credentials;
       return credentials;
     } catch (error) {

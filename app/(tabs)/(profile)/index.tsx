@@ -605,7 +605,7 @@ export default function ProfileScreen() {
             )}
 
             {/* Flags */}
-            {user.flags && user.flags.length > 0 && (
+            {/* {user.flags && user.flags.length > 0 && (
               <View
                 style={[
                   styles.section,
@@ -618,7 +618,7 @@ export default function ProfileScreen() {
                     { color: isDark ? "#fff" : "#000" },
                   ]}
                 >
-                  Flags
+                  Flagg
                 </Text>
                 <View style={styles.flagsContainer}>
                   {user.flags.map((flag, index) => (
@@ -636,7 +636,7 @@ export default function ProfileScreen() {
                   ))}
                 </View>
               </View>
-            )}
+            )} */}
 
             {/* Account Information */}
             <View
@@ -653,6 +653,25 @@ export default function ProfileScreen() {
               >
                 Kontoinformasjon
               </Text>
+
+              <View style={styles.infoRow}>
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    { color: isDark ? "#888" : "#666" },
+                  ]}
+                >
+                  Studieår
+                </Text>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    { color: isDark ? "#ccc" : "#000" },
+                  ]}
+                >
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
 
               <View style={styles.infoRow}>
                 <Text

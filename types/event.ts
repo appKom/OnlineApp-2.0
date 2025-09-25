@@ -1,3 +1,5 @@
+import { User } from "./user";
+
 export interface EventAttendanceBundle {
   event: Event;
   attendance?: Attendance;
@@ -56,16 +58,40 @@ export interface Attendance {
   updatedAt?: string;
   attendancePrice?: number;
   pools: Pool[];
-  attendees: any[];
+  attendees: Attendee[];
   // TODO: Much more info can be found in here
 }
 
-interface Pool {
+export interface Pool {
+  id: string;
+  title: string;
+  attendanceId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  mergeDelayHours: number | null;
+  yearCriteria: number[];
+  capacity: number;
+}
+
+export interface Attendee {
   id: string;
   attendanceId: string;
-  title: string;
-  mergeDelayHours: number | null;
-  capacity: number | null;
+  userId: string;
+  userGrade: number | null;
+  attendancePoolId: string;
+  selections: any[]; // No idea what the model here looks like
+  reserved: boolean;
+  earliestReservationAt: string | null;
+  attendedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  paymentDeadline: string | null;
+  paymentLink: string | null;
+  paymentId: string | null;
+  paymentReservedAt: string | null;
+  paymentChargeDeadline: string | null;
+  paymentChargedAt: string | null;
+  paymentRefundedAt: string | null;
+  paymentRefundedById: string | null;
+  user: User;
 }
