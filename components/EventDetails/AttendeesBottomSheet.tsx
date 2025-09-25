@@ -7,22 +7,20 @@ import BottomSheet, {
 import { Attendance, Attendee } from "types/event";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
 import { UserUtils } from "utils/user-utils";
+import { PoolAttendees } from "app/(tabs)/(home)/event-details";
 
 interface AttendeesBottomSheetProps {
   bottomSheetRef: React.RefObject<BottomSheet>;
   attendance: Attendance;
   userPoolIndex: number | null;
-}
-
-interface PoolAttendees {
-  in: Attendee[];
-  waitlist: Attendee[];
+  sortedAttendees: PoolAttendees[]; // Pre-sorted attendees passed from parent
 }
 
 const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   bottomSheetRef,
   attendance,
   userPoolIndex,
+  sortedAttendees,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -30,38 +28,38 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     userPoolIndex ?? 0
   );
 
-  const sortedAttendees = useMemo(() => {
-    const poolAttendees: PoolAttendees[] = Array.from(
-      { length: attendance.pools.length },
-      () => ({
-        in: [] as Attendee[],
-        waitlist: [] as Attendee[],
-      })
-    );
+  // const sortedAttendees = useMemo(() => {
+  //   const poolAttendees: PoolAttendees[] = Array.from(
+  //     { length: attendance.pools.length },
+  //     () => ({
+  //       in: [] as Attendee[],
+  //       waitlist: [] as Attendee[],
+  //     })
+  //   );
 
-    for (let i = 0; i < attendance.attendees.length; i++) {
-      const attendee = attendance.attendees[i];
+  //   for (let i = 0; i < attendance.attendees.length; i++) {
+  //     const attendee = attendance.attendees[i];
 
-      const poolIndex = UserUtils.getUserPoolIndex(
-        attendee.user,
-        attendance.pools
-      );
+  //     const poolIndex = UserUtils.getUserPoolIndex(
+  //       attendee.user,
+  //       attendance.pools
+  //     );
 
-      if (poolIndex === undefined) continue; // TODO: What to do with the user now?
+  //     if (poolIndex === undefined) continue; // TODO: What to do with the user now?
 
-      const waitlist = !attendee.reserved;
+  //     const waitlist = !attendee.reserved;
 
-      if (poolIndex !== -1) {
-        if (waitlist) {
-          poolAttendees[poolIndex].waitlist.push(attendee);
-        } else {
-          poolAttendees[poolIndex].in.push(attendee);
-        }
-      }
-    }
+  //     if (poolIndex !== -1) {
+  //       if (waitlist) {
+  //         poolAttendees[poolIndex].waitlist.push(attendee);
+  //       } else {
+  //         poolAttendees[poolIndex].in.push(attendee);
+  //       }
+  //     }
+  //   }
 
-    return poolAttendees;
-  }, [attendance]);
+  //   return poolAttendees;
+  // }, [attendance]);
 
   // Combine data with section headers as items
   const combinedData = useMemo(() => {
@@ -105,7 +103,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     }
 
     return combined;
-  }, [sortedAttendees, selectedPoolIndex, attendance.pools]);
+  }, [selectedPoolIndex, attendance.pools]);
 
   // Theme-aware colors
   const colors = {

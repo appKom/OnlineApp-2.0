@@ -3,7 +3,7 @@ import DescriptionCard from "components/EventDetails/DescriptionCard";
 import RegistrationCard from "components/EventDetails/RegistrationCard";
 import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -22,6 +22,12 @@ import { getEvent } from "utils/trpc";
 import Authenticator from "utils/authenticator";
 import { User } from "types/user";
 import { UserUtils } from "utils/user-utils";
+import { Attendee } from "types/event";
+
+export interface PoolAttendees {
+  in: Attendee[];
+  waitlist: Attendee[];
+}
 
 // Main EventDetails Page Component
 const EventDetails: React.FC = () => {
@@ -40,6 +46,41 @@ const EventDetails: React.FC = () => {
 
   // Bottom sheet ref at the top level
   const bottomSheetRef = useRef<BottomSheet>(null);
+
+  const sortedAttendees = useMemo(() => {
+    if (event == null) return [];
+
+    const poolAttendees: PoolAttendees[] = Array.from(
+      { length: event.attendance.pools.length },
+      () => ({
+        in: [] as Attendee[],
+        waitlist: [] as Attendee[],
+      })
+    );
+
+    for (let i = 0; i < event.attendance.attendees.length; i++) {
+      const attendee = event.attendance.attendees[i];
+
+      const poolIndex = UserUtils.getUserPoolIndex(
+        attendee.user,
+        event.attendance.pools
+      );
+
+      if (poolIndex === undefined) continue; // TODO: What to do with the user now?
+
+      const waitlist = !attendee.reserved;
+
+      if (poolIndex !== -1) {
+        if (waitlist) {
+          poolAttendees[poolIndex].waitlist.push(attendee);
+        } else {
+          poolAttendees[poolIndex].in.push(attendee);
+        }
+      }
+    }
+
+    return poolAttendees;
+  }, [event]);
 
   // Theme-aware colors
   const colors = {
@@ -229,6 +270,7 @@ const EventDetails: React.FC = () => {
             registrationStatus={registrationStatus}
             registrationPeriod={registrationPeriod}
             onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
+            sortedAttendees={sortedAttendees}
           />
         </ScrollView>
 
@@ -238,6 +280,7 @@ const EventDetails: React.FC = () => {
             bottomSheetRef={bottomSheetRef}
             attendance={event.attendance}
             userPoolIndex={poolIndex}
+            sortedAttendees={sortedAttendees}
           />
         )}
       </View>

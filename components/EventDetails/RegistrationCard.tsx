@@ -1,4 +1,5 @@
 import { LiquidGlassView } from "@callstack/liquid-glass";
+import { PoolAttendees } from "app/(tabs)/(home)/event-details";
 import React from "react";
 import {
   StyleSheet,
@@ -8,12 +9,15 @@ import {
   useColorScheme,
 } from "react-native";
 import { Attendance } from "types/event";
+import Authenticator from "utils/authenticator";
+import { UserUtils } from "utils/user-utils";
 
 interface RegistrationCardProps {
   attendance: Attendance;
   registrationStatus: string;
   registrationPeriod: string | null;
   onOpenAttendeesBottomSheet: () => void;
+  sortedAttendees: PoolAttendees[]; // Pre-sorted attendees passed from parent
 }
 
 // RegistrationCard Component
@@ -22,9 +26,11 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   registrationStatus,
   registrationPeriod,
   onOpenAttendeesBottomSheet,
+  sortedAttendees,
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const user = Authenticator.user;
 
   // Theme-aware colors
   const colors = {
@@ -67,12 +73,16 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   };
 
   // TODO: Figure out pool index based on your class
-  const poolIndex = 0;
+  const poolIndex = user
+    ? UserUtils.getUserPoolIndex(user, attendance.pools) ?? null
+    : null;
 
   // Extract real data from attendance object
-  const attendeesCount = attendance?.attendees?.length || 0;
-  const maxCapacity = attendance?.pools[poolIndex]?.capacity || null;
-  const waitingListCount = attendance?.waitingListCount || 0;
+  const attendeesCount = sortedAttendees[poolIndex ?? 0]?.in.length || 0;
+  const waitingListCount =
+    sortedAttendees[poolIndex ?? 0]?.waitlist.length || 0;
+  const maxCapacity =
+    poolIndex != null ? attendance?.pools[poolIndex]?.capacity : null;
 
   // Format registration dates from attendance data
   const registrationStart = formatDateTime(attendance?.registerStart);
