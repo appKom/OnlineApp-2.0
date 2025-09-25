@@ -72,8 +72,8 @@ class Authenticator {
           console.log("❌ Error retrieving credentials:", error);
 
           await this.auth0.credentialsManager.clearCredentials();
-          this.setLoggedIn(false);
           this.user = null;
+          this.setLoggedIn(false);
 
           return null;
         }
@@ -106,6 +106,7 @@ class Authenticator {
 
       const response = await this.auth0.webAuth.authorize({
         scope: "openid profile email offline_access", // offline_access is crucial for refresh tokens!
+        // audience: "https://rpc.online.ntnu.no/api/trpc", // TODO: This is new. If it breaks anything, remove it
         redirectUrl,
       });
 
@@ -113,9 +114,9 @@ class Authenticator {
       // This stores credentials in iOS Keychain / Android Keystore
       await this.auth0.credentialsManager.saveCredentials(response);
 
-      this.setLoggedIn(true);
       this.credentials = response;
       this.user = await getUser();
+      this.setLoggedIn(true);
 
       console.log("✅ Login successful!");
       console.log(

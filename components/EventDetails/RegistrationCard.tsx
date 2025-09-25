@@ -166,10 +166,20 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                 <Text
                   style={[styles.dateLabel, { color: colors.textSecondary }]}
                 >
-                  Start
+                  Åpnet
                 </Text>
                 <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
                   {registrationStart}
+                </Text>
+              </View>
+              <View style={styles.dateColumn}>
+                <Text
+                  style={[styles.dateLabel, { color: colors.textSecondary }]}
+                >
+                  Avmelding
+                </Text>
+                <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
+                  {unregistrationDeadline}
                 </Text>
               </View>
               <View
@@ -190,20 +200,10 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                     },
                   ]}
                 >
-                  Slutt
+                  Lukket
                 </Text>
                 <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
                   {registrationEnd}
-                </Text>
-              </View>
-              <View style={styles.dateColumn}>
-                <Text
-                  style={[styles.dateLabel, { color: colors.textSecondary }]}
-                >
-                  Avmelding
-                </Text>
-                <Text style={[styles.dateValue, { color: colors.textPrimary }]}>
-                  {unregistrationDeadline}
                 </Text>
               </View>
             </View>

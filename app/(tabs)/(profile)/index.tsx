@@ -249,7 +249,7 @@ export default function ProfileScreen() {
   const loadUserProfile = async () => {
     try {
       setError(null);
-      const userProfile = await getUser();
+      const userProfile = Authenticator.user ?? (await getUser());
       setUser(userProfile);
     } catch (error) {
       console.error("Error loading user profile:", error);
@@ -334,7 +334,7 @@ export default function ProfileScreen() {
             disabled={isLoading}
           >
             <Text style={styles.loginButtonText}>
-              {isLoading ? "Logging In..." : "Logg Inn"}
+              {isLoading ? "Logger Inn..." : "Logg Inn"}
             </Text>
           </TouchableOpacity>
         </View>

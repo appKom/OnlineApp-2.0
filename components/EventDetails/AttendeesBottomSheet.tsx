@@ -175,13 +175,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   };
 
   const poolTitles = useMemo(() => {
-    return attendance.pools.map((pool) => {
-      const years = pool.yearCriteria;
-      if (years.length === 5) return "Alle årsklasser";
-      if (years.length === 1) return `${years[0]}. klasse`;
-      if (years.length === 2) return `${years[0]}-${years[1]}. klasse`;
-      return `Årsklasser: ${years.join(", ")}`;
-    });
+    return attendance.pools.map((pool) => pool.title);
   }, [attendance.pools]);
 
   const renderBackdrop = useCallback(
