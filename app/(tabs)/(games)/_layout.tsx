@@ -32,6 +32,22 @@ export default function GamesLayout() {
           },
         }}
       />
+      <Stack.Screen
+        name="spinline"
+        options={{
+          headerTitle: "SpinLine",
+          headerLargeTitle: false,
+          headerBackButtonDisplayMode: "minimal",
+          headerTransparent: Platform.OS === "ios",
+          headerTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerLargeTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerTintColor: isDark ? "#ffffff" : "#000000",
+        }}
+      />
     </Stack>
   );
 }

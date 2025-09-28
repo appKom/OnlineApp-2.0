@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Authenticator from "../utils/authenticator";
+import { useColorScheme } from "react-native";
 
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   useEffect(() => {
     initializeAuth();
@@ -50,7 +54,11 @@ export default function RootLayout() {
     <>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <Stack>
+          <Stack
+            screenOptions={{
+              contentStyle: { backgroundColor: isDark ? "#000000" : "#ffffff" },
+            }}
+          >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
