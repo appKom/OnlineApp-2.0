@@ -48,6 +48,22 @@ export default function GamesLayout() {
           headerTintColor: isDark ? "#ffffff" : "#000000",
         }}
       />
+      <Stack.Screen
+        name="dice"
+        options={{
+          headerTitle: "Terning",
+          headerLargeTitle: false,
+          headerBackButtonDisplayMode: "minimal",
+          headerTransparent: Platform.OS === "ios",
+          headerTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerLargeTitleStyle: {
+            color: isDark ? "#ffffff" : "#000000",
+          },
+          headerTintColor: isDark ? "#ffffff" : "#000000",
+        }}
+      />
     </Stack>
   );
 }

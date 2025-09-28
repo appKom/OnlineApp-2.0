@@ -21,8 +21,14 @@ const games: Game[] = [
   {
     id: "spinline",
     title: "SpinLine",
-    description: "An engaging spinning line game with challenging gameplay",
+    description: "Online sin vri på spin-the-bottle",
     route: "/spinline", // Adjust this to your actual route
+  },
+  {
+    id: "dice",
+    title: "Terning",
+    description: "Kast en terning. Helt uten reklamer!",
+    route: "/dice",
   },
 ];
 
