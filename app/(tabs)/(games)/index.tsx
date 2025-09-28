@@ -6,10 +6,13 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import SpinLine from "./spinline";
 
 export default function GamesScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  return <SpinLine />;
 
   return (
     <ScrollView
