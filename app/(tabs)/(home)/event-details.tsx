@@ -9,7 +9,6 @@ import {
   Dimensions,
   Image,
   LayoutAnimation,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,18 +17,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheet from "@gorhom/bottom-sheet";
-import { getEvent } from "utils/trpc";
+import { getEvent, getRegistrationAvailability } from "utils/trpc";
 import Authenticator from "utils/authenticator";
-import { User } from "types/user";
 import { UserUtils } from "utils/user-utils";
-import { Attendee, EventAttendanceBundle } from "types/event";
+import { EventAttendanceBundle } from "types/event";
+import {
+  isRegistrationEvent,
+  formatNorwegianDate,
+  getRegistrationStatus,
+  formatRegistrationPeriod,
+  sortAttendeesByPool,
+} from "utils/event-utils";
 
-export interface PoolAttendees {
-  in: Attendee[];
-  waitlist: Attendee[];
-}
-
-// Main EventDetails Page Component
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const screenWidth = Dimensions.get("window").width;
@@ -44,66 +43,34 @@ const EventDetails: React.FC = () => {
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
-  // Bottom sheet ref at the top level
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const sortedAttendees = useMemo(() => {
-    if (event == null) return [];
-    if (event.attendance == null) return [];
+  const isRegistration = isRegistrationEvent(event);
 
-    const poolAttendees: PoolAttendees[] = Array.from(
-      { length: event.attendance.pools.length || 0 },
-      () => ({
-        in: [] as Attendee[],
-        waitlist: [] as Attendee[],
-      })
-    );
+  const userPoolIndex = useMemo(() => {
+    if (!user || !event?.attendance?.pools) return null;
+    return UserUtils.getUserPoolIndex(user, event.attendance.pools) ?? null;
+  }, [user, event?.attendance?.pools]);
 
-    for (let i = 0; i < event.attendance.attendees.length; i++) {
-      const attendee = event.attendance.attendees[i];
+  const sortedAttendees = useMemo(
+    () => sortAttendeesByPool(event, userPoolIndex),
+    [event, userPoolIndex]
+  );
 
-      const poolIndex = UserUtils.getUserPoolIndex(
-        attendee.user,
-        event.attendance.pools
-      );
+  const registrationStatus = useMemo(
+    () => getRegistrationStatus(event?.attendance),
+    [event?.attendance]
+  );
 
-      if (poolIndex === undefined) continue; // TODO: What to do with the user now?
+  const registrationPeriod = useMemo(
+    () => formatRegistrationPeriod(event?.attendance, formatNorwegianDate),
+    [event?.attendance]
+  );
 
-      const waitlist = !attendee.reserved;
-
-      if (poolIndex !== -1) {
-        if (waitlist) {
-          poolAttendees[poolIndex].waitlist.push(attendee);
-        } else {
-          poolAttendees[poolIndex].in.push(attendee);
-        }
-      }
-    }
-
-    return poolAttendees;
-  }, [event]);
-
-  // Theme-aware colors
   const colors = {
     background: isDark ? "#000000" : "#ffffff",
     text: isDark ? "#ffffff" : "#333333",
     error: isDark ? "#ff6b6b" : "#red",
-  };
-
-  // Format date for Norwegian timezone
-  const formatNorwegianDate = (dateString: string) => {
-    const date = new Date(dateString);
-
-    const formatter = new Intl.DateTimeFormat("nb-NO", {
-      timeZone: "Europe/Oslo",
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    return formatter.format(date);
   };
 
   const toggleDescription = () => {
@@ -111,55 +78,37 @@ const EventDetails: React.FC = () => {
     setDescriptionExpanded(!descriptionExpanded);
   };
 
-  // Handler to open bottom sheet from child components
   const handleOpenAttendeesBottomSheet = () => {
     console.log("🚀 Opening attendees bottom sheet");
     bottomSheetRef.current?.expand();
   };
 
-  // Check if registration is open
-  const getRegistrationStatus = () => {
-    if (!event?.attendance) return "Stengt";
-
-    const now = new Date();
-    const registerStart = new Date(event.attendance.registerStart);
-    const registerEnd = new Date(event.attendance.registerEnd);
-
-    if (now >= registerStart && now <= registerEnd) {
-      return "Åpen";
-    }
-    return "Stengt";
-  };
-
-  const formatRegistrationPeriod = () => {
-    if (!event?.attendance) return null;
-
-    const start = formatNorwegianDate(event.attendance.registerStart);
-    const end = formatNorwegianDate(event.attendance.registerEnd);
-
-    return `${start} - ${end}`;
-  };
+  useEffect(() => {});
 
   useEffect(() => {
     getEvent(eventId)
       .then((data) => {
         const eventData = data ?? {};
-        console.log(eventData);
+        // console.log(eventData);
         setEvent(eventData);
 
         if (eventData.event?.imageUrl) {
           Image.getSize(
             eventData.event.imageUrl,
-            (width, height) => {
-              setImageAspectRatio(width / height);
-            },
-            (error) => {
-              console.log("Error getting image size:", error);
-            }
+            (width, height) => setImageAspectRatio(width / height),
+            (error) => console.log("Error getting image size:", error)
           );
         }
 
         setLoading(false);
+
+        if (eventData != null && eventData.attendance != null) {
+          getRegistrationAvailability(eventData.attendance.id || "").then();
+        } else {
+          console.log(
+            eventData == null ? "event is null" : "attendance is null"
+          );
+        }
       })
       .catch((error) => {
         setError(error.message);
@@ -170,10 +119,7 @@ const EventDetails: React.FC = () => {
   if (loading) {
     return (
       <ActivityIndicator
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-        }}
+        style={{ flex: 1, backgroundColor: colors.background }}
         color={isDark ? "#ffffff" : "#000000"}
       />
     );
@@ -182,21 +128,9 @@ const EventDetails: React.FC = () => {
   if (error || !event) {
     return (
       <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: colors.background,
-        }}
+        style={[styles.centerContainer, { backgroundColor: colors.background }]}
       >
-        <Text
-          style={{
-            color: colors.error,
-            fontSize: 16,
-            textAlign: "center",
-            marginHorizontal: 20,
-          }}
-        >
+        <Text style={[styles.errorText, { color: colors.error }]}>
           {error ?? "Could not load event details"}
         </Text>
       </View>
@@ -204,12 +138,6 @@ const EventDetails: React.FC = () => {
   }
 
   const imageHeight = screenWidth / imageAspectRatio;
-  const registrationStatus = getRegistrationStatus();
-  const registrationPeriod = formatRegistrationPeriod();
-
-  const poolIndex = user
-    ? UserUtils.getUserPoolIndex(user, event.attendance.pools) ?? null
-    : null;
 
   return (
     <>
@@ -217,47 +145,26 @@ const EventDetails: React.FC = () => {
         options={{
           headerTitle: event?.event?.title || "",
           headerTransparent: true,
-          // headerStyle: {
-          //   backgroundColor: colors.background,
-          // },
           headerTintColor: colors.text,
-          headerTitleStyle: {
-            color: colors.text,
-          },
+          headerTitleStyle: { color: colors.text },
         }}
       />
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-        }}
-      >
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
           style={styles.scrollContainer}
-          contentContainerStyle={{
-            paddingBottom: insets.bottom + 40,
-          }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         >
-          {/* Full width image with proper aspect ratio */}
           <Image
             source={{ uri: event.event.imageUrl }}
-            style={[
-              styles.image,
-              {
-                width: screenWidth,
-                height: imageHeight,
-              },
-            ]}
+            style={[styles.image, { width: screenWidth, height: imageHeight }]}
             resizeMode="contain"
           />
 
-          {/* Attendance Card */}
           <AttendanceCard
             event={event}
             formatNorwegianDate={formatNorwegianDate}
           />
 
-          {/* Description Card */}
           <DescriptionCard
             description={event.event.description}
             screenWidth={screenWidth}
@@ -265,24 +172,28 @@ const EventDetails: React.FC = () => {
             onToggleDescription={toggleDescription}
           />
 
-          {/* Registration Card with callback */}
-          {event.attendance?.pools && (
+          {isRegistration ? (
             <RegistrationCard
-              attendance={event.attendance}
+              attendance={event.attendance!}
               registrationStatus={registrationStatus}
               registrationPeriod={registrationPeriod}
               onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
               sortedAttendees={sortedAttendees}
             />
+          ) : (
+            <View style={styles.noRegistrationContainer}>
+              <Text style={styles.noRegistrationText}>
+                Dette er ikke et påmeldingsarrangement.
+              </Text>
+            </View>
           )}
         </ScrollView>
 
-        {/* Bottom Sheet at the root level - OUTSIDE ScrollView */}
-        {event.attendance && (
+        {isRegistration && (
           <AttendeesBottomSheet
             bottomSheetRef={bottomSheetRef}
-            attendance={event.attendance}
-            userPoolIndex={poolIndex}
+            attendance={event.attendance!}
+            userPoolIndex={userPoolIndex}
             sortedAttendees={sortedAttendees}
           />
         )}
@@ -296,122 +207,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   image: {
+    marginTop: 120,
     backgroundColor: "#f0f0f0",
   },
-  // Keep existing styles for potential future use
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginHorizontal: 24,
-    marginVertical: 20,
-    color: "#333",
-  },
-  card: {
-    backgroundColor: "#f8f9fa",
-    marginHorizontal: 24,
-    marginBottom: 20,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
+  centerContainer: {
     flex: 1,
-  },
-  detailValue: {
-    fontSize: 16,
-    color: "#333",
-    flex: 2,
-    textAlign: "right",
-  },
-  descriptionPreview: {
-    fontSize: 16,
-    color: "#666",
-    lineHeight: 24,
-    marginBottom: 8,
-  },
-  toggleText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "600",
-    marginTop: 8,
-  },
-  htmlBase: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#666",
-  },
-  registrationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginHorizontal: 20,
+  },
+  noRegistrationContainer: {
+    marginHorizontal: 24,
+    marginTop: 16,
     marginBottom: 16,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    minWidth: 60,
-    alignItems: "center",
-  },
-  statusOpen: {
-    backgroundColor: "#D4F6D4",
-  },
-  statusClosed: {
-    backgroundColor: "#FFE4E4",
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  statusOpenText: {
-    color: "#2D7D32",
-  },
-  statusClosedText: {
-    color: "#C62828",
-  },
-  registrationButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  registrationButtonDisabled: {
-    backgroundColor: "#E0E0E0",
-  },
-  registrationButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  registrationButtonTextDisabled: {
-    color: "#999",
   },
   noRegistrationText: {
     fontSize: 16,
-    color: "#666",
+    color: "#888",
     textAlign: "center",
     fontStyle: "italic",
   },

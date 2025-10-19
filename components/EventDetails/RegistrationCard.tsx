@@ -253,7 +253,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: 24,
-    marginBottom: 20,
+    marginBottom: 24,
     borderRadius: 12,
     padding: 20,
     shadowOffset: {

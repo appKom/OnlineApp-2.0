@@ -1,7 +1,7 @@
 import { TZDate } from "@date-fns/tz";
 import { differenceInYears, isAfter, setMonth, startOfMonth } from "date-fns";
 
-import { Pool } from "types/event";
+import { AttendancePool } from "types/event";
 import { Membership, User } from "types/user";
 
 export class UserUtils {
@@ -50,7 +50,10 @@ export class UserUtils {
     }
   }
 
-  static getUserPool(user: User, pools: Pool[]): Pool | undefined {
+  static getUserPool(
+    user: User,
+    pools: AttendancePool[]
+  ): AttendancePool | undefined {
     const activeMembership = this.findActiveMembership(user);
 
     if (!activeMembership) return undefined;
@@ -62,10 +65,10 @@ export class UserUtils {
     return pools.find((pool) => pool.yearCriteria.includes(userYear));
   }
 
-  static getUserPoolIndex: (user: User, pools: Pool[]) => number | undefined = (
-    user,
-    pools
-  ) => {
+  static getUserPoolIndex: (
+    user: User,
+    pools: AttendancePool[]
+  ) => number | undefined = (user, pools) => {
     const activeMembership = this.findActiveMembership(user);
 
     if (!activeMembership) return undefined;

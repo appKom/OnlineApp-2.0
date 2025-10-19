@@ -1,4 +1,4 @@
-import { User } from "./user";
+import { Membership, User } from "./user";
 
 export interface EventAttendanceBundle {
   event: Event;
@@ -57,12 +57,12 @@ export interface Attendance {
   createdAt?: string;
   updatedAt?: string;
   attendancePrice?: number;
-  pools: Pool[];
+  pools: AttendancePool[];
   attendees: Attendee[];
   // TODO: Much more info can be found in here
 }
 
-export interface Pool {
+export interface AttendancePool {
   id: string;
   title: string;
   attendanceId: string;
@@ -95,3 +95,46 @@ export interface Attendee {
   paymentRefundedById: string | null;
   user: User;
 }
+
+export interface PoolAttendees {
+  in: Attendee[];
+  waitlist: Attendee[];
+}
+
+type RegistrationRejectionCause =
+  | "SUSPENDED"
+  | "TOO_EARLY"
+  | "TOO_LATE"
+  | "ALREADY_REGISTERED"
+  | "MISSING_PARENT_REGISTRATION"
+  | "MISSING_PARENT_RESERVATION"
+  | "MISSING_MEMBERSHIP"
+  | "NO_MATCHING_POOL";
+
+type RegistrationBypassCause =
+  | "IGNORE_PARENT"
+  | "IGNORE_REGISTRATION_START"
+  | "IGNORE_REGISTRATION_END"
+  | "OVERRIDDEN_POOL";
+
+export type RegistrationAvailabilityFailure = {
+  cause: RegistrationRejectionCause;
+  success: false;
+};
+
+export type RegistrationAvailabilitySuccess = {
+  reservationActiveAt: string; // type TZDate
+  event: Event;
+  attendance: Attendance;
+  user: User;
+  membership: Membership;
+  /** The AttendancePool the user will be placed into based on the EventRegistrationOptions passed */
+  pool: AttendancePool;
+  bypassedChecks: RegistrationBypassCause[];
+  options: any; // EventRegistrationOptions (but we don't really care about the specifics and I imagine this will change)
+  success: true;
+};
+
+export type RegistrationAvailabilityResult =
+  | RegistrationAvailabilitySuccess
+  | RegistrationAvailabilityFailure;
