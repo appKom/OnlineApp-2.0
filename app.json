@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "OnlineApp",
-    "slug": "OnlineApp",
-    "version": "1.0.0",
+    "name": "Online",
+    "slug": "Online",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",

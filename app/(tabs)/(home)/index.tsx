@@ -139,30 +139,30 @@ const AllEvents: React.FC = () => {
     }
   };
 
-  if (loading && !refreshing) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff", // Match your app's background
-        }}
-      >
-        <ActivityIndicator
-          color={colorScheme === "dark" ? "#ffffff" : "#000000"}
-        />
-      </View>
-    );
-  }
+  // if (loading && !refreshing) {
+  //   return (
+  //     <View
+  //       style={{
+  //         flex: 1,
+  //         justifyContent: "center",
+  //         alignItems: "center",
+  //         backgroundColor: colorScheme === "dark" ? "#000" : "#fff", // Match your app's background
+  //       }}
+  //     >
+  //       <ActivityIndicator
+  //         color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+  //       />
+  //     </View>
+  //   );
+  // }
 
-  if (error && !refreshing) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: "red" }}>{error}</Text>
-      </View>
-    );
-  }
+  // if (error && !refreshing) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+  //       <Text style={{ color: "red" }}>{error}</Text>
+  //     </View>
+  //   );
+  // }
 
   const renderHeader = () => (
     <View
@@ -183,42 +183,83 @@ const AllEvents: React.FC = () => {
     </View>
   );
 
+  const renderContent = () => {
+    if (loading && !refreshing) {
+      // Show loading in the list area
+      return (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 200,
+          }}
+        >
+          <ActivityIndicator
+            color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+          />
+        </View>
+      );
+    }
+    if (error && !refreshing) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 200,
+          }}
+        >
+          <Text style={{ color: "red" }}>{error}</Text>
+        </View>
+      );
+    }
+    // Normal list items
+    return null; // No placeholder content needed, FlatList will render data
+  };
+
   return (
-    <>
-      <FlatList
-        data={currentEvents}
-        keyExtractor={(bundle) => bundle.event.id}
-        contentInsetAdjustmentBehavior="automatic"
-        style={{
-          flex: 1,
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
-        }}
-        ListHeaderComponent={renderHeader}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        renderItem={({ item }) => (
-          <Pressable
-            style={{
-              padding: 12,
-              borderBottomWidth: 1,
-              borderColor: colorScheme === "dark" ? "#222" : "#ececec",
-            }}
-            onPress={() =>
-              router.push({
-                pathname: "/event-details",
-                params: { eventId: item.event.id },
-              })
-            }
-          >
-            <Text
-              style={{ color: colorScheme === "dark" ? "#ffffff" : "#000000" }}
-            >
-              {item.event.title ?? "NULL"}
-            </Text>
-          </Pressable>
-        )}
-      />
-    </>
+    <FlatList
+      data={loading && !refreshing ? [] : currentEvents}
+      keyExtractor={(bundle) => bundle.event.id}
+      contentInsetAdjustmentBehavior="automatic"
+      style={{
+        flex: 1,
+        backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+      }}
+      ListHeaderComponent={renderHeader}
+      ListEmptyComponent={renderContent}
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      renderItem={
+        loading && !refreshing
+          ? null // Don't render items during loading
+          : ({ item }) => (
+              <Pressable
+                style={{
+                  padding: 12,
+                  borderBottomWidth: 1,
+                  borderColor: colorScheme === "dark" ? "#222" : "#ececec",
+                }}
+                onPress={() =>
+                  router.push({
+                    pathname: "/event-details",
+                    params: { eventId: item.event.id },
+                  })
+                }
+              >
+                <Text
+                  style={{
+                    color: colorScheme === "dark" ? "#ffffff" : "#000000",
+                  }}
+                >
+                  {item.event.title ?? "NULL"}
+                </Text>
+              </Pressable>
+            )
+      }
+    />
   );
 };
 
