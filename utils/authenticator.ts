@@ -108,6 +108,10 @@ class Authenticator {
         scope: "openid profile email offline_access", // offline_access is crucial for refresh tokens!
         // audience: "https://rpc.online.ntnu.no/api/trpc", // TODO: This is new. If it breaks anything, remove it
         redirectUrl,
+        additionalParameters: {
+          prompt: "login",   // ignore existing SSO and show the chooser
+          max_age: "0",      // force fresh auth (string per OIDC/TS types)
+        },    // ignore existing SSO, show the login UI
       });
 
       console.log("💾 Storing credentials securely...");
