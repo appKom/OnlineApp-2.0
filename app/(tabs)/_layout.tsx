@@ -1,43 +1,48 @@
-import { withLayoutContext } from "expo-router";
-import { createNativeBottomTabNavigator } from "@bottom-tabs/react-navigation";
+import { Tabs } from "expo-router";
 import { useColorScheme } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { getTheme, ThemeMode } from "../../utils/theme";
 
-const BottomTabNavigator = createNativeBottomTabNavigator().Navigator;
-const Tabs = withLayoutContext(BottomTabNavigator);
+type TabIconProps = { color: string; size?: number };
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const colorScheme = (useColorScheme() as ThemeMode) || "light";
+  const theme = getTheme(colorScheme);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#fab759", // Your primary accent color
-        tabBarInactiveTintColor: "#999999", // Inactive tab color
-        tabBarStyle: {
-          backgroundColor: isDark ? "#000000" : "#ffffff",
-        },
+        tabBarActiveTintColor: theme.secondary ?? theme.primary,
+        tabBarInactiveTintColor: theme.outline ?? "#999999",
+        tabBarStyle: { backgroundColor: theme.surface ?? (colorScheme === "dark" ? "#000" : "#fff") },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
         name="(home)"
         options={{
           title: "Hjem",
-          tabBarIcon: () => ({ sfSymbol: "house" }),
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <Ionicons name="home-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="(games)"
         options={{
           title: "Spill",
-          tabBarIcon: () => ({ sfSymbol: "dice" }),
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <Ionicons name="game-controller-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="(profile)"
         options={{
           title: "Profil",
-          tabBarIcon: () => ({ sfSymbol: "person" }),
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <Ionicons name="person-outline" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>
