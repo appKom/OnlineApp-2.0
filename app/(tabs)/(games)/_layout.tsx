@@ -1,12 +1,15 @@
 import { Stack } from "expo-router";
 import { Platform, useColorScheme } from "react-native";
+import Header from "../../../components/Header";
 
 export default function GamesLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   return (
-    <Stack
+    <>
+      <Header title="Spill" />
+      <Stack
       screenOptions={{
         headerLargeTitle: true,
         headerLargeTitleStyle: {
@@ -18,6 +21,7 @@ export default function GamesLayout() {
       <Stack.Screen
         name="index"
         options={{
+          headerShown: false,
           headerTitle: "Spill",
           headerLargeTitle: true,
           headerShadowVisible: false,
@@ -64,6 +68,7 @@ export default function GamesLayout() {
           headerTintColor: isDark ? "#ffffff" : "#000000",
         }}
       />
-    </Stack>
+      </Stack>
+    </>
   );
 }

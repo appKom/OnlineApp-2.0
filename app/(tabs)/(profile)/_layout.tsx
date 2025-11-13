@@ -1,13 +1,17 @@
 import { Stack } from "expo-router";
 import { Platform, useColorScheme } from "react-native";
+import Header from "../../../components/Header";
 
-export default function GamesLayout() {
+export default function ProfileLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   return (
-    <Stack
+    <>
+      <Header title="Profil" />
+      <Stack
       screenOptions={{
+        headerShown: false,
         headerLargeTitle: true,
         headerLargeTitleStyle: {
           fontSize: 28,
@@ -32,6 +36,7 @@ export default function GamesLayout() {
           },
         }}
       />
-    </Stack>
+      </Stack>
+    </>
   );
 }

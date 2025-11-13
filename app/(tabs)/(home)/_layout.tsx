@@ -1,15 +1,19 @@
 import { Stack } from "expo-router";
 import { Platform, useColorScheme } from "react-native";
+import Header from "../../../components/Header";
 
 export default function HomeLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   return (
-    <Stack>
+    <>
+      <Header title="Arrangementer" />
+      <Stack>
       <Stack.Screen
         name="index"
         options={{
+          headerShown: false,
           headerTitle: "Arrangementer",
           headerLargeTitle: true,
           headerShadowVisible: false,
@@ -38,6 +42,7 @@ export default function HomeLayout() {
           headerTintColor: isDark ? "#ffffff" : "#000000",
         }}
       />
-    </Stack>
+      </Stack>
+    </>
   );
 }
