@@ -4,13 +4,12 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetFlatList,
 } from "@gorhom/bottom-sheet";
-import { Attendance, Attendee } from "types/event";
+import { Attendance, Attendee, PoolAttendees } from "types/event";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
 import { UserUtils } from "utils/user-utils";
-import { PoolAttendees } from "app/(tabs)/(home)/event-details";
 
 interface AttendeesBottomSheetProps {
-  bottomSheetRef: React.RefObject<BottomSheet>;
+  bottomSheetRef: React.RefObject<BottomSheet | null>;
   attendance: Attendance;
   userPoolIndex: number | null;
   sortedAttendees: PoolAttendees[]; // Pre-sorted attendees passed from parent
@@ -76,7 +75,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
       });
       // Add all attendees
       combined.push(
-        ...poolAttendees.in.map((item, index) => ({
+        ...poolAttendees.in.map((item: Attendee, index: number) => ({
           ...item,
           type: "attendee",
           sectionIndex: index,
@@ -94,7 +93,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
       });
       // Add all waitlisted people
       combined.push(
-        ...poolAttendees.waitlist.map((item, index) => ({
+        ...poolAttendees.waitlist.map((item: Attendee, index: number) => ({
           ...item,
           type: "waitlist",
           sectionIndex: index,
@@ -118,7 +117,8 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   const snapPoints = useMemo(() => ["80%"], []);
 
   // Render different item types
-  const renderCombinedItem = ({ item, index }) => {
+  // item shape is either a section header or an attendee-like object
+  const renderCombinedItem = ({ item, index }: { item: any; index: number }) => {
     // Render section headers
     if (item.type === "sectionHeader") {
       return (
@@ -179,7 +179,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   }, [attendance.pools]);
 
   const renderBackdrop = useCallback(
-    (props) => (
+    (props: any) => (
       <BottomSheetBackdrop
         {...props}
         disappearsOnIndex={-1}
@@ -228,7 +228,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
       {/* Single scrollable list with section headers as items */}
       <BottomSheetFlatList
         data={combinedData}
-        keyExtractor={(item, index) => item.id || `item-${index}`}
+        keyExtractor={(item: any, index: number) => item.id || `item-${index}`}
         renderItem={renderCombinedItem}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}

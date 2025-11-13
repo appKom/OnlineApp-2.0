@@ -4,7 +4,7 @@ import Authenticator from "./authenticator";
 import { jwtDecode } from "jwt-decode";
 import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
-import { RegistrationAvailabilityResult } from "types/event";
+import { RegistrationAvailabilityResult, EventAttendanceBundle } from "types/event";
 
 const client = createTRPCUntypedClient({
   links: [
@@ -26,12 +26,15 @@ const client = createTRPCUntypedClient({
   ],
 });
 
-export async function getAllEvents() {
+export async function getAllEvents(): Promise<{ items?: EventAttendanceBundle[] }> {
   const result = await client.query("event.all");
-  return result;
+  // The TRPC client is untyped here; cast to the expected shape so callers
+  // can access `items` safely. If the backend response shape changes this
+  // cast may be incorrect and should be updated.
+  return result as { items?: EventAttendanceBundle[] };
 }
 
-export async function getAllEventsByAttendingUserId(userId: string) {
+export async function getAllEventsByAttendingUserId(userId: string): Promise<{ items?: EventAttendanceBundle[] } | null> {
   const credentials = await Authenticator.getCurrentCredentials();
 
   if (!credentials) return null;
@@ -41,12 +44,14 @@ export async function getAllEventsByAttendingUserId(userId: string) {
   const result = await client.query("event.allByAttendingUserId", {
     id: decoded.sub,
   });
-  return result;
+  return result as { items?: EventAttendanceBundle[] };
 }
 
-export async function getEvent(eventId: string) {
+export async function getEvent(eventId: string): Promise<EventAttendanceBundle | null> {
   const result = await client.query("event.get", eventId);
-  return result;
+  // Cast the untyped TRPC response to our EventAttendanceBundle shape.
+  // If the backend returns null/undefined, normalize to null.
+  return (result as EventAttendanceBundle) ?? null;
 }
 
 export async function getUser(): Promise<User | null> {

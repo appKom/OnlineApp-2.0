@@ -88,11 +88,11 @@ const EventDetails: React.FC = () => {
   useEffect(() => {
     getEvent(eventId)
       .then((data) => {
-        const eventData = data ?? {};
-        // console.log(eventData);
+        // keep the exact return type from getEvent (EventAttendanceBundle | null)
+        const eventData = data ?? null;
         setEvent(eventData);
 
-        if (eventData.event?.imageUrl) {
+        if (eventData?.event?.imageUrl) {
           Image.getSize(
             eventData.event.imageUrl,
             (width, height) => setImageAspectRatio(width / height),
@@ -166,7 +166,7 @@ const EventDetails: React.FC = () => {
           />
 
           <DescriptionCard
-            description={event.event.description}
+            description={event.event.description ?? ""}
             screenWidth={screenWidth}
             descriptionExpanded={descriptionExpanded}
             onToggleDescription={toggleDescription}
