@@ -15,7 +15,7 @@ import {
   getAllEvents,
   getAllEventsByAttendingUserId,
 } from "../../../utils/trpc";
-import { ButtonGroup } from "@rneui/themed";
+import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
 import Authenticator from "utils/authenticator";
 import { getTheme, ThemeMode } from "utils/theme";
 
@@ -173,7 +173,7 @@ const AllEvents: React.FC = () => {
         paddingVertical: 12,
       }}
     >
-      <ButtonGroup
+      <AnimatedButtonGroup
         buttons={["Alle", "Mine"]}
         selectedIndex={selectedIndex}
         onPress={handleTabIndexChange}
@@ -181,16 +181,13 @@ const AllEvents: React.FC = () => {
           borderRadius: 13, 
           backgroundColor: theme.primaryContainer,
           padding: 3,
-          borderColor: "transparent",
+          overflow: 'hidden',
         }}
         buttonStyle={{ backgroundColor: 'transparent' }}
-        selectedButtonStyle={{ 
-          backgroundColor: theme.secondaryFixedDim,
-          borderRadius: 10
-        }}
-        textStyle={{ color: theme.onPrimaryContainer }}
         selectedTextStyle={{ color: theme.onSecondaryFixed }}
-        innerBorderStyle={{ color: 'transparent' }}
+        textStyle={{ color: theme.onPrimaryContainer }}
+        highlightStyle={{ backgroundColor: theme.secondaryFixedDim, opacity: 1 }}
+        highlightInset={6}
       />
     </View>
   );
@@ -232,46 +229,49 @@ const AllEvents: React.FC = () => {
   };
 
   return (
-    <FlatList
-      data={loading && !refreshing ? [] : currentEvents}
-      keyExtractor={(bundle) => bundle.event.id}
-      contentInsetAdjustmentBehavior="automatic"
-      style={{
-        flex: 1,
-        backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
-      }}
-      ListHeaderComponent={renderHeader}
-      ListEmptyComponent={renderContent}
-      refreshing={refreshing}
-      onRefresh={handleRefresh}
-      renderItem={
-        loading && !refreshing
-          ? null // Don't render items during loading
-          : ({ item }) => (
-              <Pressable
-                style={{
-                  padding: 12,
-                  borderBottomWidth: 1,
-                  borderColor: colorScheme === "dark" ? "#222" : "#ececec",
-                }}
-                onPress={() =>
-                  router.push({
-                    pathname: "/event-details",
-                    params: { eventId: item.event.id },
-                  })
-                }
-              >
-                <Text
+    <View style={{ flex: 1 }}>
+      {renderHeader()}
+      <FlatList
+        data={loading && !refreshing ? [] : currentEvents}
+        keyExtractor={(bundle) => bundle.event.id}
+        contentInsetAdjustmentBehavior="automatic"
+        style={{
+          flex: 1,
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        }}
+        ListHeaderComponent={null}
+        ListEmptyComponent={renderContent}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        renderItem={
+          loading && !refreshing
+            ? null // Don't render items during loading
+            : ({ item }) => (
+                <Pressable
                   style={{
-                    color: colorScheme === "dark" ? "#ffffff" : "#000000",
+                    padding: 12,
+                    borderBottomWidth: 1,
+                    borderColor: colorScheme === "dark" ? "#222" : "#ececec",
                   }}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/event-details",
+                      params: { eventId: item.event.id },
+                    })
+                  }
                 >
-                  {item.event.title ?? "NULL"}
-                </Text>
-              </Pressable>
-            )
-      }
-    />
+                  <Text
+                    style={{
+                      color: colorScheme === "dark" ? "#ffffff" : "#000000",
+                    }}
+                  >
+                    {item.event.title ?? "NULL"}
+                  </Text>
+                </Pressable>
+              )
+        }
+      />
+    </View>
   );
 };
 
