@@ -15,8 +15,9 @@ import {
   getAllEvents,
   getAllEventsByAttendingUserId,
 } from "../../../utils/trpc";
-import SegmentedControl from "@react-native-segmented-control/segmented-control";
+import { ButtonGroup } from "@rneui/themed";
 import Authenticator from "utils/authenticator";
+import { getTheme, ThemeMode } from "utils/theme";
 
 type TabType = "alle" | "mine";
 
@@ -34,7 +35,8 @@ const AllEvents: React.FC = () => {
   const [myEventsLoaded, setMyEventsLoaded] = useState(false);
 
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const colorScheme = (useColorScheme() as ThemeMode) || "light";
+  const theme = getTheme(colorScheme);
 
   const currentTab: TabType = selectedIndex === 0 ? "alle" : "mine";
   const currentEvents = currentTab === "alle" ? allEvents : myEvents;
@@ -96,9 +98,8 @@ const AllEvents: React.FC = () => {
     loadInitialData();
   }, []);
 
-  // Handle tab change
-  const handleTabChange = async (event: any) => {
-    const newIndex = event.nativeEvent.selectedSegmentIndex;
+  // Handle tab change coming from ButtonGroup (index number)
+  const handleTabIndexChange = async (newIndex: number) => {
     setSelectedIndex(newIndex);
 
     const newTab: TabType = newIndex === 0 ? "alle" : "mine";
@@ -167,18 +168,29 @@ const AllEvents: React.FC = () => {
   const renderHeader = () => (
     <View
       style={{
-        backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        backgroundColor: theme.surface,
         paddingHorizontal: 16,
         paddingVertical: 12,
       }}
     >
-      <SegmentedControl
-        values={["Alle", "Mine"]}
+      <ButtonGroup
+        buttons={["Alle", "Mine"]}
         selectedIndex={selectedIndex}
-        onChange={handleTabChange}
-        style={{
-          height: 32,
+        onPress={handleTabIndexChange}
+        containerStyle={{ 
+          borderRadius: 13, 
+          backgroundColor: theme.primaryContainer,
+          padding: 3,
+          borderColor: "transparent",
         }}
+        buttonStyle={{ backgroundColor: 'transparent' }}
+        selectedButtonStyle={{ 
+          backgroundColor: theme.secondaryFixedDim,
+          borderRadius: 10
+        }}
+        textStyle={{ color: theme.onPrimaryContainer }}
+        selectedTextStyle={{ color: theme.onSecondaryFixed }}
+        innerBorderStyle={{ color: 'transparent' }}
       />
     </View>
   );
