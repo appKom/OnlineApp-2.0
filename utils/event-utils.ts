@@ -23,11 +23,12 @@ export const formatNorwegianDate = (dateString: string): string => {
 export const getRegistrationStatus = (
   attendance: EventAttendanceBundle["attendance"]
 ): string => {
-  if (!attendance) return "Stengt";
+  // If attendance or its boundaries are missing, treat as closed
+  if (!attendance || !attendance.registerStart || !attendance.registerEnd) return "Stengt";
 
   const now = new Date();
-  const registerStart = new Date(attendance.registerStart);
-  const registerEnd = new Date(attendance.registerEnd);
+  const registerStart = new Date(attendance.registerStart as string);
+  const registerEnd = new Date(attendance.registerEnd as string);
 
   if (now >= registerStart && now <= registerEnd) {
     return "Åpen";
@@ -39,9 +40,9 @@ export const formatRegistrationPeriod = (
   attendance: EventAttendanceBundle["attendance"],
   formatDate: (date: string) => string
 ): string | null => {
-  if (!attendance) return null;
-  const start = formatDate(attendance.registerStart);
-  const end = formatDate(attendance.registerEnd);
+  if (!attendance || !attendance.registerStart || !attendance.registerEnd) return null;
+  const start = formatDate(attendance.registerStart as string);
+  const end = formatDate(attendance.registerEnd as string);
   return `${start} - ${end}`;
 };
 
