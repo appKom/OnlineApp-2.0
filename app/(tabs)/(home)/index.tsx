@@ -256,7 +256,10 @@ const AllEvents: React.FC = () => {
                   onPress={() =>
                     router.push({
                       pathname: "/event-details",
-                      params: { eventId: item.event.id },
+                      params: { 
+                        eventId: item.event.id,
+                        headerTitle: item.event.title,
+                      },
                     })
                   }
                 >
