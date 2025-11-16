@@ -1,73 +1,30 @@
-import { Stack } from "expo-router";
-import { Platform, useColorScheme } from "react-native";
+import { Stack, useSegments } from "expo-router";
+import { useColorScheme } from "react-native";
+import { getTheme, ThemeMode } from "../../../utils/theme";
 import Header from "../../../components/Header";
 
 export default function GamesLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const colorScheme = (useColorScheme() as ThemeMode) || "light";
+  const theme = getTheme(colorScheme);
+
+  const segments = useSegments();
+  const current = segments[segments.length - 1] ?? "index";
+  const titleMap: Record<string, string> = {
+    index: "Spill",
+    spinline: "SpinLine",
+    dice: "Terning",
+  };
+  const title = titleMap[current] ?? "Spill";
 
   return (
     <>
-      <Header title="Spill" />
-      <Stack
-      screenOptions={{
-        headerLargeTitle: true,
-        headerLargeTitleStyle: {
-          fontSize: 28,
-          fontWeight: "bold",
-        },
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          headerShown: false,
-          headerTitle: "Spill",
-          headerLargeTitle: true,
-          headerShadowVisible: false,
-          headerBlurEffect: undefined,
-          headerTransparent: Platform.OS === "ios",
-          headerLargeTitleShadowVisible: false,
-          headerTitleStyle: {
-            color: isDark ? "#ffffff" : "#000000",
-          },
-          headerLargeTitleStyle: {
-            color: isDark ? "#ffffff" : "#000000",
-          },
-        }}
-      />
-      <Stack.Screen
-        name="spinline"
-        options={{
-          headerTitle: "SpinLine",
-          headerLargeTitle: false,
-          headerBackButtonDisplayMode: "minimal",
-          headerTransparent: Platform.OS === "ios",
-          headerTitleStyle: {
-            color: isDark ? "#ffffff" : "#000000",
-          },
-          headerLargeTitleStyle: {
-            color: isDark ? "#ffffff" : "#000000",
-          },
-          headerTintColor: isDark ? "#ffffff" : "#000000",
-        }}
-      />
-      <Stack.Screen
-        name="dice"
-        options={{
-          headerTitle: "Terning",
-          headerLargeTitle: false,
-          headerBackButtonDisplayMode: "minimal",
-          headerTransparent: Platform.OS === "ios",
-          headerTitleStyle: {
-            color: isDark ? "#ffffff" : "#000000",
-          },
-          headerLargeTitleStyle: {
-            color: isDark ? "#ffffff" : "#000000",
-          },
-          headerTintColor: isDark ? "#ffffff" : "#000000",
-        }}
-      />
+      {/* Static header placed outside the Stack so it won't animate with screen transitions */}
+      <Header title={title} />
+
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="spinline" />
+        <Stack.Screen name="dice" />
       </Stack>
     </>
   );
