@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useColorScheme } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import { getTheme, ThemeMode } from "../../utils/theme";
 
 type TabIconProps = { color: string; size?: number };
@@ -22,8 +22,9 @@ export default function TabLayout() {
         name="(home)"
         options={{
           title: "Hjem",
+          animation: "none",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="home-outline" color={color} size={size} />
+            <MaterialIcons name="event" color={color} size={size} />
           ),
         }}
       />
@@ -31,8 +32,9 @@ export default function TabLayout() {
         name="(games)"
         options={{
           title: "Spill",
+          animation: "none",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="game-controller-outline" color={color} size={size} />
+            <FontAwesome6 name="dice" color={color} size={size} />
           ),
         }}
       />
@@ -40,8 +42,9 @@ export default function TabLayout() {
         name="(profile)"
         options={{
           title: "Profil",
+          animation: "none",
           tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="person-outline" color={color} size={size} />
+            <Ionicons name="person" color={color} size={size} />
           ),
         }}
       />
