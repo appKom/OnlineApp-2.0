@@ -1,5 +1,5 @@
 import { LiquidGlassView } from "@callstack/liquid-glass";
-import { PoolAttendees } from "app/(tabs)/(home)/event-details";
+import { PoolAttendees } from "types/event";
 import React from "react";
 import {
   StyleSheet,
@@ -78,11 +78,12 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
     : null;
 
   // Extract real data from attendance object
-  const attendeesCount = sortedAttendees[poolIndex ?? 0]?.in.length || 0;
+  const attendeesCount =
+    sortedAttendees?.[poolIndex ?? 0]?.in?.length ?? 0;
   const waitingListCount =
-    sortedAttendees[poolIndex ?? 0]?.waitlist.length || 0;
+    sortedAttendees?.[poolIndex ?? 0]?.waitlist?.length ?? 0;
   const maxCapacity =
-    poolIndex != null ? attendance?.pools[poolIndex]?.capacity : null;
+    poolIndex != null ? attendance?.pools?.[poolIndex]?.capacity ?? null : null;
 
   // Format registration dates from attendance data
   const registrationStart = formatDateTime(attendance?.registerStart);

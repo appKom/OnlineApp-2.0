@@ -141,14 +141,6 @@ const EventDetails: React.FC = () => {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerTitle: event?.event?.title || "",
-          headerTransparent: true,
-          headerTintColor: colors.text,
-          headerTitleStyle: { color: colors.text },
-        }}
-      />
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
           style={styles.scrollContainer}
@@ -207,7 +199,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   image: {
-    marginTop: 120,
+    marginTop: 0,
     backgroundColor: "#f0f0f0",
   },
   centerContainer: {

@@ -23,9 +23,12 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const [selectedPoolIndex, setSelectedPoolIndex] = useState(
-    userPoolIndex ?? 0
-  );
+  const [selectedPoolIndex, setSelectedPoolIndex] = useState(() => {
+    // ensure initial index is within bounds
+    const initial = userPoolIndex ?? 0;
+    if (!attendance?.pools || attendance.pools.length === 0) return 0;
+    return Math.max(0, Math.min(initial, attendance.pools.length - 1));
+  });
 
   // const sortedAttendees = useMemo(() => {
   //   const poolAttendees: PoolAttendees[] = Array.from(
@@ -62,20 +65,20 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
 
   // Combine data with section headers as items
   const combinedData = useMemo(() => {
-    const poolAttendees = sortedAttendees[selectedPoolIndex];
-    const combined = [];
+    const poolAttendees = sortedAttendees?.[selectedPoolIndex] ?? { in: [], waitlist: [] };
+    const combined: any[] = [];
 
     // Add "Påmeldte" section
-    if (poolAttendees.in.length > 0) {
+    if ((poolAttendees.in?.length ?? 0) > 0) {
       // Add section header as an item
       combined.push({
         type: "sectionHeader",
-        title: `Påmeldte (${poolAttendees.in.length}/${attendance.pools[selectedPoolIndex].capacity})`,
+        title: `Påmeldte (${poolAttendees.in.length}/${attendance.pools?.[selectedPoolIndex]?.capacity ?? 0})`,
         id: "attendees-header",
       });
       // Add all attendees
       combined.push(
-        ...poolAttendees.in.map((item: Attendee, index: number) => ({
+        ...((poolAttendees.in ?? []) as Attendee[]).map((item: Attendee, index: number) => ({
           ...item,
           type: "attendee",
           sectionIndex: index,
@@ -84,7 +87,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     }
 
     // Add "Venteliste" section
-    if (poolAttendees.waitlist.length > 0) {
+    if ((poolAttendees.waitlist?.length ?? 0) > 0) {
       // Add section header as an item
       combined.push({
         type: "sectionHeader",
@@ -93,7 +96,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
       });
       // Add all waitlisted people
       combined.push(
-        ...poolAttendees.waitlist.map((item: Attendee, index: number) => ({
+        ...((poolAttendees.waitlist ?? []) as Attendee[]).map((item: Attendee, index: number) => ({
           ...item,
           type: "waitlist",
           sectionIndex: index,
@@ -102,7 +105,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     }
 
     return combined;
-  }, [selectedPoolIndex, attendance.pools]);
+  }, [selectedPoolIndex, attendance.pools, sortedAttendees]);
 
   // Theme-aware colors
   const colors = {
