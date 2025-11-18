@@ -1,16 +1,11 @@
 import { LiquidGlassView } from "@callstack/liquid-glass";
 import { PoolAttendees } from "types/event";
 import React from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  useColorScheme,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Attendance } from "types/event";
 import Authenticator from "utils/authenticator";
 import { UserUtils } from "utils/user-utils";
+import { useTheme, useThemeMode } from "utils/theme";
 
 interface RegistrationCardProps {
   attendance: Attendance;
@@ -28,25 +23,21 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   onOpenAttendeesBottomSheet,
   sortedAttendees,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { mode } = useThemeMode();
+  const isDark = mode === "dark";
+  const theme = useTheme();
   const user = Authenticator.user;
 
-  // Theme-aware colors
+  // Use shared theme tokens for most colors. Keep status colors using isDark as requested.
   const colors = {
-    cardBackground: isDark
-      ? "rgba(255, 255, 255, 0.1)"
-      : "rgba(255, 255, 255, 0.8)",
-    textPrimary: isDark ? "#ffffff" : "#333333",
-    textSecondary: isDark ? "#cccccc" : "#555555",
-    textTertiary: isDark ? "#aaaaaa" : "#666666",
-    badgeBackground: isDark
-      ? "rgba(255, 255, 255, 0.1)"
-      : "rgba(0, 0, 0, 0.05)",
-    buttonBackground: isDark
-      ? "rgba(100, 181, 246, 0.2)"
-      : "rgba(0, 122, 255, 0.2)",
-    buttonText: isDark ? "#64B5F6" : "#007AFF",
+    cardBackground: theme.primaryContainer,
+    textPrimary: theme.onSecondaryContainer,
+    textSecondary: theme.onPrimaryContainer,
+    textTertiary: theme.onSurfaceVariant,
+    badgeBackground: theme.secondary,
+    badgeText: theme.onSecondary,
+    buttonBackground: theme.primaryFixedDim,
+    buttonText: theme.onPrimary,
     statusOpenBg: isDark ? "rgba(76, 175, 80, 0.3)" : "#D4F6D4",
     statusOpenText: isDark ? "#A5D6A7" : "#2D7D32",
     statusClosedBg: isDark ? "rgba(244, 67, 54, 0.3)" : "#FFE4E4",
@@ -140,7 +131,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                 ]}
               >
                 <Text
-                  style={[styles.badgeText, { color: colors.textSecondary }]}
+                  style={[styles.badgeText, { color: colors.badgeText }]}
                 >
                   Påmeldte: {attendeesCount}
                   {maxCapacity ? `/${maxCapacity}` : ""}
@@ -154,7 +145,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                 ]}
               >
                 <Text
-                  style={[styles.badgeText, { color: colors.textSecondary }]}
+                  style={[styles.badgeText, { color: colors.badgeText }]}
                 >
                   Venteliste: {waitingListCount}
                 </Text>
@@ -173,7 +164,15 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                   {registrationStart}
                 </Text>
               </View>
-              <View style={styles.dateColumn}>
+              <View style={[
+                styles.dateColumn,
+                {
+                  borderLeftWidth: 1,
+                  borderRightWidth: 1,
+                  borderColor: colors.badgeBackground,
+                },
+                ]}
+              >
                 <Text
                   style={[styles.dateLabel, { color: colors.textSecondary }]}
                 >
@@ -183,16 +182,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                   {unregistrationDeadline}
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.dateColumn,
-                  {
-                    borderLeftWidth: 1,
-                    borderRightWidth: 1,
-                    borderColor: colors.badgeBackground,
-                  },
-                ]}
-              >
+              <View style={styles.dateColumn}>
                 <Text
                   style={[
                     styles.dateLabel,

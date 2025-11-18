@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTheme } from "utils/theme";
 import HTML from "react-native-render-html";
 import { LiquidGlassView } from "@callstack/liquid-glass";
 
@@ -22,17 +17,14 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   descriptionExpanded,
   onToggleDescription,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  // Theme-aware colors
+  // Use centralized theme tokens
+  const theme = useTheme();
   const colors = {
-    cardBackground: isDark
-      ? "rgba(255, 255, 255, 0.1)"
-      : "rgba(255, 255, 255, 0.8)",
-    textPrimary: isDark ? "#ffffff" : "#333333",
-    textSecondary: isDark ? "#cccccc" : "#666666",
-    toggleText: "#fab759", // App accent color
+    cardBackground: theme.secondaryContainer,
+    textPrimary: theme.onTertiaryContainer,
+    textSecondary: theme.onSecondaryContainer,
+    toggleText: theme.onTertiaryContainer,
+    toggleTextBackground: theme.tertiaryContainer,
   };
 
   // Strip HTML tags for length check
@@ -45,7 +37,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
   return (
     <LiquidGlassView
-      style={[styles.card, { backgroundColor: colors.cardBackground }]}
+        style={[styles.card, { backgroundColor: colors.cardBackground }]}
     >
       <TouchableOpacity
         key={`description-${descriptionExpanded}`}
@@ -53,7 +45,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         activeOpacity={shouldShowToggle ? 0.7 : 1}
         style={styles.touchableContent}
       >
-        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}> 
           Beskrivelse
         </Text>
 
@@ -66,15 +58,12 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
           <HTML
             source={{ html: description }}
             contentWidth={screenWidth - 88}
-            baseStyle={{
-              ...styles.htmlBase,
-              color: colors.textSecondary,
-            }}
+            baseStyle={{ ...styles.htmlBase, color: colors.textSecondary }}
           />
         </View>
 
         {shouldShowToggle && (
-          <Text style={[styles.toggleText, { color: colors.toggleText }]}>
+          <Text style={[styles.toggleText, { color: colors.toggleText, backgroundColor: colors.toggleTextBackground }]}>
             {descriptionExpanded ? "Vis mindre" : "Les mer..."}
           </Text>
         )}
@@ -116,6 +105,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    overflow: "hidden",
+    alignSelf: "flex-start",
   },
   htmlBase: {
     fontSize: 16,

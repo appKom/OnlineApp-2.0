@@ -6,7 +6,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 
@@ -17,7 +16,7 @@ import {
 } from "../../../utils/trpc";
 import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
 import Authenticator from "utils/authenticator";
-import { getTheme, ThemeMode } from "utils/theme";
+import { useTheme } from "utils/theme";
 
 type TabType = "alle" | "mine";
 
@@ -35,8 +34,7 @@ const AllEvents: React.FC = () => {
   const [myEventsLoaded, setMyEventsLoaded] = useState(false);
 
   const router = useRouter();
-  const colorScheme = (useColorScheme() as ThemeMode) || "light";
-  const theme = getTheme(colorScheme);
+  const theme = useTheme();
 
   const currentTab: TabType = selectedIndex === 0 ? "alle" : "mine";
   const currentEvents = currentTab === "alle" ? allEvents : myEvents;
@@ -204,21 +202,14 @@ const AllEvents: React.FC = () => {
             minHeight: 200,
           }}
         >
-          <ActivityIndicator
-            color={colorScheme === "dark" ? "#ffffff" : "#000000"}
-          />
+          <ActivityIndicator color={theme.onBackground} />
         </View>
       );
     }
     if (error && !refreshing) {
       return (
         <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: 200,
-          }}
+          style={{ flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 }}
         >
           <Text style={{ color: "red" }}>{error}</Text>
         </View>
@@ -235,10 +226,7 @@ const AllEvents: React.FC = () => {
         data={loading && !refreshing ? [] : currentEvents}
         keyExtractor={(bundle) => bundle.event.id}
         contentInsetAdjustmentBehavior="automatic"
-        style={{
-          flex: 1,
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
-        }}
+        style={{ flex: 1, backgroundColor: theme.background }}
         ListHeaderComponent={null}
         ListEmptyComponent={renderContent}
         refreshing={refreshing}
@@ -248,11 +236,7 @@ const AllEvents: React.FC = () => {
             ? null // Don't render items during loading
             : ({ item }) => (
                 <Pressable
-                  style={{
-                    padding: 12,
-                    borderBottomWidth: 1,
-                    borderColor: colorScheme === "dark" ? "#222" : "#ececec",
-                  }}
+                    style={{ padding: 12, borderBottomWidth: 1, borderColor: theme.surfaceContainerHigh }}
                   onPress={() =>
                     router.push({
                       pathname: "/event-details",
@@ -263,13 +247,7 @@ const AllEvents: React.FC = () => {
                     })
                   }
                 >
-                  <Text
-                    style={{
-                      color: colorScheme === "dark" ? "#ffffff" : "#000000",
-                    }}
-                  >
-                    {item.event.title ?? "NULL"}
-                  </Text>
+                  <Text style={{ color: theme.onBackground }}>{item.event.title ?? "NULL"}</Text>
                 </Pressable>
               )
         }

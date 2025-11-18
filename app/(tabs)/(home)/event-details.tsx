@@ -12,7 +12,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,14 +27,14 @@ import {
   formatRegistrationPeriod,
   sortAttendeesByPool,
 } from "utils/event-utils";
+import { useTheme } from "utils/theme";
 
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const screenWidth = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const user = Authenticator.user;
+  const theme = useTheme();
 
   const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,10 +66,11 @@ const EventDetails: React.FC = () => {
     [event?.attendance]
   );
 
+  // Use shared theme tokens for colors
   const colors = {
-    background: isDark ? "#000000" : "#ffffff",
-    text: isDark ? "#ffffff" : "#333333",
-    error: isDark ? "#ff6b6b" : "#red",
+    background: theme.background,
+    text: theme.onBackground,
+    error: theme.error,
   };
 
   const toggleDescription = () => {
@@ -117,22 +117,13 @@ const EventDetails: React.FC = () => {
   }, [eventId]);
 
   if (loading) {
-    return (
-      <ActivityIndicator
-        style={{ flex: 1, backgroundColor: colors.background }}
-        color={isDark ? "#ffffff" : "#000000"}
-      />
-    );
+    return <ActivityIndicator style={{ flex: 1, backgroundColor: colors.background }} color={colors.text} />;
   }
 
   if (error || !event) {
     return (
-      <View
-        style={[styles.centerContainer, { backgroundColor: colors.background }]}
-      >
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          {error ?? "Could not load event details"}
-        </Text>
+      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.error }]}>{error ?? "Could not load event details"}</Text>
       </View>
     );
   }
@@ -148,7 +139,10 @@ const EventDetails: React.FC = () => {
         >
           <Image
             source={{ uri: event.event.imageUrl }}
-            style={[styles.image, { width: screenWidth, height: imageHeight }]}
+            style={[
+              styles.image,
+              { width: screenWidth, height: imageHeight, backgroundColor: theme.surfaceContainerLow },
+            ]}
             resizeMode="contain"
           />
 
@@ -174,7 +168,7 @@ const EventDetails: React.FC = () => {
             />
           ) : (
             <View style={styles.noRegistrationContainer}>
-              <Text style={styles.noRegistrationText}>
+              <Text style={[styles.noRegistrationText, { color: theme.onSurfaceVariant }]}>
                 Dette er ikke et påmeldingsarrangement.
               </Text>
             </View>
@@ -200,7 +194,6 @@ const styles = StyleSheet.create({
   },
   image: {
     marginTop: 0,
-    backgroundColor: "#f0f0f0",
   },
   centerContainer: {
     flex: 1,
@@ -219,7 +212,6 @@ const styles = StyleSheet.create({
   },
   noRegistrationText: {
     fontSize: 16,
-    color: "#888",
     textAlign: "center",
     fontStyle: "italic",
   },

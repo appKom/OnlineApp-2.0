@@ -1,12 +1,8 @@
 import { Stack } from "expo-router";
-import { useColorScheme } from "react-native";
 import { useSegments, useGlobalSearchParams } from "expo-router";
-import { getTheme, ThemeMode } from "../../../utils/theme";
 import Header from "../../../components/Header";
 
 export default function HomeLayout() {
-  const colorScheme = (useColorScheme() as ThemeMode) || "light";
-  const theme = getTheme(colorScheme);
 
   const { headerTitle } = useGlobalSearchParams<{ headerTitle?: string }>();
 

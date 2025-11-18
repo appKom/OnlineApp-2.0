@@ -1,11 +1,7 @@
 import { Stack, useSegments } from "expo-router";
-import { useColorScheme } from "react-native";
-import { getTheme, ThemeMode } from "../../../utils/theme";
 import Header from "../../../components/Header";
 
 export default function GamesLayout() {
-  const colorScheme = (useColorScheme() as ThemeMode) || "light";
-  const theme = getTheme(colorScheme);
 
   const segments = useSegments();
   const current = segments[segments.length - 1] ?? "index";

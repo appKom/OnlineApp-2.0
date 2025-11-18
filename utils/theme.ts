@@ -1,5 +1,7 @@
 // Auto-generated theme derived from material-theme.json (2025-11-11)
 // Exports a complete set of tokens for the "light" and "dark" schemes
+import React, { createContext, useContext, useMemo, useState } from 'react';
+import { Appearance, useColorScheme } from 'react-native';
 
 export type ThemeScheme = {
   // core tokens
@@ -174,8 +176,71 @@ export function getTheme(mode: ThemeMode = "light"): ThemeScheme {
   return themes[mode];
 }
 
-export default {
-  light,
-  dark,
-  getTheme,
+// Theme context and provider
+// Provides the resolved theme and mode to React components. Components should
+// call `useTheme()` to obtain the current token set; components will re-render
+// when the provider's resolved mode changes (system change or explicit override).
+
+type ThemeContextValue = {
+  mode: ThemeMode;
+  theme: ThemeScheme;
+  // set to 'light'|'dark' to force a theme or 'system' to follow Appearance
+  setMode: (m: ThemeMode | 'system') => void;
 };
+
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+export type ThemeProviderProps = {
+  children?: React.ReactNode;
+  // initialMode: 'light' | 'dark' | 'system' (defaults to 'system')
+  initialMode?: ThemeMode | 'system';
+};
+
+export function ThemeProvider({ children, initialMode = 'system' }: ThemeProviderProps) {
+  const system = useColorScheme();
+  const [overrideMode, setOverrideMode] = useState<ThemeMode | 'system'>(initialMode);
+
+  const resolvedMode: ThemeMode = overrideMode === 'system'
+    ? (system === 'dark' ? 'dark' : 'light')
+    : overrideMode;
+
+  const theme = useMemo(() => getTheme(resolvedMode), [resolvedMode]);
+
+  const value = useMemo<ThemeContextValue>(() => ({
+    mode: resolvedMode,
+    theme,
+    setMode: (m: ThemeMode | 'system') => setOverrideMode(m),
+  }), [resolvedMode, theme]);
+
+  return React.createElement(ThemeContext.Provider, { value }, children);
+}
+
+// Hook: returns the ThemeScheme for the currently resolved theme.
+// Preferred usage: call inside React components that are rendered under
+// <ThemeProvider />. Components will update automatically when the provider
+// resolves a different mode.
+export function useTheme(): ThemeScheme {
+  const ctx = useContext(ThemeContext);
+  if (ctx) return ctx.theme;
+  // fallback for callers outside the provider: resolve from system color scheme
+  const cs = useColorScheme() as ThemeMode | null;
+  const mode: ThemeMode = cs === 'dark' ? 'dark' : 'light';
+  return getTheme(mode);
+}
+
+// Helper: returns the resolved mode and a setter to override it. When called
+// outside a provider this returns the current system mode and a no-op setter.
+export function useThemeMode(): { mode: ThemeMode; setMode: (m: ThemeMode | 'system') => void } {
+  const ctx = useContext(ThemeContext);
+  if (ctx) return { mode: ctx.mode, setMode: ctx.setMode };
+  const cs = useColorScheme() as ThemeMode | null;
+  const mode: ThemeMode = cs === 'dark' ? 'dark' : 'light';
+  return { mode, setMode: () => {} };
+}
+
+// Return the current mode ('light' | 'dark') based on the system appearance.
+// This is a synchronous helper you can call from non-component code.
+export function getCurrentTheme(): ThemeMode {
+  const cs = Appearance.getColorScheme();
+  return cs === 'dark' ? 'dark' : 'light';
+}

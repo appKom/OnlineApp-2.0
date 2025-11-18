@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, Image, Pressable, StyleSheet, useColorScheme } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getTheme, ThemeMode } from "../utils/theme";
+import { useTheme, getCurrentTheme } from "../utils/theme";
 import { useRouter } from "expo-router";
 
 export const HEADER_HEIGHT = 64;
@@ -21,17 +21,16 @@ export default function Header({
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const colorScheme = (useColorScheme() as ThemeMode) || "light";
-  const theme = getTheme(colorScheme);
-
+  const theme = useTheme();
   const logoBgColor = theme.surface;
   const titleBgColor = theme.surface;
   const titleColor = theme.onSurface;
+  const logoSource = getCurrentTheme() === "dark" ? require("../assets/Online_Logokit/png/Online_hvit.png") : require("../assets/Online_Logokit/png/Online_bla.png");
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: logoBgColor }]}>
       <View style={[styles.logoSection, ] }>
-        <Image source={require("../assets/Online_Logokit/png/Online_hvit.png")} style={{ width: logoWidth, height: logoHeight, resizeMode: "contain" }} />
+        <Image source={logoSource} style={{ width: logoWidth, height: logoHeight, resizeMode: "contain" }} />
       </View>
 
       {title ? (

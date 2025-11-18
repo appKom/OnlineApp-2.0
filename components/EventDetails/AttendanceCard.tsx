@@ -1,6 +1,7 @@
 import React from "react";
-import { StyleSheet, Text, View, useColorScheme } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { LiquidGlassView } from "@callstack/liquid-glass";
+import { useTheme } from "utils/theme";
 
 interface AttendanceCardProps {
   event: any;
@@ -11,16 +12,11 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
   event,
   formatNorwegianDate,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  // Theme-aware colors
+  const theme = useTheme();
   const colors = {
-    cardBackground: isDark
-      ? "rgba(255, 255, 255, 0.1)"
-      : "rgba(255, 255, 255, 0.8)",
-    textPrimary: isDark ? "#ffffff" : "#333333",
-    textSecondary: isDark ? "#cccccc" : "#555555",
+    cardBackground: theme.tertiaryContainer,
+    textPrimary: theme.onPrimaryContainer,
+    textSecondary: theme.onTertiaryContainer,
   };
 
   // Smart date formatting function
@@ -56,16 +52,14 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
   };
 
   return (
-    <LiquidGlassView
-      style={[styles.card, { backgroundColor: colors.cardBackground }]}
-    >
+    <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground }]}> 
       <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
         Tid & Sted
       </Text>
 
       {/* Smart date range */}
       <View style={styles.detailRow}>
-        <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+        <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
           {formatDateRange(event.event.start, event.event.end)}
         </Text>
       </View>
@@ -75,7 +69,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
           {/* <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
             Sted:
           </Text> */}
-          <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+          <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
             {event.event.locationTitle}
           </Text>
         </View>
@@ -83,10 +77,10 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       {event.event.locationAddress && (
         <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+          <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>
             Adresse:
           </Text>
-          <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+          <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
             {event.event.locationAddress}
           </Text>
         </View>

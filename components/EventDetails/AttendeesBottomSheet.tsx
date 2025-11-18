@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, View, Image, useColorScheme } from "react-native";
+import { StyleSheet, Text, View, Image } from "react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetFlatList,
@@ -7,6 +7,7 @@ import BottomSheet, {
 import { Attendance, Attendee, PoolAttendees } from "types/event";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
 import { UserUtils } from "utils/user-utils";
+import { useTheme } from "utils/theme";
 
 interface AttendeesBottomSheetProps {
   bottomSheetRef: React.RefObject<BottomSheet | null>;
@@ -21,8 +22,6 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   userPoolIndex,
   sortedAttendees,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const [selectedPoolIndex, setSelectedPoolIndex] = useState(() => {
     // ensure initial index is within bounds
     const initial = userPoolIndex ?? 0;
@@ -107,13 +106,14 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     return combined;
   }, [selectedPoolIndex, attendance.pools, sortedAttendees]);
 
-  // Theme-aware colors
+  // Theme-aware colors using centralized theme tokens
+  const theme = useTheme();
   const colors = {
-    background: isDark ? "#1a1a1a" : "#ffffff",
-    textPrimary: isDark ? "#ffffff" : "#333333",
-    textSecondary: isDark ? "#cccccc" : "#666666",
-    separator: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-    handle: isDark ? "#333333" : "#cccccc",
+    background: theme.primaryContainer,
+    textPrimary: theme.onPrimaryContainer,
+    textSecondary: theme.onSecondaryContainer,
+    separator: theme.primaryFixedDim,
+    handle: theme.secondary,
   };
 
   // Snap points for the bottom sheet
@@ -125,12 +125,8 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     // Render section headers
     if (item.type === "sectionHeader") {
       return (
-        <View
-          style={[styles.sectionHeader, { backgroundColor: colors.background }]}
-        >
-          <Text
-            style={[styles.sectionHeaderText, { color: colors.textPrimary }]}
-          >
+        <View style={[styles.sectionHeader, { backgroundColor: colors.background, borderBottomColor: colors.separator }]}> 
+          <Text style={[styles.sectionHeaderText, { color: colors.textPrimary }]}>
             {item.title}
           </Text>
         </View>
@@ -143,22 +139,13 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
     const displayIndex = item.sectionIndex + 1; // Use section-specific index
 
     return (
-      <View
-        style={[styles.attendeeItem, { borderBottomColor: colors.separator }]}
-      >
-        <Text style={[styles.indexText, { color: colors.textSecondary }]}>
-          {displayIndex}.
-        </Text>
+      <View style={[styles.attendeeItem, { borderBottomColor: colors.separator }]}> 
+        <Text style={[styles.indexText, { color: colors.textSecondary }]}>{displayIndex}.</Text>
 
         <Image
-          source={{
-            uri:
-              user.imageUrl || "https://via.placeholder.com/40x40.png?text=?",
-          }}
-          style={styles.profileImage}
-          defaultSource={{
-            uri: "https://via.placeholder.com/40x40.png?text=?",
-          }}
+          source={{ uri: user.imageUrl || "https://via.placeholder.com/40x40.png?text=?" }}
+          style={[styles.profileImage, { backgroundColor: theme.surfaceContainerLow }]}
+          defaultSource={{ uri: "https://via.placeholder.com/40x40.png?text=?" }}
         />
 
         <View style={styles.attendeeInfo}>
@@ -166,9 +153,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
             {user.name}
           </Text>
           {year && (
-            <Text
-              style={[styles.attendeeYear, { color: colors.textSecondary }]}
-            >
+            <Text style={[styles.attendeeYear, { color: colors.textSecondary }]}>
               {year}. klasse
             </Text>
           )}
@@ -195,24 +180,19 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
   );
 
   return (
-    <BottomSheet
+  <BottomSheet
       ref={bottomSheetRef}
       index={-1} // Start closed
       snapPoints={snapPoints}
       maxDynamicContentSize={80}
       enableDynamicSizing={false}
       enablePanDownToClose={true}
-      backgroundStyle={[
-        styles.bottomSheetBackground,
-        { backgroundColor: colors.background },
-      ]}
+      backgroundStyle={[styles.bottomSheetBackground, { backgroundColor: colors.background }]}
       handleIndicatorStyle={{ backgroundColor: colors.handle }}
       backdropComponent={renderBackdrop}
     >
       {/* Fixed header area */}
-      <View
-        style={[styles.fixedHeader, { borderBottomColor: colors.separator }]}
-      >
+      <View style={[styles.fixedHeader, { borderBottomColor: colors.separator }]}> 
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           Påmeldte ({attendance?.attendees?.length || 0})
         </Text>
@@ -225,6 +205,13 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
               setSelectedPoolIndex(index);
             }
           }}
+          activeFontStyle={{ color: theme.onSecondary, fontWeight: "600", fontSize: 14 }}
+
+          // accent/slider/background:
+          
+          backgroundColor="transparent"
+          tabStyle={{ backgroundColor: "transparent" }}
+          sliderStyle={{ backgroundColor: theme.secondary }}
         />
       </View>
 
@@ -270,7 +257,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f0f0f0",
   },
   attendeeInfo: {
     flex: 1,
@@ -305,7 +291,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 0, // No extra padding since parent has it
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
     backgroundColor: "transparent", // Let BottomSheet background show through
     marginTop: 8, // Add some spacing before section headers
   },
