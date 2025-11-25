@@ -6,6 +6,9 @@ import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
 import { RegistrationAvailabilityResult, EventAttendanceBundle } from "types/event";
 
+const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
+type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES [number]
+
 const client = createTRPCUntypedClient({
   links: [
     httpBatchLink({
@@ -85,4 +88,32 @@ export async function getRegistrationAvailability(
   console.log("Availability:", result);
 
   return result as RegistrationAvailabilityResult;
+}
+
+export async function registerForEvent(
+  attendanceId: string
+): Promise<RegistrationAvailabilityResult | null> {
+  const result = await client.mutation("event.attendance.registerForEvent", {
+    attendanceId: attendanceId,
+  });
+
+  console.log("Register result:", result);
+
+  return result as RegistrationAvailabilityResult;
+}
+
+export async function deregisterForEvent (
+  attendanceId: string,
+  deregisterType: DeregisterReasonType,
+  deregisterReason?: string
+): Promise<RegistrationAvailabilityResult | null> {
+  const result = await client.mutation("event.attendance.deregisterForEvent", {
+    attendanceId: attendanceId,
+    deregisterReason: {
+      type: deregisterType,
+      details: deregisterReason ?? null
+    }
+  });
+
+   return result as RegistrationAvailabilityResult;
 }

@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheet from "@gorhom/bottom-sheet";
-import { getEvent, getRegistrationAvailability } from "utils/trpc";
+import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent } from "utils/trpc";
 import Authenticator from "utils/authenticator";
 import { UserUtils } from "utils/user-utils";
 import { EventAttendanceBundle } from "types/event";
@@ -28,6 +28,9 @@ import {
   sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme } from "utils/theme";
+
+const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
+type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES [number]
 
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -65,6 +68,44 @@ const EventDetails: React.FC = () => {
     () => formatRegistrationPeriod(event?.attendance, formatNorwegianDate),
     [event?.attendance]
   );
+
+  const [registering, setRegistering] = useState(false);
+
+  const handleRegisterPress = async () => {
+    if (!event?.attendance?.id) return;
+    setRegistering(true);
+    try {
+      const result = await registerForEvent(event.attendance.id);
+      if (result && (result as any).success) {
+        // Refresh availability or re-fetch event to update UI
+        await getRegistrationAvailability(event.attendance.id);
+      } else {
+        console.warn("Registration failed:", result);
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const handleDeregisterPress = async () => {
+    if (!event?.attendance?.id) return;    try {
+      const result = await deregisterForEvent(event.attendance.id, DEREGISTER_REASON_TYPES[6] , "test");
+      if (result && (result as any).success) {
+        // Refresh availability or re-fetch event to update UI
+        await getRegistrationAvailability(event.attendance.id);
+      } else {
+        console.warn("Registration failed:", result);
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+
 
   // Use shared theme tokens for colors
   const colors = {
@@ -165,6 +206,8 @@ const EventDetails: React.FC = () => {
               registrationPeriod={registrationPeriod}
               onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
               sortedAttendees={sortedAttendees}
+              onRegisterPress={handleDeregisterPress}
+              loading={registering}
             />
           ) : (
             <View style={styles.noRegistrationContainer}>
