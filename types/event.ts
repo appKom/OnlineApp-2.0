@@ -3,6 +3,8 @@ import { Membership, User } from "./user";
 export interface EventAttendanceBundle {
   event: Event;
   attendance?: Attendance;
+  parentEvent?: Event | null;
+  parentAttendance?: Attendance | null;
 }
 
 export interface Event {

@@ -1,6 +1,6 @@
 import AttendanceCard from "components/EventDetails/AttendanceCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
-import RegistrationCard from "components/EventDetails/RegistrationCard";
+import RegistrationCard from "components/EventDetails/RegistrationCard/AttendanceCard";
 import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
@@ -16,7 +16,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheet from "@gorhom/bottom-sheet";
-import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent } from "utils/trpc";
+import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
+import type { Punishment } from "types/punishment";
 import Authenticator from "utils/authenticator";
 import { UserUtils } from "utils/user-utils";
 import { EventAttendanceBundle } from "types/event";
@@ -42,6 +43,7 @@ const EventDetails: React.FC = () => {
   const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [punishment, setPunishment] = useState<Punishment | null>(null);
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
@@ -150,6 +152,15 @@ const EventDetails: React.FC = () => {
             eventData == null ? "event is null" : "attendance is null"
           );
         }
+
+        // Fetch server-computed punishment for the signed-in user (if any)
+        if (user) {
+          void getExpiryDateForUser(user.id).then((p) => {
+            setPunishment((p as Punishment) ?? null);
+          }).catch(() => {
+            // ignore errors here; keep punishment null
+          });
+        }
       })
       .catch((error) => {
         setError(error.message);
@@ -201,13 +212,12 @@ const EventDetails: React.FC = () => {
 
           {isRegistration ? (
             <RegistrationCard
-              attendance={event.attendance!}
-              registrationStatus={registrationStatus}
-              registrationPeriod={registrationPeriod}
-              onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
-              sortedAttendees={sortedAttendees}
-              onRegisterPress={handleDeregisterPress}
-              loading={registering}
+              user={user}
+              event={event.event}
+              initialAttendance={event.attendance!}
+              initialPunishment={punishment}
+              parentEvent={event.parentEvent ?? null}
+              parentAttendance={event.parentAttendance ?? null}
             />
           ) : (
             <View style={styles.noRegistrationContainer}>

@@ -6,8 +6,8 @@ import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
 import { RegistrationAvailabilityResult, EventAttendanceBundle } from "types/event";
 
-const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
-type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES [number]
+export const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
+export type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES[number]
 
 const client = createTRPCUntypedClient({
   links: [
@@ -116,4 +116,22 @@ export async function deregisterForEvent (
   });
 
    return result as RegistrationAvailabilityResult;
+}
+
+export async function findChargeAttendeeScheduleDate(attendeeId: string): Promise<Date | null> {
+  try {
+    const result = await client.query("event.attendance.findChargeAttendeeScheduleDate", { attendeeId });
+    return (result as string) ? new Date(result as string) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function getExpiryDateForUser(userId: string): Promise<any | null> {
+  try {
+    const result = await client.query("personalMark.getExpiryDateForUser", { userId });
+    return result ?? null;
+  } catch (e) {
+    return null;
+  }
 }
