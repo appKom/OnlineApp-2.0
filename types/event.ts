@@ -12,16 +12,16 @@ export interface Event {
   type?: string;
   id: string;
   title: string;
-  start?: string;
-  end?: string;
+  start?: Date;
+  end?: Date;
   description?: string;
   subtitle?: string;
   imageUrl?: string;
   locationAddress?: string;
   locationLink?: string;
-  attendanceId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  attendanceId?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
   parentId?: string;
   metadataImportId?: number;
   companies?: any[]; // No idea about the format here
@@ -38,8 +38,8 @@ interface HostingGroup {
   imageUrl?: string;
   email?: string;
   contactUrl?: string;
-  createdAt?: string;
-  deactivatedAt?: string;
+  createdAt?: Date;
+  deactivatedAt?: Date | null;
   roles?: Role[];
 }
 
@@ -52,12 +52,12 @@ interface Role {
 
 export interface Attendance {
   id?: string;
-  registerStart?: string;
-  registerEnd?: string;
-  deregisterDeadline?: string;
-  selections?: []; // No idea what the model here looks like
-  createdAt?: string;
-  updatedAt?: string;
+  registerStart?: Date;
+  registerEnd?: Date;
+  deregisterDeadline?: Date;
+  selections?: any; // JSON selections structure
+  createdAt?: Date;
+  updatedAt?: Date;
   attendancePrice?: number;
   pools: AttendancePool[];
   attendees: Attendee[];
@@ -83,17 +83,17 @@ export interface Attendee {
   attendancePoolId: string;
   selections: any[]; // No idea what the model here looks like
   reserved: boolean;
-  earliestReservationAt: string | null;
-  attendedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  paymentDeadline: string | null;
+  earliestReservationAt: Date | null;
+  attendedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  paymentDeadline: Date | null;
   paymentLink: string | null;
   paymentId: string | null;
-  paymentReservedAt: string | null;
-  paymentChargeDeadline: string | null;
-  paymentChargedAt: string | null;
-  paymentRefundedAt: string | null;
+  paymentReservedAt: Date | null;
+  paymentChargeDeadline: Date | null;
+  paymentChargedAt: Date | null;
+  paymentRefundedAt: Date | null;
   paymentRefundedById: string | null;
   user: User;
 }
