@@ -67,7 +67,7 @@ const EventDetails: React.FC = () => {
   );
 
   const registrationPeriod = useMemo(
-    () => formatRegistrationPeriod(event?.attendance, formatNorwegianDate),
+    () => formatRegistrationPeriod(event?.attendance),
     [event?.attendance]
   );
 

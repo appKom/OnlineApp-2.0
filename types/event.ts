@@ -12,11 +12,12 @@ export interface Event {
   type?: string;
   id: string;
   title: string;
-  start?: Date;
-  end?: Date;
+  start: Date;
+  end: Date;
   description?: string;
   subtitle?: string;
   imageUrl?: string;
+  locationTitle?: string;
   locationAddress?: string;
   locationLink?: string;
   attendanceId?: string | null;
@@ -51,13 +52,13 @@ interface Role {
 }
 
 export interface Attendance {
-  id?: string;
-  registerStart?: Date;
-  registerEnd?: Date;
-  deregisterDeadline?: Date;
-  selections?: any; // JSON selections structure
-  createdAt?: Date;
-  updatedAt?: Date;
+  id: string;
+  registerStart: Date;
+  registerEnd: Date;
+  deregisterDeadline: Date;
+  selections: any; // JSON selections structure
+  createdAt: Date;
+  updatedAt: Date;
   attendancePrice?: number;
   pools: AttendancePool[];
   attendees: Attendee[];
