@@ -112,6 +112,35 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }, [event.id, closeToEvent])
 
   const attendee = getAttendee(attendance, user)
+  const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+
+    if (!attendee?.id || !attendance.attendancePrice) {
+      setChargeScheduleDate(null)
+      return
+    }
+
+    const attendeeId = attendee.id
+
+    async function fetchChargeDate() {
+      try {
+        const d = await trpc.findChargeAttendeeScheduleDate(attendeeId)
+        if (!mounted) return
+        setChargeScheduleDate(d ?? null)
+      } catch (e) {
+        if (!mounted) return
+        setChargeScheduleDate(null)
+      }
+    }
+
+    void fetchChargeDate()
+
+    return () => {
+      mounted = false
+    }
+  }, [attendee?.id, attendance.attendancePrice])
 
   const registerForAttendance = async () => {
     try {
@@ -132,7 +161,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const hasPunishment = Boolean(punishment && (punishment.delay > 0 || punishment.suspended))
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.primaryContainer}]}>
       <Text style={[styles.title, { color: theme.onBackground }]}>{"Påmelding"}</Text>
 
       <AttendanceDateInfo attendance={attendance} attendee={attendee} chargeScheduleDate={null} />
@@ -181,7 +210,17 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    marginHorizontal: 24,
+    marginBottom: 20,
+    borderRadius: 12,
+    padding: 20,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   title: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
   section: { marginVertical: 8 },
