@@ -49,11 +49,10 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   };
 
   // Format date-time helper (converts ISO to "DD.MM, HH:MM")
-  const formatDateTime = (dateString?: string): string => {
-    if (!dateString) return "—";
+  const formatDateTime = (date?: Date): string => {
+    if (!date) return "—";
 
     try {
-      const date = new Date(dateString);
       if (isNaN(date.getTime())) return "—";
 
       const day = String(date.getDate()).padStart(2, "0");
