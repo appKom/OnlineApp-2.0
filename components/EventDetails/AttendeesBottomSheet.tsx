@@ -6,7 +6,6 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import { Attendance, Attendee, PoolAttendees } from "types/event";
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
-import { UserUtils } from "utils/user-utils";
 import { useTheme } from "utils/theme";
 
 interface AttendeesBottomSheetProps {

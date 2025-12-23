@@ -19,7 +19,7 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
 import type { Punishment } from "types/punishment";
 import Authenticator from "utils/authenticator";
-import { UserUtils } from "utils/user-utils";
+import { getUserPoolIndex } from "utils/user-utils";
 import { EventAttendanceBundle } from "types/event";
 import {
   isRegistrationEvent,
@@ -53,7 +53,7 @@ const EventDetails: React.FC = () => {
 
   const userPoolIndex = useMemo(() => {
     if (!user || !event?.attendance?.pools) return null;
-    return UserUtils.getUserPoolIndex(user, event.attendance.pools) ?? null;
+    return getUserPoolIndex(user, event.attendance.pools) ?? null;
   }, [user, event?.attendance?.pools]);
 
   const sortedAttendees = useMemo(

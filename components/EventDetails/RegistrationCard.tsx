@@ -4,7 +4,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Attendance } from "types/event";
 import Authenticator from "utils/authenticator";
-import { UserUtils } from "utils/user-utils";
+import { getUserPoolIndex } from "utils/user-utils";
 import { useTheme, useThemeMode } from "utils/theme";
 
 interface RegistrationCardProps {
@@ -69,7 +69,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
 
   // TODO: Figure out pool index based on your class
   const poolIndex = user
-    ? UserUtils.getUserPoolIndex(user, attendance.pools) ?? null
+    ? getUserPoolIndex(user, attendance.pools) ?? null
     : null;
 
   // Extract real data from attendance object
