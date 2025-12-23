@@ -84,7 +84,7 @@ export interface Attendee {
   attendancePoolId: string;
   selections: any[]; // No idea what the model here looks like
   reserved: boolean;
-  earliestReservationAt: Date | null;
+  earliestReservationAt: Date;
   attendedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
