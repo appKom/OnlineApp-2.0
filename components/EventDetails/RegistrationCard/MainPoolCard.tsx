@@ -1,5 +1,5 @@
 import React from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Linking, Animated } from "react-native"
 import type { Attendance } from "../../../types/event"
 import { getAttendee, hasAttendeePaid, getAttendeeQueuePosition } from "../../../utils/attendance"
 import { useCountdown } from "../../../utils/use-countdown"
@@ -35,6 +35,28 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
   const theme = useTheme();
   const now = new Date();
   const attendee = getAttendee(attendance, user)
+  
+  // Pulse animation for payment countdown
+  const pulseAnim = React.useRef(new Animated.Value(1)).current
+
+  React.useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 600,
+          useNativeDriver: false,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: false,
+        }),
+      ])
+    )
+    animation.start()
+    return () => animation.stop()
+  }, [])
 
   const registerCountdownText = useCountdown(attendance.registerStart)
   const registerCountdownInterval = interval(subMinutes(attendance.registerStart, 15), attendance.registerStart)
@@ -145,7 +167,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
         
       </View>
 
-      <View style={{marginVertical: 20}}>
+      <View style={{margin: 20}}>
         {!showRegisterCountdown && (
           <View style={{alignItems: "center"}}>
             <View style={{marginBottom: 5, alignItems: "center"}}>
@@ -189,12 +211,22 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
         {showPaymentCountdown && attendee?.paymentLink && (
           <TouchableOpacity onPress={() => attendee.paymentLink && Linking.openURL(attendee.paymentLink)}>
-            <View>
-              <Text style={{ color: onBackgroundColor }}>Du må betale innen</Text>
-              <Text style={{ color: onBackgroundColor }}>
+            <Animated.View style={{
+              alignItems: "center",
+              marginTop: 10,
+              backgroundColor: "#FF9800",
+              padding: 12,
+              borderRadius: 10,
+              gap: 8,
+              transform: [{ scale: pulseAnim }]
+            }}>
+              <MaterialCommunityIcons name="alert-circle" size={28} color="#FFF" />
+              <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "600" }}>Du må betale innen</Text>
+              <Text style={{ color: "#FFF", fontSize: 24, fontWeight: "900" }}>
                 {paymentCountdownText}
               </Text>
-            </View>
+              <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "500" }}>Trykk her for å betale</Text>
+            </Animated.View>
           </TouchableOpacity>
         )}
       </View>
