@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Animated } from "react-native"
+import { BlurView } from "@react-native-community/blur"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
@@ -126,65 +127,69 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <Animated.View style={{ flex: 1, justifyContent: "center", padding: "10%", backgroundColor: opacityAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.5)"]
-        }) }}>
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => closeModal()}
-            style={{ flex: 1, justifyContent: "center" }}
-          >
-            <Animated.View
-              style={{
-                transform: [{ scale: scaleAnim }],
-                opacity: opacityAnim,
-              }}
+        <Animated.View 
+          style={[
+            StyleSheet.absoluteFill,
+            { opacity: opacityAnim }
+          ]}
+        >
+          <BlurView blurType="dark" blurAmount={5} style={StyleSheet.absoluteFill}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => closeModal()}
+              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
             >
+              <Animated.View
+                style={{
+                  transform: [{ scale: scaleAnim }],
+                  opacity: opacityAnim,
+                }}
+              >
               <TouchableOpacity
                 activeOpacity={1}
                 onPress={(e) => e.stopPropagation()}
-                style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, height: 250 }}
+                style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, height: 250, width: 300 }}
               >
-              {activeSelectionIndex !== null && (
-                <FlatList
-                  data={attendance.selections[activeSelectionIndex].options}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={attendance.selections[activeSelectionIndex].options.length > 4}
-                  contentContainerStyle={{ gap: 3 }}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => handleSelectionChange(activeSelectionIndex, item.id)}
-                      style={
-                        {
-                          backgroundColor:
-                            selections[activeSelectionIndex]?.optionId === item.id
-                              ? theme.tertiaryContainer
-                              : theme.secondaryContainer,
-                          height: 50, justifyContent: "center", alignItems: "center", borderRadius: 12
-                        }
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
+                {activeSelectionIndex !== null && (
+                  <FlatList
+                    data={attendance.selections[activeSelectionIndex].options}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled={attendance.selections[activeSelectionIndex].options.length > 4}
+                    contentContainerStyle={{ gap: 3 }}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => handleSelectionChange(activeSelectionIndex, item.id)}
+                        style={
                           {
-                            color:
+                            backgroundColor:
                               selections[activeSelectionIndex]?.optionId === item.id
-                                ? theme.onTertiaryContainer
-                                : theme.onSecondaryContainer,
-                          },
-                        ]}
+                                ? theme.tertiaryContainer
+                                : theme.secondaryContainer,
+                            height: 50, justifyContent: "center", alignItems: "center", borderRadius: 12
+                          }
+                        }
                       >
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                />
-              )}
-            </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.pillText,
+                            {
+                              color:
+                                selections[activeSelectionIndex]?.optionId === item.id
+                                  ? theme.onTertiaryContainer
+                                  : theme.onSecondaryContainer,
+                            },
+                          ]}
+                        >
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
+              </TouchableOpacity>
             </Animated.View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </BlurView>
         </Animated.View>
       </Modal>
     </>
