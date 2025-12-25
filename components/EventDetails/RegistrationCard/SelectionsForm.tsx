@@ -88,43 +88,55 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableOpacity
-          style={[styles.overlay, { backgroundColor: "rgba(0, 0, 0, 0.5)" }]}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
+        <View style={{ flex: 1, justifyContent: "center", padding: "10%", backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-            style={[styles.optionsContainer, { backgroundColor: theme.surface, borderColor: theme.outline }]}
+            onPress={() => setModalVisible(false)}
           >
-            {activeSelectionIndex !== null && (
-              <FlatList
-                data={attendance.selections[activeSelectionIndex].options}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={attendance.selections[activeSelectionIndex].options.length > 4}
-                renderItem={({ item, index: optionIndex }) => (
-                  <TouchableOpacity
-                    onPress={() => handleSelectionChange(activeSelectionIndex, item.id)}
-                    style={[
-                      styles.optionItem,
-                      {
-                        borderBottomColor: theme.outlineVariant,
-                        borderBottomWidth: optionIndex < attendance.selections[activeSelectionIndex].options.length - 1 ? 1 : 0,
-                        backgroundColor:
-                          selections[activeSelectionIndex]?.optionId === item.id
-                            ? theme.surfaceContainer
-                            : "transparent",
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.optionText, { color: theme.onBackground }]}>{item.name}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+              style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, height: 250 }}
+            >
+              {activeSelectionIndex !== null && (
+                <FlatList
+                  data={attendance.selections[activeSelectionIndex].options}
+                  keyExtractor={(item) => item.id}
+                  scrollEnabled={attendance.selections[activeSelectionIndex].options.length > 4}
+                  contentContainerStyle={{ gap: 3 }}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => handleSelectionChange(activeSelectionIndex, item.id)}
+                      style={
+                        {
+                          backgroundColor:
+                            selections[activeSelectionIndex]?.optionId === item.id
+                              ? theme.tertiaryContainer
+                              : theme.secondaryContainer,
+                          height: 50, justifyContent: "center", alignItems: "center", borderRadius: 12
+                        }
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          {
+                            color:
+                              selections[activeSelectionIndex]?.optionId === item.id
+                                ? theme.onTertiaryContainer
+                                : theme.onSecondaryContainer,
+                          },
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              )}
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </>
   )
@@ -162,30 +174,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  optionsContainer: {
-    width: "80%",
-    maxHeight: 280,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  optionItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  optionText: {
+  pillText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 })
 
