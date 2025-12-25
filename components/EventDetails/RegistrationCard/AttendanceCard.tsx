@@ -3,6 +3,7 @@ import { View, ScrollView, Text, StyleSheet, Button } from "react-native"
 import type {
   Attendance,
   Event as EventType,
+  AttendanceSelectionResponse,
 } from "../../../types/event"
 import { User } from "../../../types/user"
 import { Punishment } from "../../../types/punishment"
@@ -158,6 +159,19 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     }
   }
 
+  const handleSelectionChange = async (selections: AttendanceSelectionResponse[]) => {
+    if (!attendee?.id) {
+      return
+    }
+
+    try {
+      // Save selections to server
+      await trpc.setSelectionsOptions(attendee.id, selections)
+    } catch (e) {
+      console.error("Error saving selections:", e)
+    }
+  }
+
   const hasPunishment = Boolean(punishment && (punishment.delay > 0 || punishment.suspended))
 
   return (
@@ -173,7 +187,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
       {attendee?.reserved && (attendance.selections?.length ?? 0) > 0 && (
         <View style={styles.section}>
           <Text style={styles.subtitle}>Valg</Text>
-          <SelectionsForm attendance={attendance} attendee={attendee} onSubmit={() => {}} disabled={attendanceStatus === "Closed"} />
+          <SelectionsForm attendance={attendance} attendee={attendee} onSubmit={handleSelectionChange} disabled={attendanceStatus === "Closed"} />
         </View>
       )}
 

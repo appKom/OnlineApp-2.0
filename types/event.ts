@@ -56,13 +56,30 @@ export interface Attendance {
   registerStart: Date;
   registerEnd: Date;
   deregisterDeadline: Date;
-  selections: any; // JSON selections structure
+  selections: AttendanceSelection[];
   createdAt: Date;
   updatedAt: Date;
   attendancePrice?: number;
   pools: AttendancePool[];
   attendees: Attendee[];
-  // TODO: Much more info can be found in here
+}
+
+export interface AttendanceSelection {
+  id: string;
+  name: string;
+  options: AttendanceSelectionOption[];
+}
+
+export interface AttendanceSelectionOption {
+  id: string;
+  name: string;
+}
+
+export interface AttendanceSelectionResponse {
+  selectionId: string;
+  selectionName: string;
+  optionId: string;
+  optionName: string;
 }
 
 export interface AttendancePool {
@@ -82,7 +99,7 @@ export interface Attendee {
   userId: string;
   userGrade: number | null;
   attendancePoolId: string;
-  selections: any[]; // No idea what the model here looks like
+  selections: AttendanceSelectionResponse[];
   reserved: boolean;
   earliestReservationAt: Date;
   attendedAt: Date | null;

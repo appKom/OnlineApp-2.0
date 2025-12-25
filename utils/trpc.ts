@@ -4,7 +4,7 @@ import Authenticator from "./authenticator";
 import { jwtDecode } from "jwt-decode";
 import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
-import { RegistrationAvailabilityResult, EventAttendanceBundle } from "types/event";
+import { RegistrationAvailabilityResult, EventAttendanceBundle, AttendanceSelectionResponse } from "types/event";
 
 export const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
 export type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES[number]
@@ -133,5 +133,20 @@ export async function getExpiryDateForUser(userId: string): Promise<any | null> 
     return result ?? null;
   } catch (e) {
     return null;
+  }
+}
+
+export async function setSelectionsOptions(
+  attendeeId: string,
+  selections: AttendanceSelectionResponse[]
+): Promise<void> {
+  try {
+    await client.mutation("event.attendance.updateSelectionResponses", {
+      attendeeId,
+      options: selections,
+    });
+  } catch (e) {
+    console.error("Error setting selections:", e);
+    throw e;
   }
 }
