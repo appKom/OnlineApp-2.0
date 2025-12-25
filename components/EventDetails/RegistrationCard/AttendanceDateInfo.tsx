@@ -28,11 +28,11 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
   const showDeregisterDeadlineNotice = hasPaid && !isEqual(actualDeregisterDeadline, deregisterDeadline)
   
   const theme = useTheme();
-  const blockColor = showDeregisterDeadlineNotice ? theme.error : theme.secondaryContainer;
+  const blockColor = showDeregisterDeadlineNotice ? theme.error : theme.tertiaryContainer;
 
   const makeDateElement = (label: string, date: Date, time: string, showNotice?: boolean, icon?: React.ReactNode) => {
     const shortDateStr = formatDate(date, isThisYear(date) ? "dd. MMM" : "dd.MM.yyyy", { locale: nb })
-    const textColor = showNotice ? theme.onError : theme.onSecondaryContainer;
+    const textColor = showNotice ? theme.onError : theme.onTertiaryContainer;
     return (
       <View>
         <View style={styles.row}>
