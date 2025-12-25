@@ -6,58 +6,69 @@ import { Appearance, useColorScheme } from 'react-native';
 export type ThemeScheme = {
   // core tokens
   primary: string;
-  surfaceTint?: string;
-  onPrimary?: string;
-  primaryContainer?: string;
-  onPrimaryContainer?: string;
-  secondary?: string;
-  onSecondary?: string;
-  secondaryContainer?: string;
-  onSecondaryContainer?: string;
-  tertiary?: string;
-  onTertiary?: string;
-  tertiaryContainer?: string;
-  onTertiaryContainer?: string;
-  error?: string;
-  onError?: string;
-  errorContainer?: string;
-  onErrorContainer?: string;
-  background?: string;
-  onBackground?: string;
-  surface?: string;
-  onSurface?: string;
-  surfaceVariant?: string;
-  onSurfaceVariant?: string;
-  outline?: string;
-  outlineVariant?: string;
-  shadow?: string;
-  scrim?: string;
-  inverseSurface?: string;
-  inverseOnSurface?: string;
-  inversePrimary?: string;
+  surfaceTint: string;
+  onPrimary: string;
+  primaryContainer: string;
+  onPrimaryContainer: string;
+  secondary: string;
+  onSecondary: string;
+  secondaryContainer: string;
+  onSecondaryContainer: string;
+  tertiary: string;
+  onTertiary: string;
+  tertiaryContainer: string;
+  onTertiaryContainer: string;
+  error: string;
+  onError: string;
+  errorContainer: string;
+  onErrorContainer: string;
+  background: string;
+  onBackground: string;
+  surface: string;
+  onSurface: string;
+  surfaceVariant: string;
+  onSurfaceVariant: string;
+  outline: string;
+  outlineVariant: string;
+  shadow: string;
+  scrim: string;
+  inverseSurface: string;
+  inverseOnSurface: string;
+  inversePrimary: string;
 
   // fixed / variant tokens
-  primaryFixed?: string;
-  onPrimaryFixed?: string;
-  primaryFixedDim?: string;
-  onPrimaryFixedVariant?: string;
-  secondaryFixed?: string;
-  onSecondaryFixed?: string;
-  secondaryFixedDim?: string;
-  onSecondaryFixedVariant?: string;
-  tertiaryFixed?: string;
-  onTertiaryFixed?: string;
-  tertiaryFixedDim?: string;
-  onTertiaryFixedVariant?: string;
+  primaryFixed: string;
+  onPrimaryFixed: string;
+  primaryFixedDim: string;
+  onPrimaryFixedVariant: string;
+  secondaryFixed: string;
+  onSecondaryFixed: string;
+  secondaryFixedDim: string;
+  onSecondaryFixedVariant: string;
+  tertiaryFixed: string;
+  onTertiaryFixed: string;
+  tertiaryFixedDim: string;
+  onTertiaryFixedVariant: string;
 
   // surface helpers
-  surfaceDim?: string;
-  surfaceBright?: string;
-  surfaceContainerLowest?: string;
-  surfaceContainerLow?: string;
-  surfaceContainer?: string;
-  surfaceContainerHigh?: string;
-  surfaceContainerHighest?: string;
+  surfaceDim: string;
+  surfaceBright: string;
+  surfaceContainerLowest: string;
+  surfaceContainerLow: string;
+  surfaceContainer: string;
+  surfaceContainerHigh: string;
+  surfaceContainerHighest: string;
+
+  attending: string;
+  onAttending: string;
+  waitlist: string;
+  onWaitlist: string;
+  registerButton: string;
+  onRegisterButton: string;
+  deregisterButton: string;
+  onDeregisterButton: string;
+  registerForWaitlist: string;
+  onRegisterForWaitlist: string;
 };
 
 export const light: ThemeScheme = {
@@ -112,6 +123,17 @@ export const light: ThemeScheme = {
   surfaceContainer: "#EBEEF3",
   surfaceContainerHigh: "#E5E8ED",
   surfaceContainerHighest: "#DFE3E7",
+
+  attending: "#b9f8cf",
+  onAttending: "#00351a",
+  waitlist: "#fff085",
+  onWaitlist: "#3d3000",
+  registerButton: "#7bf1a8",
+  onRegisterButton: "#00391f",
+  deregisterButton: "#ffa2a2",
+  onDeregisterButton: "#4a0a0a",
+  registerForWaitlist: "#fff085",
+  onRegisterForWaitlist: "#3d3000",
 };
 
 export const dark: ThemeScheme = {
@@ -166,6 +188,17 @@ export const dark: ThemeScheme = {
   surfaceContainer: "#1C2024",
   surfaceContainerHigh: "#262B2E",
   surfaceContainerHighest: "#313539",
+
+  attending: "#016630",
+  onAttending: "#b9f8cf",
+  waitlist: "#312c85",
+  onWaitlist: "#e0ddff",
+  registerButton: "#0d542b",
+  onRegisterButton: "#b9f8cf",
+  deregisterButton: "#82181a",
+  onDeregisterButton: "#ffd9d6",
+  registerForWaitlist: "#894b00",
+  onRegisterForWaitlist: "#ffe7b0",
 };
 
 const themes = { light, dark } as const;

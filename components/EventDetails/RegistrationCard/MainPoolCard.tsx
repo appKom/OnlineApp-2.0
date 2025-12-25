@@ -24,8 +24,6 @@ import { nb } from "date-fns/locale"
 import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "utils/theme";
 
-const theme = useTheme();
-
 interface MainPoolCardProps {
   attendance: Attendance
   user: User | null
@@ -34,6 +32,7 @@ interface MainPoolCardProps {
 }
 
 export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, authorizeUrl, chargeScheduleDate }) => {
+  const theme = useTheme();
   const now = new Date();
   const attendee = getAttendee(attendance, user)
 
@@ -55,17 +54,17 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
     return (
       <TouchableOpacity onPress={() => Authenticator.login()} style={[styles.card, {backgroundColor: theme.inversePrimary}]}>
         <View style={{flex: 1, alignSelf: 'center', gap: 8}}>
-          <Text style={{fontSize: 17, fontWeight: "bold", color: theme.primaryFixed}}>
+          <Text style={{fontSize: 17, fontWeight: "bold", color: theme.onPrimary}}>
             Du er ikke innlogget
           </Text>
 
           <View style={[styles.textItem]}>
-            <Text style={{fontSize: 15, color: theme.primary}}>Logg inn</Text>
-            <MaterialCommunityIcons name="login" color={theme.primary} size={15}/>
+            <Text style={{fontSize: 15, color: theme.onPrimary}}>Logg inn</Text>
+            <MaterialCommunityIcons name="login" color={theme.onPrimary} size={15}/>
           </View>
 
           {attendance.attendancePrice && attendance.attendancePrice > 0 && (
-            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} />
+            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} color={theme.onPrimary} />
           )}
         </View>
       </TouchableOpacity>
@@ -76,16 +75,16 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!membership && !attendee) {
     return (
-      <View style={styles.card}>
-        <Text>Du har ikke registert medlemskap</Text>
+      <View style={[styles.card, {backgroundColor: theme.primary}]}> 
+        <Text style={{ color: theme.onPrimary }}>Du har ikke registert medlemskap</Text>
 
         <View>
-          <Text>Gå til OW for å registrere deg</Text>
+          <Text style={{ color: theme.onPrimary }}>Gå til OW for å registrere deg</Text>
         </View>
 
         {attendance.attendancePrice && attendance.attendancePrice > 0 && (
           <View>
-            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} />
+            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} color={theme.onPrimary} />
           </View>
         )}
       </View>
@@ -96,8 +95,17 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!pool) {
     return (
-      <View style={styles.card}>
-        <Text>Du kan ikke melde deg på dette arrangementet</Text>
+      <View style={[styles.card, { backgroundColor: theme.primary, alignItems: 'center'}]}>
+        <Text
+          style={{
+            fontSize: 15,
+            fontWeight: 'bold',
+            color: theme.onPrimary,
+            maxWidth: '75%',
+          }}
+        >
+          Du kan ikke melde deg på dette arrangemetet
+        </Text>
       </View>
     )
   }
@@ -108,52 +116,71 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   const servingPunishment = attendee?.earliestReservationAt && isFuture(attendee.earliestReservationAt)
 
+  const backgroundColor = !attendee ? theme.primary : attendee?.reserved === true ? theme.attending : theme.waitlist;
+  const onBackgroundColor = !attendee
+    ? theme.onPrimary ?? theme.onPrimaryContainer ?? '#000'
+    : attendee?.reserved === true
+      ? theme.onAttending ?? '#000'
+      : theme.onWaitlist ?? '#000'
+
+  const withAlpha = (hex: string, alpha: number) =>
+    `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`
+
   return (
-    <View style={styles.card}>
-      <View>
-        <Text>
+    <View style={{backgroundColor: withAlpha(backgroundColor, 0.7), borderRadius: 12}}>
+      <View style={{gap: 5, alignItems: "center"}}>
+        <Text style={{backgroundColor: backgroundColor, color: onBackgroundColor, alignSelf: 'stretch', textAlign: 'center', padding: 5, borderTopLeftRadius: 12, borderTopRightRadius: 12}}>
           {pool.title}
         </Text>
 
-        {pool.mergeDelayHours && pool.mergeDelayHours > 0 && (
-          <DelayPill
-            mergeDelayHours={pool.mergeDelayHours}
-          />
-        )}
+        {/* {pool.mergeDelayHours && pool.mergeDelayHours > 0 && ( */}
+          <View style={{borderRadius: 5, backgroundColor: backgroundColor}}>
+            <DelayPill
+              mergeDelayHours={pool.mergeDelayHours}
+              color={onBackgroundColor}
+            />
+          </View>
+          
+        {/* )} */}
       </View>
 
-      <View>
+      <View style={{marginVertical: 10}}>
         {!showRegisterCountdown && (
-          <View>
-            <View>
-              <Text>
+          <View style={{alignItems: "center"}}>
+            <View style={{flexDirection: "row", gap: 5, marginBottom: 5}}>
+              <Text style={{ color: onBackgroundColor }}>
                 {reservedAttendeeCount}
                 {/* Don't show capacity for merge pools (capacity = 0) */}
                 {pool.capacity > 0 && `/${pool.capacity}`}
               </Text>
 
               {hasWaitlist && (
-                <Text>
+                <Text style={{ color: onBackgroundColor }}>
                   +{unreservedAttendeeCount} i kø
                 </Text>
               )}
             </View>
 
-            <View>
+            <View style={{}}>
               {servingPunishment ? (
-                <PunishmentStatus attendee={attendee} />
+                <PunishmentStatus attendee={attendee} color={onBackgroundColor} />
               ) : (
-                <AttendanceStatus attendance={attendance} attendee={attendee} />
+                <AttendanceStatus attendance={attendance} attendee={attendee} color={onBackgroundColor} />
               )}
-              <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} />
+              <PaymentStatus
+                attendance={attendance}
+                attendee={attendee}
+                chargeScheduleDate={chargeScheduleDate}
+                color={onBackgroundColor}
+              />
             </View>
           </View>
         )}
 
         {showRegisterCountdown && (
           <View>
-            <Text>{pool.capacity > 0 ? `${pool.capacity} plasser` : "Påmelding"} åpner om</Text>
-            <Text>
+            <Text style={{ color: onBackgroundColor }}>{pool.capacity > 0 ? `${pool.capacity} plasser` : "Påmelding"} åpner om</Text>
+            <Text style={{ color: onBackgroundColor }}>
               {registerCountdownText}
             </Text>
           </View>
@@ -162,8 +189,8 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
         {showPaymentCountdown && attendee?.paymentLink && (
           <TouchableOpacity onPress={() => attendee.paymentLink && Linking.openURL(attendee.paymentLink)}>
             <View>
-              <Text>Du må betale innen</Text>
-              <Text>
+              <Text style={{ color: onBackgroundColor }}>Du må betale innen</Text>
+              <Text style={{ color: onBackgroundColor }}>
                 {paymentCountdownText}
               </Text>
             </View>
@@ -176,17 +203,18 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
 interface DelayPillProps {
   mergeDelayHours: number | null
+  color?: string
 }
 
-const DelayPill = ({ mergeDelayHours }: DelayPillProps) => {
+const DelayPill = ({ mergeDelayHours, color }: DelayPillProps) => {
   const content = mergeDelayHours
     ? `Denne gruppen får plasser ${mergeDelayHours} timer etter påmeldingsstart`
     : "Denne påmeldingsgruppen kan få plasser senere"
 
   return (
-    <View>
-      <FontAwesome6 name="clock"/>
-      <Text>{mergeDelayHours ? `${mergeDelayHours}t` : "TBD"}</Text>
+    <View style={{flexDirection: "row", alignItems: "center", paddingVertical: 3, paddingHorizontal: 7, gap: 3}}>
+      <FontAwesome6 name="clock" color={color} />
+      <Text style={{ color }}>{mergeDelayHours ? `${mergeDelayHours}t` : "TBD"}</Text>
     </View>
   )
 }
@@ -194,23 +222,24 @@ const DelayPill = ({ mergeDelayHours }: DelayPillProps) => {
 interface AttendanceStatusProps {
   attendance: Attendance
   attendee: Attendee | null
+  color: string
 }
 
-const AttendanceStatus = ({ attendance, attendee }: AttendanceStatusProps) => {
+const AttendanceStatus = ({ attendance, attendee, color }: AttendanceStatusProps) => {
   if (!attendee) {
     return (
-      <View>
-        <FontAwesome6 name="user-xmark"/>
-        <Text>Du er ikke påmeldt</Text>
+      <View style={styles.textItem}>
+        <FontAwesome6 name="user-xmark" color={color} />
+        <Text style={{ color }}>Du er ikke påmeldt</Text>
       </View>
     )
   }
 
   if (attendee.reserved === true) {
     return (
-      <View>
-        <FontAwesome6 name="user-check"/>
-        <Text>Du er påmeldt</Text>
+      <View style={styles.textItem}>
+        <FontAwesome6 name="user-check" color={color} />
+        <Text style={{ color }}>Du er påmeldt</Text>
       </View>
     )
   }
@@ -219,8 +248,8 @@ const AttendanceStatus = ({ attendance, attendee }: AttendanceStatusProps) => {
 
   return (
     <View>
-      <FontAwesome6 name="clock"/>
-      <Text>Du er {queuePosition !== null && `${queuePosition}. `}i køen</Text>
+      <FontAwesome6 name="clock" color={color} />
+      <Text style={{ color }}>Du er {queuePosition !== null && `${queuePosition}. `}i køen</Text>
     </View>
   )
 }
@@ -229,9 +258,10 @@ interface PaymentStatusProps {
   attendance: Attendance
   attendee: Attendee | null
   chargeScheduleDate?: Date | null
+  color: string
 }
 
-const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStatusProps) => {
+const PaymentStatus = ({ attendance, attendee, chargeScheduleDate, color }: PaymentStatusProps) => {
   const hasPaid = hasAttendeePaid(attendance, attendee)
 
   if (!attendance.attendancePrice || hasPaid === null) {
@@ -241,8 +271,8 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStat
   if (!attendee) {
     return (
       <View style={[styles.textItem]}>
-        <FontAwesome6 name="coins" color={theme.primary} size={15}/>
-        <Text style={{fontSize: 15, color: theme.primary}}>{attendance.attendancePrice} kr</Text>
+        <FontAwesome6 name="coins" color={color} size={15}/>
+        <Text style={{fontSize: 15, color}}>{attendance.attendancePrice} kr</Text>
       </View>
     )
   }
@@ -250,8 +280,8 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStat
   if (!hasPaid) {
     return (
       <View style={[styles.textItem]}>
-        <FontAwesome6 name="xmark" color={theme.primary} size={15}/>
-        <Text style={{fontSize: 15, color: theme.primary}} >{attendance.attendancePrice} kr ubetalt</Text>
+        <FontAwesome6 name="xmark" color={color} size={15}/>
+        <Text style={{fontSize: 15, color}} >{attendance.attendancePrice} kr ubetalt</Text>
       </View>
     )
   }
@@ -259,8 +289,8 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStat
   if (attendee.paymentChargedAt) {
     return (
       <View style={[styles.textItem]}>
-        <FontAwesome6 name="check" color={theme.primary} size={15}/>
-        <Text style={{fontSize: 15, color: theme.primary}} >Du har betalt {attendance.attendancePrice} kr</Text>
+        <FontAwesome6 name="check" color={color} size={15}/>
+        <Text style={{fontSize: 15, color}} >Du har betalt {attendance.attendancePrice} kr</Text>
       </View>
     )
   }
@@ -268,13 +298,13 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStat
   if (attendee.paymentReservedAt) {
     return (
       <View>
-        <FontAwesome6 name="check"/>
+        <FontAwesome6 name="check" color={color} />
 
         <View>
-          <Text>Du har reservert {attendance.attendancePrice} kr</Text>
+          <Text style={{ color }}>Du har reservert {attendance.attendancePrice} kr</Text>
 
           {chargeScheduleDate && (
-            <Text>
+            <Text style={{ color }}>
               Du blir trukket rundt{" "}
               {formatDate(roundToNearestHours(chargeScheduleDate), "dd. MMM 'kl.' HH", { locale: nb })}
             </Text>
@@ -287,8 +317,8 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStat
   if (attendee.paymentRefundedAt) {
     return (
       <View>
-        <FontAwesome6 name="arrow-right-long" />
-        <Text>Du er refundert {attendance.attendancePrice} kr</Text>
+        <FontAwesome6 name="arrow-right-long" color={color} />
+        <Text style={{ color }}>Du er refundert {attendance.attendancePrice} kr</Text>
       </View>
     )
   }
@@ -300,11 +330,11 @@ interface PunishmentStatusProps {
   attendee: Attendee
 }
 
-const PunishmentStatus = ({ attendee }: PunishmentStatusProps) => {
+const PunishmentStatus = ({ attendee, color }: PunishmentStatusProps & { color: string }) => {
   return (
     <View>
-      <FontAwesome6 name="clock" />
-      <Text>{formatDistanceToNowStrict(attendee.earliestReservationAt, { locale: nb })} utsettelse</Text>
+      <FontAwesome6 name="clock" color={color} />
+      <Text style={{ color }}>{formatDistanceToNowStrict(attendee.earliestReservationAt, { locale: nb })} utsettelse</Text>
     </View>
   )
 }
@@ -315,7 +345,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   textItem: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
