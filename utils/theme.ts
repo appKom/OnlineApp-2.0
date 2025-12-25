@@ -277,3 +277,18 @@ export function getCurrentTheme(): ThemeMode {
   const cs = Appearance.getColorScheme();
   return cs === 'dark' ? 'dark' : 'light';
 }
+
+// Color utility helpers
+// Apply alpha transparency to a hex color
+export function withAlpha(hex: string, alpha: number): string {
+  return `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+}
+
+// Darken a hex color by reducing RGB values
+export function darken(hex: string, factor: number): string {
+  const num = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, (num >> 16) - factor);
+  const g = Math.max(0, ((num >> 8) & 0x00ff) - factor);
+  const b = Math.max(0, (num & 0x0000ff) - factor);
+  return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
+}

@@ -22,7 +22,7 @@ import {
 } from "date-fns"
 import { nb } from "date-fns/locale"
 import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "utils/theme";
+import { useTheme, withAlpha, darken } from "utils/theme";
 
 interface MainPoolCardProps {
   attendance: Attendance
@@ -123,39 +123,40 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
       ? theme.onAttending ?? '#000'
       : theme.onWaitlist ?? '#000'
 
-  const withAlpha = (hex: string, alpha: number) =>
-    `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`
-
   return (
     <View style={{backgroundColor: withAlpha(backgroundColor, 0.7), borderRadius: 12}}>
-      <View style={{gap: 5, alignItems: "center"}}>
-        <Text style={{backgroundColor: backgroundColor, color: onBackgroundColor, alignSelf: 'stretch', textAlign: 'center', padding: 5, borderTopLeftRadius: 12, borderTopRightRadius: 12}}>
-          {pool.title}
-        </Text>
+      <View style={{ gap: 5, alignItems: "center", backgroundColor: backgroundColor, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+        <View style={{ flexDirection: "row", margin: 5 }}>
+          <Text style={{ color: onBackgroundColor, padding: 5}}>
+            {pool.title}
+          </Text>
 
-        {/* {pool.mergeDelayHours && pool.mergeDelayHours > 0 && ( */}
-          <View style={{borderRadius: 5, backgroundColor: backgroundColor}}>
-            <DelayPill
-              mergeDelayHours={pool.mergeDelayHours}
-              color={onBackgroundColor}
-            />
-          </View>
-          
-        {/* )} */}
+          {pool.mergeDelayHours && pool.mergeDelayHours > 0 && (
+            <View style={{borderRadius: 5, justifyContent: "center"}}>
+              <DelayPill
+                mergeDelayHours={pool.mergeDelayHours}
+                color={onBackgroundColor}
+                backgroundColor={darken(backgroundColor, 20)}
+              />
+            </View>
+            
+          )}
+        </View>
+        
       </View>
 
-      <View style={{marginVertical: 10}}>
+      <View style={{marginVertical: 20}}>
         {!showRegisterCountdown && (
           <View style={{alignItems: "center"}}>
-            <View style={{flexDirection: "row", gap: 5, marginBottom: 5}}>
-              <Text style={{ color: onBackgroundColor }}>
+            <View style={{marginBottom: 5, alignItems: "center"}}>
+              <Text style={{ color: onBackgroundColor, fontSize: 30, fontWeight: "bold" }}>
                 {reservedAttendeeCount}
                 {/* Don't show capacity for merge pools (capacity = 0) */}
                 {pool.capacity > 0 && `/${pool.capacity}`}
               </Text>
 
               {hasWaitlist && (
-                <Text style={{ color: onBackgroundColor }}>
+                <Text style={{ color: onBackgroundColor, backgroundColor: backgroundColor, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 7 }}>
                   +{unreservedAttendeeCount} i kø
                 </Text>
               )}
@@ -178,9 +179,9 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
         )}
 
         {showRegisterCountdown && (
-          <View>
+          <View style={{alignItems: "center"}}>
             <Text style={{ color: onBackgroundColor }}>{pool.capacity > 0 ? `${pool.capacity} plasser` : "Påmelding"} åpner om</Text>
-            <Text style={{ color: onBackgroundColor }}>
+            <Text style={{ color: onBackgroundColor, fontSize: 30, fontWeight: "bold" }}>
               {registerCountdownText}
             </Text>
           </View>
@@ -204,15 +205,16 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 interface DelayPillProps {
   mergeDelayHours: number | null
   color?: string
+  backgroundColor?: string
 }
 
-const DelayPill = ({ mergeDelayHours, color }: DelayPillProps) => {
+const DelayPill = ({ mergeDelayHours, color, backgroundColor }: DelayPillProps) => {
   const content = mergeDelayHours
     ? `Denne gruppen får plasser ${mergeDelayHours} timer etter påmeldingsstart`
     : "Denne påmeldingsgruppen kan få plasser senere"
 
   return (
-    <View style={{flexDirection: "row", alignItems: "center", paddingVertical: 3, paddingHorizontal: 7, gap: 3}}>
+    <View style={{flexDirection: "row", alignItems: "center", paddingVertical: 3, paddingHorizontal: 7, gap: 3, backgroundColor, borderRadius: 7}}>
       <FontAwesome6 name="clock" color={color} />
       <Text style={{ color }}>{mergeDelayHours ? `${mergeDelayHours}t` : "TBD"}</Text>
     </View>
@@ -280,7 +282,7 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate, color }: Paym
   if (!hasPaid) {
     return (
       <View style={[styles.textItem]}>
-        <FontAwesome6 name="xmark" color={color} size={15}/>
+        <FontAwesome6 name="xmark" color="red" size={15}/>
         <Text style={{fontSize: 15, color}} >{attendance.attendancePrice} kr ubetalt</Text>
       </View>
     )
@@ -297,7 +299,7 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate, color }: Paym
 
   if (attendee.paymentReservedAt) {
     return (
-      <View>
+      <View style={[styles.textItem]}>
         <FontAwesome6 name="check" color={color} />
 
         <View>
@@ -316,7 +318,7 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate, color }: Paym
 
   if (attendee.paymentRefundedAt) {
     return (
-      <View>
+      <View style={[styles.textItem]}>
         <FontAwesome6 name="arrow-right-long" color={color} />
         <Text style={{ color }}>Du er refundert {attendance.attendancePrice} kr</Text>
       </View>
@@ -332,7 +334,7 @@ interface PunishmentStatusProps {
 
 const PunishmentStatus = ({ attendee, color }: PunishmentStatusProps & { color: string }) => {
   return (
-    <View>
+    <View style={ styles.textItem }>
       <FontAwesome6 name="clock" color={color} />
       <Text style={{ color }}>{formatDistanceToNowStrict(attendee.earliestReservationAt, { locale: nb })} utsettelse</Text>
     </View>
@@ -347,7 +349,7 @@ const styles = StyleSheet.create({
   textItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: 5,
   }
 })
 
