@@ -125,7 +125,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
         visible={modalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => closeModal()}
       >
         <Animated.View 
           style={[
