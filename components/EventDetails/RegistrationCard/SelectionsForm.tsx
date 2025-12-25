@@ -133,6 +133,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => closeModal()}
+            style={{ flex: 1, justifyContent: "center" }}
           >
             <Animated.View
               style={{
