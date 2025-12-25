@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, FlatList } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
@@ -10,7 +10,6 @@ interface Props {
   onSubmit: (selections: AttendanceSelectionResponse[]) => void
   disabled?: boolean
 }
-
 
 export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit, disabled }) => {
   const theme = useTheme()
@@ -27,18 +26,18 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
     })
   )
 
-  const [errors, setErrors] = useState<Record<number, boolean>>({})
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null)
+  const [modalVisible, setModalVisible] = useState(false)
+  const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null)
 
   const handleSelectionChange = useCallback(
-    (index: number, optionId: string) => {
-      const selection = attendance.selections[index]
+    (selectionIndex: number, optionId: string) => {
+      const selection = attendance.selections[selectionIndex]
       const option = selection.options.find((opt) => opt.id === optionId)
 
       if (!option) return
 
       const updatedSelections = [...selections]
-      updatedSelections[index] = {
+      updatedSelections[selectionIndex] = {
         selectionId: selection.id,
         selectionName: selection.name,
         optionId: option.id,
@@ -46,77 +45,76 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
       }
 
       setSelections(updatedSelections)
-
-      if (optionId) {
-        setErrors((prev) => ({ ...prev, [index]: false }))
-      }
-
-      setOpenDropdown(null)
+      setModalVisible(false)
       onSubmit(updatedSelections)
     },
     [attendance, onSubmit]
   )
 
-  React.useEffect(() => {
-    const newErrors: Record<number, boolean> = {}
-    selections.forEach((sel, idx) => {
-      if (!sel.optionId) {
-        newErrors[idx] = true
-      }
-    })
-    setErrors(newErrors)
-  }, [selections])
-
   return (
-    <ScrollView style={styles.container}>
+    <>
       {attendance.selections.map((selection, index) => (
-        <View key={selection.id} style={styles.fieldContainer}>
-          <Text style={[styles.label, { color: theme.onBackground }]}>{selection.name}</Text>
+        <View key={selection.id} style={styles.selectionRow}>
+          <View style={styles.selectionInfo}>
+            <Text style={[styles.selectionTitle, { color: theme.onBackground }]}>{selection.name}</Text>
+            {selections[index]?.optionName ? (
+              <Text style={[styles.selectedOption, { color: theme.onSurfaceVariant }]}>
+                Ditt valg: {selections[index].optionName}
+              </Text>
+            ) : (
+              <Text style={styles.errorMessage}>Du må velge et alternativ</Text>
+            )}
+          </View>
 
           <TouchableOpacity
             disabled={disabled}
-            onPress={() => setOpenDropdown(openDropdown === index ? null : index)}
+            onPress={() => {
+              setActiveSelectionIndex(index)
+              setModalVisible(true)
+            }}
             style={[
               styles.selectButton,
-              {
-                backgroundColor: theme.surfaceContainer,
-                borderColor: errors[index] ? "#d32f2f" : theme.outline,
-              },
+              { backgroundColor: theme.primary, opacity: disabled ? 0.5 : 1 }
             ]}
           >
-            <Text
-              style={[
-                styles.selectButtonText,
-                {
-                  color: selections[index]?.optionName ? theme.onBackground : theme.onSurfaceVariant,
-                },
-              ]}
-            >
-              {selections[index]?.optionName || `Velg ${selection.name}`}
-            </Text>
-            <MaterialCommunityIcons
-              name={openDropdown === index ? "chevron-up" : "chevron-down"}
-              size={20}
-              color={theme.onBackground}
-            />
+            <MaterialCommunityIcons name="chevron-down" size={20} color={theme.onPrimary} />
           </TouchableOpacity>
+        </View>
+      ))}
 
-          {openDropdown === index && (
-            <View style={[styles.dropdownMenu, { backgroundColor: theme.surface, borderColor: theme.outline }]}>
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={[styles.overlay, { backgroundColor: "rgba(0, 0, 0, 0.5)" }]}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={[styles.optionsContainer, { backgroundColor: theme.surface, borderColor: theme.outline }]}
+          >
+            {activeSelectionIndex !== null && (
               <FlatList
-                data={selection.options}
+                data={attendance.selections[activeSelectionIndex].options}
                 keyExtractor={(item) => item.id}
-                scrollEnabled={false}
+                scrollEnabled={attendance.selections[activeSelectionIndex].options.length > 4}
                 renderItem={({ item, index: optionIndex }) => (
                   <TouchableOpacity
-                    onPress={() => handleSelectionChange(index, item.id)}
+                    onPress={() => handleSelectionChange(activeSelectionIndex, item.id)}
                     style={[
                       styles.optionItem,
                       {
-                        backgroundColor:
-                          selections[index]?.optionId === item.id ? theme.surfaceContainer : "transparent",
                         borderBottomColor: theme.outlineVariant,
-                        borderBottomWidth: optionIndex < selection.options.length - 1 ? 1 : 0,
+                        borderBottomWidth: optionIndex < attendance.selections[activeSelectionIndex].options.length - 1 ? 1 : 0,
+                        backgroundColor:
+                          selections[activeSelectionIndex]?.optionId === item.id
+                            ? theme.surfaceContainer
+                            : "transparent",
                       },
                     ]}
                   >
@@ -124,58 +122,70 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
                   </TouchableOpacity>
                 )}
               />
-            </View>
-          )}
-
-          {errors[index] && <Text style={styles.errorText}>Du må velge et alternativ</Text>}
-        </View>
-      ))}
-    </ScrollView>
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-  },
-  fieldContainer: {
-    marginBottom: 16,
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  selectButton: {
+  selectionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    marginBottom: 16,
+    gap: 12,
   },
-  selectButtonText: {
-    fontSize: 14,
+  selectionInfo: {
     flex: 1,
   },
-  dropdownMenu: {
-    borderWidth: 1,
+  selectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  selectedOption: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  errorMessage: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#d32f2f",
+  },
+  selectButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 8,
-    maxHeight: 300,
-    marginTop: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  optionsContainer: {
+    width: "80%",
+    maxHeight: 280,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   optionItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   optionText: {
-    fontSize: 14,
-  },
-  errorText: {
-    fontSize: 12,
-    color: "#d32f2f",
-    marginTop: 4,
+    fontSize: 16,
+    fontWeight: "500",
   },
 })
 

@@ -186,7 +186,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       {attendee?.reserved && (attendance.selections?.length ?? 0) > 0 && (
         <View style={styles.section}>
-          <Text style={styles.subtitle}>Valg</Text>
           <SelectionsForm attendance={attendance} attendee={attendee} onSubmit={handleSelectionChange} disabled={attendanceStatus === "Closed"} />
         </View>
       )}
