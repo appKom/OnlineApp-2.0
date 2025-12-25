@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Animated } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
@@ -28,6 +28,8 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
 
   const [modalVisible, setModalVisible] = useState(false)
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null)
+  const [scaleAnim] = useState(new Animated.Value(0))
+  const [opacityAnim] = useState(new Animated.Value(0))
 
   const handleSelectionChange = useCallback(
     (selectionIndex: number, optionId: string) => {
@@ -45,11 +47,50 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
       }
 
       setSelections(updatedSelections)
-      setModalVisible(false)
+      closeModal()
       onSubmit(updatedSelections)
     },
     [attendance, onSubmit]
   )
+
+  const openModal = useCallback(
+    (index: number) => {
+      setActiveSelectionIndex(index)
+      setModalVisible(true)
+
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 5,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start()
+    },
+    [scaleAnim, opacityAnim]
+  )
+
+  const closeModal = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false)
+    })
+  }, [scaleAnim, opacityAnim])
 
   return (
     <>
@@ -68,10 +109,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
 
           <TouchableOpacity
             disabled={disabled}
-            onPress={() => {
-              setActiveSelectionIndex(index)
-              setModalVisible(true)
-            }}
+            onPress={() => openModal(index)}
             style={[
               styles.selectButton,
               { backgroundColor: theme.primary, opacity: disabled ? 0.5 : 1 }
@@ -88,16 +126,25 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={{ flex: 1, justifyContent: "center", padding: "10%", backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
+        <Animated.View style={{ flex: 1, justifyContent: "center", padding: "10%", backgroundColor: opacityAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.5)"]
+        }) }}>
           <TouchableOpacity
             activeOpacity={1}
-            onPress={() => setModalVisible(false)}
+            onPress={() => closeModal()}
           >
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={(e) => e.stopPropagation()}
-              style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, height: 250 }}
+            <Animated.View
+              style={{
+                transform: [{ scale: scaleAnim }],
+                opacity: opacityAnim,
+              }}
             >
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={(e) => e.stopPropagation()}
+                style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, height: 250 }}
+              >
               {activeSelectionIndex !== null && (
                 <FlatList
                   data={attendance.selections[activeSelectionIndex].options}
@@ -135,8 +182,9 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
                 />
               )}
             </TouchableOpacity>
+            </Animated.View>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </Modal>
     </>
   )
