@@ -281,7 +281,7 @@ const AttendanceStatus = ({ attendance, attendee, color }: AttendanceStatusProps
   const queuePosition = getAttendeeQueuePosition(attendance, attendee.user)
 
   return (
-    <View>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <FontAwesome6 name="clock" color={color} />
       <Text style={{ color }}>Du er {queuePosition !== null && `${queuePosition}. `}i køen</Text>
     </View>
