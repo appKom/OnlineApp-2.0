@@ -1,5 +1,12 @@
-import React, { useState, useCallback } from "react"
-import { View, TouchableOpacity, LayoutAnimation, Platform, UIManager, Animated } from "react-native"
+import React, { useState, useCallback, useRef } from "react"
+import {
+  View,
+  TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  Animated,
+} from "react-native"
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -15,9 +22,12 @@ interface CollapsibleContextType {
   isOpen: boolean
   toggleOpen: () => void
   rotationAnim: Animated.Value
+  contentAnim: Animated.Value
 }
 
-const CollapsibleContext = React.createContext<CollapsibleContextType | undefined>(undefined)
+const CollapsibleContext = React.createContext<CollapsibleContextType | undefined>(
+  undefined
+)
 
 export const useCollapsible = () => {
   const context = React.useContext(CollapsibleContext)
@@ -27,36 +37,60 @@ export const useCollapsible = () => {
   return context
 }
 
-export const Collapsible: React.FC<CollapsibleProps> = ({ children, defaultOpen = false }) => {
+export const Collapsible: React.FC<CollapsibleProps> = ({
+  children,
+  defaultOpen = false,
+}) => {
   const [isOpen, setIsOpen] = useState(defaultOpen)
-  const rotationAnim = React.useRef(new Animated.Value(defaultOpen ? 1 : 0)).current
+
+  const rotationAnim = useRef(new Animated.Value(defaultOpen ? 1 : 0)).current
+  const contentAnim = useRef(new Animated.Value(defaultOpen ? 1 : 0)).current
 
   const toggleOpen = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setIsOpen((prev) => {
-      const newState = !prev
-      Animated.spring(rotationAnim, {
-        toValue: newState ? 1 : 0,
-        friction: 6,
-        tension: 40,
-        useNativeDriver: false,
-      }).start()
-      return newState
+
+    setIsOpen(prev => {
+      const next = !prev
+
+      Animated.parallel([
+        Animated.spring(rotationAnim, {
+          toValue: next ? 1 : 0,
+          friction: 6,
+          tension: 40,
+          useNativeDriver: false,
+        }),
+        Animated.timing(contentAnim, {
+          toValue: next ? 1 : 0,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start()
+
+      return next
     })
-  }, [rotationAnim])
+  }, [])
 
   return (
-    <CollapsibleContext.Provider value={{ isOpen, toggleOpen, rotationAnim }}>
+    <CollapsibleContext.Provider
+      value={{ isOpen, toggleOpen, rotationAnim, contentAnim }}
+    >
       <View>{children}</View>
     </CollapsibleContext.Provider>
   )
 }
 
 interface CollapsibleTriggerProps {
-  children: ((isOpen: boolean, rotation: Animated.AnimatedInterpolation<string | number>) => React.ReactElement) | React.ReactNode
+  children:
+    | ((
+        isOpen: boolean,
+        rotation: Animated.AnimatedInterpolation<string | number>
+      ) => React.ReactElement)
+    | React.ReactNode
 }
 
-export const CollapsibleTrigger: React.FC<CollapsibleTriggerProps> = ({ children }) => {
+export const CollapsibleTrigger: React.FC<CollapsibleTriggerProps> = ({
+  children,
+}) => {
   const { toggleOpen, isOpen, rotationAnim } = useCollapsible()
 
   const rotation = rotationAnim.interpolate({
@@ -66,7 +100,9 @@ export const CollapsibleTrigger: React.FC<CollapsibleTriggerProps> = ({ children
 
   return (
     <TouchableOpacity onPress={toggleOpen} activeOpacity={0.6}>
-      {typeof children === "function" ? (children as any)(isOpen, rotation) : children}
+      {typeof children === "function"
+        ? children(isOpen, rotation)
+        : children}
     </TouchableOpacity>
   )
 }
@@ -75,14 +111,41 @@ interface CollapsibleContentProps {
   children: React.ReactNode
 }
 
-export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({ children }) => {
-  const { isOpen } = useCollapsible()
+export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
+  children,
+}) => {
+  const { contentAnim } = useCollapsible()
+  const measuredHeight = useRef(0)
 
-  if (!isOpen) {
-    return null
-  }
+  const height = contentAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, measuredHeight.current || 1],
+  })
 
-  return <View>{children}</View>
+  const opacity = contentAnim.interpolate({
+    inputRange: [0, 0.2, 1],
+    outputRange: [0, 0, 1],
+  })
+
+  return (
+    <Animated.View
+      style={{
+        height,
+        opacity,
+        overflow: "hidden",
+      }}
+    >
+      <View
+        onLayout={e => {
+          if (!measuredHeight.current) {
+            measuredHeight.current = e.nativeEvent.layout.height
+          }
+        }}
+      >
+        {children}
+      </View>
+    </Animated.View>
+  )
 }
 
 export default Collapsible
