@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
+  PanResponder,
 } from "react-native"
 import { BlurView } from "@react-native-community/blur"
 import { MaterialIcons } from "@expo/vector-icons"
@@ -23,6 +24,8 @@ interface ViewAttendeesButtonProps {
 
 const SCREEN_HEIGHT = Dimensions.get("window").height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.6
+const CLOSE_DISTANCE = 120
+const CLOSE_VELOCITY = 1.1
 
 export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   attendance,
@@ -44,6 +47,8 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
 
   const reservedAttendees = allAttendees.filter(a => a.reserved)
   const waitlistAttendees = allAttendees.filter(a => !a.reserved)
+
+  /* ---------------- Open / close animation ---------------- */
 
   useEffect(() => {
     if (!isMounted) return
@@ -74,7 +79,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     })
   }, [isOpen, isMounted])
 
-
   const openModal = () => {
     setIsMounted(true)
     setIsOpen(true)
@@ -83,6 +87,38 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   const closeModal = () => {
     setIsOpen(false)
   }
+
+  /* ---------------- PanResponder (HANDLE ONLY) ---------------- */
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+
+      onPanResponderMove: (_, gesture) => {
+        if (gesture.dy > 0) {
+          sheetAnim.setValue(gesture.dy)
+        }
+      },
+
+      onPanResponderRelease: (_, gesture) => {
+        const shouldClose =
+          gesture.dy > CLOSE_DISTANCE || gesture.vy > CLOSE_VELOCITY
+
+        if (shouldClose) {
+          closeModal()
+        } else {
+          Animated.spring(sheetAnim, {
+            toValue: 0,
+            friction: 6,
+            tension: 60,
+            useNativeDriver: true,
+          }).start()
+        }
+      },
+    })
+  ).current
+
+  /* ---------------- Render ---------------- */
 
   return (
     <>
@@ -115,7 +151,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
           onRequestClose={closeModal}
         >
           <View style={{ flex: 1 }}>
-            {/* 🔹 Animated blur backdrop */}
+            {/* Backdrop */}
             <Animated.View
               style={[
                 StyleSheet.absoluteFill,
@@ -131,7 +167,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
               </BlurView>
             </Animated.View>
 
-            {/* 🔹 Animated bottom sheet */}
+            {/* Bottom sheet */}
             <Animated.View
               style={[
                 styles.bottomSheet,
@@ -141,20 +177,25 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                 },
               ]}
             >
-              <View style={styles.handleContainer}>
+              {/* ✅ DRAGGABLE HEADER */}
+              <View
+                {...panResponder.panHandlers}
+                style={styles.dragHeader}
+              >
                 <View
                   style={[
                     styles.handle,
                     { backgroundColor: theme.onSurfaceVariant },
                   ]}
                 />
+
+                <Text
+                  style={[styles.modalTitle, { color: theme.onBackground }]}
+                >
+                  Påmeldingsliste
+                </Text>
               </View>
 
-              <Text
-                style={[styles.modalTitle, { color: theme.onBackground }]}
-              >
-                Påmeldingsliste
-              </Text>
 
               <FlatList
                 data={[
@@ -218,6 +259,8 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   )
 }
 
+/* ---------------- Attendee row ---------------- */
+
 interface AttendeeRowProps {
   attendee: Attendee
   user: User
@@ -244,7 +287,7 @@ const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
       </Text>
 
       <Image
-        source={{ uri: attendee.user.imageUrl || undefined }}
+        source={attendee.user.imageUrl ? { uri: attendee.user.imageUrl } : undefined}
         style={styles.avatar}
       />
 
@@ -270,6 +313,8 @@ const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
     </View>
   )
 }
+
+/* ---------------- Styles ---------------- */
 
 const styles = StyleSheet.create({
   button: {
@@ -301,8 +346,9 @@ const styles = StyleSheet.create({
   },
   handle: {
     width: 40,
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
+    alignSelf: "center"
   },
   modalTitle: {
     fontSize: 20,
@@ -356,6 +402,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginHorizontal: 16,
     marginVertical: 8,
+  },
+    dragHeader: {
+    paddingTop: 8,
+    paddingBottom: 12,
   },
 })
 
