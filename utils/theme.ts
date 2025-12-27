@@ -284,11 +284,26 @@ export function withAlpha(hex: string, alpha: number): string {
   return `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
 }
 
-// Darken a hex color by reducing RGB values
-export function darken(hex: string, factor: number): string {
+// Elevate a color: darken in light mode, lighten in dark mode
+export function elevate(hex: string, factor: number): string {
+  const mode = getCurrentTheme();
   const num = parseInt(hex.slice(1), 16);
-  const r = Math.max(0, (num >> 16) - factor);
-  const g = Math.max(0, ((num >> 8) & 0x00ff) - factor);
-  const b = Math.max(0, (num & 0x0000ff) - factor);
+  
+  let r = (num >> 16) & 0xff;
+  let g = (num >> 8) & 0xff;
+  let b = num & 0xff;
+
+  if (mode === 'light') {
+    // Darken: reduce RGB values
+    r = Math.max(0, r - factor);
+    g = Math.max(0, g - factor);
+    b = Math.max(0, b - factor);
+  } else {
+    // Lighten: increase RGB values
+    r = Math.min(255, r + factor);
+    g = Math.min(255, g + factor);
+    b = Math.min(255, b + factor);
+  }
+
   return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
 }

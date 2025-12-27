@@ -22,7 +22,7 @@ import {
 } from "date-fns"
 import { nb } from "date-fns/locale"
 import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme, withAlpha, darken } from "utils/theme";
+import { useTheme, withAlpha, elevate } from "utils/theme";
 
 interface MainPoolCardProps {
   attendance: Attendance
@@ -158,7 +158,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
               <DelayPill
                 mergeDelayHours={pool.mergeDelayHours}
                 color={onBackgroundColor}
-                backgroundColor={darken(backgroundColor, 20)}
+                backgroundColor={elevate(backgroundColor, 20)}
               />
             </View>
             

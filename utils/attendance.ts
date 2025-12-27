@@ -85,7 +85,7 @@ export const getAttendeeQueuePosition = (attendance: Attendance, user: any | nul
 
   const unreservedAttendees = attendance.attendees
     .filter((a) => a.attendancePoolId === pool.id && !a.reserved)
-    .toSorted((a, b) => compareAsc(new Date(a.earliestReservationAt ?? 0), new Date(b.earliestReservationAt ?? 0)))
+    .sort((a, b) => compareAsc(new Date(a.earliestReservationAt ?? 0), new Date(b.earliestReservationAt ?? 0)))
 
   const index = unreservedAttendees.indexOf(attendee)
   if (index === -1) return null
