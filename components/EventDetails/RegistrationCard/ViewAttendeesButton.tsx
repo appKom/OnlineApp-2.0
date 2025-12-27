@@ -1,5 +1,15 @@
-import React, { useState, useCallback, useEffect, useRef } from "react"
-import { View, Text, TouchableOpacity, Modal, FlatList, Image, StyleSheet, Dimensions, Animated } from "react-native"
+import React, { useState, useEffect, useRef } from "react"
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  Image,
+  StyleSheet,
+  Dimensions,
+  Animated,
+} from "react-native"
 import { BlurView } from "@react-native-community/blur"
 import { MaterialIcons } from "@expo/vector-icons"
 import type { Attendance, Attendee } from "../../../types/event"
@@ -11,15 +21,43 @@ interface ViewAttendeesButtonProps {
   user: User | null
 }
 
-export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({ attendance, user }) => {
+const SCREEN_HEIGHT = Dimensions.get("window").height
+
+export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
+  attendance,
+  user,
+}) => {
   const theme = useTheme()
   const [modalVisible, setModalVisible] = useState(false)
 
-  const allAttendees = attendance.attendees.sort((a, b) =>
-    new Date(a.earliestReservationAt).getTime() - new Date(b.earliestReservationAt).getTime()
+  const sheetAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
+
+  const allAttendees = [...attendance.attendees].sort(
+    (a, b) =>
+      new Date(a.earliestReservationAt).getTime() -
+      new Date(b.earliestReservationAt).getTime()
   )
-  const reservedAttendees = allAttendees.filter((attendee) => attendee.reserved)
-  const waitlistAttendees = allAttendees.filter((attendee) => !attendee.reserved)
+
+  const reservedAttendees = allAttendees.filter(a => a.reserved)
+  const waitlistAttendees = allAttendees.filter(a => !a.reserved)
+
+  useEffect(() => {
+    if (modalVisible) {
+      Animated.spring(sheetAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 70,
+        useNativeDriver: true,
+      }).start()
+    } else {
+      Animated.spring(sheetAnim, {
+        toValue: SCREEN_HEIGHT,
+        friction: 8,
+        tension: 70,
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [modalVisible])
 
   return (
     <>
@@ -28,56 +66,122 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({ attend
         onPress={() => setModalVisible(true)}
         style={[
           styles.button,
-          { backgroundColor: theme.secondaryContainer, opacity: !user ? 0.5 : 1 }
+          {
+            backgroundColor: theme.secondaryContainer,
+            opacity: !user ? 0.5 : 1,
+          },
         ]}
       >
-        <MaterialIcons name="people" size={20} color={theme.onSecondaryContainer} />
-        <Text style={[styles.buttonText, { color: theme.onSecondaryContainer }]}>Vis påmeldte</Text>
+        <MaterialIcons
+          name="people"
+          size={20}
+          color={theme.onSecondaryContainer}
+        />
+        <Text style={[styles.buttonText, { color: theme.onSecondaryContainer }]}>
+          Vis påmeldte
+        </Text>
       </TouchableOpacity>
 
       <Modal
         visible={modalVisible && !!user}
         transparent
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={{ flex: 1 }}>
-          <BlurView blurType="dark" blurAmount={5} style={StyleSheet.absoluteFill}>
+          {/* 🔹 Static blur + backdrop */}
+          <BlurView
+            blurType="dark"
+            blurAmount={5}
+            style={StyleSheet.absoluteFill}
+          >
             <TouchableOpacity
               activeOpacity={1}
               onPress={() => setModalVisible(false)}
-              style={{ flex: 0.4 }}
+              style={{ flex: 1 }}
             />
-            <View style={[styles.bottomSheet, { backgroundColor: theme.background }]}>
-              <View style={styles.handleContainer}>
-                <View style={[styles.handle, { backgroundColor: theme.onSurfaceVariant }]} />
-              </View>
+          </BlurView>
 
-              <Text style={[styles.modalTitle, { color: theme.onBackground }]}>Påmeldingsliste</Text>
-
-              <FlatList
-                data={[
-                  { type: "reserved", title: "Påmeldte", attendees: reservedAttendees },
-                  ...(waitlistAttendees.length > 0 ? [{ type: "waitlist", title: "Venteliste", attendees: waitlistAttendees }] : [])
+          {/* 🔹 Animated bottom sheet */}
+          <Animated.View
+            style={[
+              styles.bottomSheet,
+              {
+                backgroundColor: theme.background,
+                transform: [{ translateY: sheetAnim }],
+              },
+            ]}
+          >
+            <View style={styles.handleContainer}>
+              <View
+                style={[
+                  styles.handle,
+                  { backgroundColor: theme.onSurfaceVariant },
                 ]}
-                keyExtractor={(item) => item.type}
-                renderItem={({ item }) => (
-                  <View>
-                    <Text style={[styles.sectionTitle, { backgroundColor: theme.surfaceVariant, color: theme.onSurfaceVariant }]}>
-                      {item.title}
-                    </Text>
-                    {item.attendees.length > 0 ? (
-                      item.attendees.map((attendee, index) => (
-                        <AttendeeRow key={attendee.id} attendee={attendee} user={user!} index={index} />
-                      ))
-                    ) : (
-                      <Text style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>Ingen påmeldte</Text>
-                    )}
-                  </View>
-                )}
               />
             </View>
-          </BlurView>
+
+            <Text
+              style={[styles.modalTitle, { color: theme.onBackground }]}
+            >
+              Påmeldingsliste
+            </Text>
+
+            <FlatList
+              data={[
+                {
+                  type: "reserved",
+                  title: "Påmeldte",
+                  attendees: reservedAttendees,
+                },
+                ...(waitlistAttendees.length > 0
+                  ? [
+                      {
+                        type: "waitlist",
+                        title: "Venteliste",
+                        attendees: waitlistAttendees,
+                      },
+                    ]
+                  : []),
+              ]}
+              keyExtractor={item => item.type}
+              renderItem={({ item }) => (
+                <View>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      {
+                        backgroundColor: theme.surfaceVariant,
+                        color: theme.onSurfaceVariant,
+                      },
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+
+                  {item.attendees.length > 0 ? (
+                    item.attendees.map((attendee, index) => (
+                      <AttendeeRow
+                        key={attendee.id}
+                        attendee={attendee}
+                        user={user!}
+                        index={index}
+                      />
+                    ))
+                  ) : (
+                    <Text
+                      style={[
+                        styles.emptyText,
+                        { color: theme.onSurfaceVariant },
+                      ]}
+                    >
+                      Ingen påmeldte
+                    </Text>
+                  )}
+                </View>
+              )}
+            />
+          </Animated.View>
         </View>
       </Modal>
     </>
@@ -95,7 +199,16 @@ const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
   const isUser = attendee.userId === user.id
 
   return (
-    <View style={[styles.attendeeRow, { backgroundColor: isUser ? theme.primaryContainer : "transparent" }]}>
+    <View
+      style={[
+        styles.attendeeRow,
+        {
+          backgroundColor: isUser
+            ? theme.primaryContainer
+            : "transparent",
+        },
+      ]}
+    >
       <Text style={[styles.index, { color: theme.onSurfaceVariant }]}>
         {index + 1}.
       </Text>
@@ -106,11 +219,22 @@ const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
       />
 
       <View style={styles.userInfo}>
-        <Text style={[styles.userName, { color: theme.onBackground }]} numberOfLines={1}>
+        <Text
+          style={[styles.userName, { color: theme.onBackground }]}
+          numberOfLines={1}
+        >
           {attendee.user.name}
         </Text>
-        <Text style={[styles.userGrade, { color: theme.onSurfaceVariant }]}>
-          {attendee.userGrade ? `${attendee.userGrade}. klasse` : "Ingen klasse"}
+
+        <Text
+          style={[
+            styles.userGrade,
+            { color: theme.onSurfaceVariant },
+          ]}
+        >
+          {attendee.userGrade
+            ? `${attendee.userGrade}. klasse`
+            : "Ingen klasse"}
         </Text>
       </View>
     </View>
@@ -132,7 +256,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   bottomSheet: {
-    flex: 0.6,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_HEIGHT * 0.6,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
