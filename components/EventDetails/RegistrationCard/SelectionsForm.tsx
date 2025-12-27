@@ -148,7 +148,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
               <TouchableOpacity
                 activeOpacity={1}
                 onPress={(e) => e.stopPropagation()}
-                style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, height: 250, width: 300 }}
+                style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, maxHeight: 250, width: 300 }}
               >
                 {activeSelectionIndex !== null && (
                   <FlatList
