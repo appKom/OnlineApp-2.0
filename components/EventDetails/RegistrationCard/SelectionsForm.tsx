@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Animated } from "react-native"
 import { BlurView } from "@react-native-community/blur"
-import { Feather } from "@expo/vector-icons"
+import { Octicons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
 
@@ -116,7 +116,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
               { backgroundColor: theme.primary, opacity: disabled ? 0.5 : 1 }
             ]}
           >
-            <Feather name="arrow-up-left" size={20} color={theme.onPrimary} />
+            <Octicons name="arrow-up-left" size={20} color={theme.onPrimary} />
           </TouchableOpacity>
         </View>
       ))}

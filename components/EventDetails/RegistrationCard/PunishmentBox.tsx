@@ -1,8 +1,8 @@
 import React from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native"
 import type { Punishment } from "../../../types/punishment"
-import { Ionicons, FontAwesome6, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-import { useTheme, withAlpha, darken } from "utils/theme";
+import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTheme, withAlpha, elevate } from "utils/theme";
 
 interface Props {
   punishment: Punishment
@@ -15,7 +15,7 @@ export const PunishmentBox: React.FC<Props> =  ({ punishment }) => {
     return (
       <View >
         <View >
-          <Feather name="alert-triangle"/>
+          <Ionicons name="alert-circle"/>
           <Text>Du er suspendert</Text>
         </View>
 
@@ -29,7 +29,7 @@ export const PunishmentBox: React.FC<Props> =  ({ punishment }) => {
   return (
     <View style={{backgroundColor: theme.errorContainer, padding: 15, borderRadius: 12, gap: 5}}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-        <Feather name="alert-triangle" color={theme.onErrorContainer} size={17}/>
+        <Ionicons name="alert-circle" color={theme.onErrorContainer} size={17}/>
         <Text style={{ fontSize: 16, color: theme.onErrorContainer }}>{punishment.delay} timer utsatt påmelding pga. prikk</Text>
       </View>
 
