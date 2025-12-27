@@ -22,15 +22,19 @@ interface ViewAttendeesButtonProps {
 }
 
 const SCREEN_HEIGHT = Dimensions.get("window").height
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.6
 
 export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   attendance,
   user,
 }) => {
   const theme = useTheme()
-  const [modalVisible, setModalVisible] = useState(false)
 
-  const sheetAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
+  const [isMounted, setIsMounted] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+
+  const sheetAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current
+  const backdropOpacity = useRef(new Animated.Value(0)).current
 
   const allAttendees = [...attendance.attendees].sort(
     (a, b) =>
@@ -42,28 +46,41 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   const waitlistAttendees = allAttendees.filter(a => !a.reserved)
 
   useEffect(() => {
-    if (modalVisible) {
+    if (!isMounted) return
+
+    Animated.parallel([
       Animated.spring(sheetAnim, {
-        toValue: 0,
+        toValue: isOpen ? 0 : SHEET_HEIGHT,
         friction: 8,
         tension: 70,
         useNativeDriver: true,
-      }).start()
-    } else {
-      Animated.spring(sheetAnim, {
-        toValue: SCREEN_HEIGHT,
-        friction: 8,
-        tension: 70,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: isOpen ? 1 : 0,
+        duration: 200,
         useNativeDriver: true,
-      }).start()
-    }
-  }, [modalVisible])
+      }),
+    ]).start(({ finished }) => {
+      if (finished && !isOpen) {
+        setIsMounted(false)
+      }
+    })
+  }, [isOpen, isMounted])
+
+  const openModal = () => {
+    setIsMounted(true)
+    setIsOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsOpen(false)
+  }
 
   return (
     <>
       <TouchableOpacity
         disabled={!user}
-        onPress={() => setModalVisible(true)}
+        onPress={openModal}
         style={[
           styles.button,
           {
@@ -82,108 +99,113 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
         </Text>
       </TouchableOpacity>
 
-      <Modal
-        visible={modalVisible && !!user}
-        transparent
-        animationType="none"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={{ flex: 1 }}>
-          {/* 🔹 Static blur + backdrop */}
-          <BlurView
-            blurType="dark"
-            blurAmount={5}
-            style={StyleSheet.absoluteFill}
-          >
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={() => setModalVisible(false)}
-              style={{ flex: 1 }}
-            />
-          </BlurView>
-
-          {/* 🔹 Animated bottom sheet */}
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              {
-                backgroundColor: theme.background,
-                transform: [{ translateY: sheetAnim }],
-              },
-            ]}
-          >
-            <View style={styles.handleContainer}>
-              <View
-                style={[
-                  styles.handle,
-                  { backgroundColor: theme.onSurfaceVariant },
-                ]}
-              />
-            </View>
-
-            <Text
-              style={[styles.modalTitle, { color: theme.onBackground }]}
-            >
-              Påmeldingsliste
-            </Text>
-
-            <FlatList
-              data={[
-                {
-                  type: "reserved",
-                  title: "Påmeldte",
-                  attendees: reservedAttendees,
-                },
-                ...(waitlistAttendees.length > 0
-                  ? [
-                      {
-                        type: "waitlist",
-                        title: "Venteliste",
-                        attendees: waitlistAttendees,
-                      },
-                    ]
-                  : []),
+      {isMounted && (
+        <Modal
+          visible
+          transparent
+          animationType="none"
+          onRequestClose={closeModal}
+        >
+          <View style={{ flex: 1 }}>
+            {/* 🔹 Animated blur backdrop */}
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                { opacity: backdropOpacity },
               ]}
-              keyExtractor={item => item.type}
-              renderItem={({ item }) => (
-                <View>
-                  <Text
-                    style={[
-                      styles.sectionTitle,
-                      {
-                        backgroundColor: theme.surfaceVariant,
-                        color: theme.onSurfaceVariant,
-                      },
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
+            >
+              <BlurView blurType="dark" blurAmount={5} style={{ flex: 1 }}>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={closeModal}
+                  style={{ flex: 1 }}
+                />
+              </BlurView>
+            </Animated.View>
 
-                  {item.attendees.length > 0 ? (
-                    item.attendees.map((attendee, index) => (
-                      <AttendeeRow
-                        key={attendee.id}
-                        attendee={attendee}
-                        user={user!}
-                        index={index}
-                      />
-                    ))
-                  ) : (
+            {/* 🔹 Animated bottom sheet */}
+            <Animated.View
+              style={[
+                styles.bottomSheet,
+                {
+                  backgroundColor: theme.background,
+                  transform: [{ translateY: sheetAnim }],
+                },
+              ]}
+            >
+              <View style={styles.handleContainer}>
+                <View
+                  style={[
+                    styles.handle,
+                    { backgroundColor: theme.onSurfaceVariant },
+                  ]}
+                />
+              </View>
+
+              <Text
+                style={[styles.modalTitle, { color: theme.onBackground }]}
+              >
+                Påmeldingsliste
+              </Text>
+
+              <FlatList
+                data={[
+                  {
+                    type: "reserved",
+                    title: "Påmeldte",
+                    attendees: reservedAttendees,
+                  },
+                  ...(waitlistAttendees.length > 0
+                    ? [
+                        {
+                          type: "waitlist",
+                          title: "Venteliste",
+                          attendees: waitlistAttendees,
+                        },
+                      ]
+                    : []),
+                ]}
+                keyExtractor={item => item.type}
+                renderItem={({ item }) => (
+                  <View>
                     <Text
                       style={[
-                        styles.emptyText,
-                        { color: theme.onSurfaceVariant },
+                        styles.sectionTitle,
+                        {
+                          backgroundColor: theme.surfaceVariant,
+                          color: theme.onSurfaceVariant,
+                        },
                       ]}
                     >
-                      Ingen påmeldte
+                      {item.title}
                     </Text>
-                  )}
-                </View>
-              )}
-            />
-          </Animated.View>
-        </View>
-      </Modal>
+
+                    {item.attendees.length > 0 ? (
+                      item.attendees.map((attendee, index) => (
+                        <AttendeeRow
+                          key={attendee.id}
+                          attendee={attendee}
+                          user={user!}
+                          index={index}
+                        />
+                      ))
+                    ) : (
+                      <Text
+                        style={[
+                          styles.emptyText,
+                          { color: theme.onSurfaceVariant },
+                        ]}
+                      >
+                        Ingen påmeldte
+                      </Text>
+                    )}
+                  </View>
+                )}
+              />
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
     </>
   )
 }
@@ -260,7 +282,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.6,
+    height: SHEET_HEIGHT,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
