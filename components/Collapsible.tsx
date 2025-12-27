@@ -116,35 +116,39 @@ export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
 }) => {
   const { contentAnim } = useCollapsible()
   const measuredHeight = useRef(0)
+  const [ready, setReady] = useState(false)
 
   const height = contentAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, measuredHeight.current || 1],
-  })
-
-  const opacity = contentAnim.interpolate({
-    inputRange: [0, 0.2, 1],
-    outputRange: [0, 0, 1],
+    outputRange: [0, measuredHeight.current],
   })
 
   return (
-    <Animated.View
-      style={{
-        height,
-        opacity,
-        overflow: "hidden",
-      }}
-    >
-      <View
-        onLayout={e => {
-          if (!measuredHeight.current) {
+    <>
+      {!ready && (
+        <View
+          style={{ position: "absolute", opacity: 0, zIndex: -1 }}
+          onLayout={e => {
             measuredHeight.current = e.nativeEvent.layout.height
-          }
-        }}
-      >
-        {children}
-      </View>
-    </Animated.View>
+            setReady(true)
+          }}
+        >
+          {children}
+        </View>
+      )}
+
+      {/* 🔹 Animated container */}
+      {ready && (
+        <Animated.View
+          style={{
+            height,
+            overflow: "hidden",
+          }}
+        >
+          {children}
+        </Animated.View>
+      )}
+    </>
   )
 }
 
