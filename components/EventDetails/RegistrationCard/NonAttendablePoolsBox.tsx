@@ -1,5 +1,5 @@
 import React from "react"
-import { View, Text, StyleSheet } from "react-native"
+import { View, Text, StyleSheet, Animated } from "react-native"
 import type { Attendance, AttendancePool } from "../../../types/event"
 import { getAttendablePool, 
   getNonAttendablePools, 
@@ -8,7 +8,7 @@ import { getAttendablePool,
 } from "../../../utils/attendance"
 import type { User } from "../../../types/user"
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons"
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "../../Collapsible"
+import { Collapsible, CollapsibleTrigger, CollapsibleContent, useCollapsible } from "../../Collapsible"
 import { useTheme, withAlpha, elevate } from "../../../utils/theme"
 
 interface NonAttendablePoolsBoxProps {
@@ -34,12 +34,20 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({att
     <View style={{ backgroundColor: withAlpha(theme.secondaryContainer, 0.99), padding: 12, borderRadius: 10 }}>
       <Collapsible defaultOpen={!hasAttendablePool}>
       <CollapsibleTrigger>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text style={{ color: theme.onSecondaryContainer, fontSize: 17, marginBottom: 5 }}>
-            {hasAttendablePool ? "Andre påmeldingsgrupper" : "Påmeldingsgrupper"}
-          </Text>
-          <MaterialIcons name="keyboard-arrow-down" color={theme.onSecondaryContainer} size={30}/>
-        </View>
+        {(isOpen, rotation) => (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={{ color: theme.onSecondaryContainer, fontSize: 17, marginBottom: 5 }}>
+              {hasAttendablePool ? "Andre påmeldingsgrupper" : "Påmeldingsgrupper"}
+            </Text>
+            <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+              <MaterialIcons 
+                name="keyboard-arrow-down" 
+                color={theme.onSecondaryContainer} 
+                size={30}
+              />
+            </Animated.View>
+          </View>
+        )}
       </CollapsibleTrigger>
 
       <CollapsibleContent>

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react"
-import { View, TouchableOpacity, LayoutAnimation, Platform, UIManager } from "react-native"
+import { View, TouchableOpacity, LayoutAnimation, Platform, UIManager, Animated } from "react-native"
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -14,6 +14,7 @@ interface CollapsibleProps {
 interface CollapsibleContextType {
   isOpen: boolean
   toggleOpen: () => void
+  rotationAnim: Animated.Value
 }
 
 const CollapsibleContext = React.createContext<CollapsibleContextType | undefined>(undefined)
@@ -28,29 +29,43 @@ export const useCollapsible = () => {
 
 export const Collapsible: React.FC<CollapsibleProps> = ({ children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  const rotationAnim = React.useRef(new Animated.Value(defaultOpen ? 1 : 0)).current
 
   const toggleOpen = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setIsOpen((prev) => !prev)
-  }, [])
+    setIsOpen((prev) => {
+      const newState = !prev
+      Animated.timing(rotationAnim, {
+        toValue: newState ? 1 : 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start()
+      return newState
+    })
+  }, [rotationAnim])
 
   return (
-    <CollapsibleContext.Provider value={{ isOpen, toggleOpen }}>
+    <CollapsibleContext.Provider value={{ isOpen, toggleOpen, rotationAnim }}>
       <View>{children}</View>
     </CollapsibleContext.Provider>
   )
 }
 
 interface CollapsibleTriggerProps {
-  children: React.ReactNode
+  children: ((isOpen: boolean, rotation: Animated.AnimatedInterpolation<string | number>) => React.ReactElement) | React.ReactNode
 }
 
 export const CollapsibleTrigger: React.FC<CollapsibleTriggerProps> = ({ children }) => {
-  const { toggleOpen } = useCollapsible()
+  const { toggleOpen, isOpen, rotationAnim } = useCollapsible()
+
+  const rotation = rotationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["-90deg", "0deg"],
+  })
 
   return (
     <TouchableOpacity onPress={toggleOpen} activeOpacity={0.6}>
-      {children}
+      {typeof children === "function" ? (children as any)(isOpen, rotation) : children}
     </TouchableOpacity>
   )
 }
