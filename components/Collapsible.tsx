@@ -35,9 +35,10 @@ export const Collapsible: React.FC<CollapsibleProps> = ({ children, defaultOpen 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setIsOpen((prev) => {
       const newState = !prev
-      Animated.timing(rotationAnim, {
+      Animated.spring(rotationAnim, {
         toValue: newState ? 1 : 0,
-        duration: 300,
+        friction: 6,
+        tension: 40,
         useNativeDriver: false,
       }).start()
       return newState
