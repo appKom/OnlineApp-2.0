@@ -49,15 +49,22 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     if (!isMounted) return
 
     Animated.parallel([
-      Animated.spring(sheetAnim, {
-        toValue: isOpen ? 0 : SHEET_HEIGHT,
-        friction: 8,
-        tension: 70,
-        useNativeDriver: true,
-      }),
+      isOpen
+        ? Animated.spring(sheetAnim, {
+            toValue: 0,
+            friction: 8,
+            tension: 70,
+            useNativeDriver: true,
+          })
+        : Animated.timing(sheetAnim, {
+            toValue: SHEET_HEIGHT,
+            duration: 220,
+            useNativeDriver: true,
+          }),
+
       Animated.timing(backdropOpacity, {
         toValue: isOpen ? 1 : 0,
-        duration: 200,
+        duration: isOpen ? 200 : 120,
         useNativeDriver: true,
       }),
     ]).start(({ finished }) => {
@@ -66,6 +73,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       }
     })
   }, [isOpen, isMounted])
+
 
   const openModal = () => {
     setIsMounted(true)

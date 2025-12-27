@@ -194,7 +194,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       <View style={styles.row}>
         {attendee?.reserved && <TicketButton attendee={attendee} />}
-        <ViewAttendeesButton attendance={attendance} user={user} attendeeListOpen={false} setAttendeeListOpen={() => {}} />
+        <ViewAttendeesButton attendance={attendance} user={user} />
       </View>
 
       <RegistrationButton
