@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700"},
   section: { marginVertical: 8 },
   subtitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
-  row: { flexDirection: "row", gap: 12, alignItems: "center" },
+  row: { flexDirection: "row", gap: 12 },
   ruleRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
 })
 
