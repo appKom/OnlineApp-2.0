@@ -19,7 +19,7 @@ import { SelectionsForm } from "./SelectionsForm"
 import { TicketButton } from "./TicketButton"
 import { ViewAttendeesButton } from "./ViewAttendeesButton"
 
-import { getAttendanceStatus } from "../attendanceStatus"
+import { getAttendanceStatus } from "../../../types/attendanceStatus"
 import { useTheme } from "../../../utils/theme"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"

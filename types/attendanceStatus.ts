@@ -1,4 +1,4 @@
-import type { Attendance } from "../../types/event"
+import type { Attendance } from "./event"
 
 export type AttendanceStatus = "NotOpened" | "Open" | "Closed"
 
