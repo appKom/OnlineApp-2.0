@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Animated } from "react-native"
-import { BlurView } from "@react-native-community/blur"
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native"
 import { Octicons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
+import { AnimatedModal } from "../../AnimatedModal"
 
 interface Props {
   attendance: Attendance
@@ -27,10 +27,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
     })
   )
 
-  const [modalVisible, setModalVisible] = useState(false)
-  const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null)
-  const [scaleAnim] = useState(new Animated.Value(0))
-  const [opacityAnim] = useState(new Animated.Value(0))
+  const [openModalId, setOpenModalId] = useState<string | null>(null)
 
   const handleSelectionChange = useCallback(
     (selectionIndex: number, optionId: string) => {
@@ -48,150 +45,90 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
       }
 
       setSelections(updatedSelections)
-      closeModal()
       onSubmit(updatedSelections)
     },
-    [attendance, onSubmit]
+    [attendance, selections, onSubmit]
   )
-
-  const openModal = useCallback(
-    (index: number) => {
-      setActiveSelectionIndex(index)
-      setModalVisible(true)
-
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 5,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start()
-    },
-    [scaleAnim, opacityAnim]
-  )
-
-  const closeModal = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setModalVisible(false)
-    })
-  }, [scaleAnim, opacityAnim])
 
   return (
     <>
       {attendance.selections.map((selection, index) => (
-        <View key={selection.id} style={styles.selectionRow}>
-          <View style={styles.selectionInfo}>
-            <Text style={[styles.selectionTitle, { color: theme.onBackground }]}>{selection.name}</Text>
-            {selections[index]?.optionName ? (
-              <Text style={[styles.selectedOption, { color: theme.onSurfaceVariant }]}>
-                Ditt valg: {selections[index].optionName}
-              </Text>
-            ) : (
-              <Text style={styles.errorMessage}>Du må velge et alternativ</Text>
-            )}
-          </View>
-
+        <View key={selection.id}>
           <TouchableOpacity
-            disabled={disabled}
-            onPress={() => openModal(index)}
-            style={[
-              styles.selectButton,
-              { backgroundColor: theme.primary, opacity: disabled ? 0.5 : 1 }
-            ]}
+            onPress={() => setOpenModalId(selection.id)}
+            style={styles.selectionRow}
           >
-            <Octicons name="arrow-up-left" size={20} color={theme.onPrimary} />
+            <View style={styles.selectionInfo}>
+              <Text style={[styles.selectionTitle, { color: theme.onBackground }]}>{selection.name}</Text>
+              {selections[index]?.optionName ? (
+                <Text style={[styles.selectedOption, { color: theme.onSurfaceVariant }]}>
+                  Ditt valg: {selections[index].optionName}
+                </Text>
+              ) : (
+                <Text style={styles.errorMessage}>Du må velge et alternativ</Text>
+              )}
+            </View>
+
+            <View
+              style={[
+                styles.selectButton,
+                { backgroundColor: theme.primary, opacity: disabled ? 0.5 : 1 }
+              ]}
+            >
+              <Octicons name="arrow-up-left" size={20} color={theme.onPrimary} />
+            </View>
           </TouchableOpacity>
+
+          <AnimatedModal
+            visible={openModalId === selection.id}
+            onClose={() => setOpenModalId(null)}
+            modalWidth={300}
+            modalMaxWidth={350}
+          >
+            {(closeModal) => (
+              <View style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, maxHeight: 250 }}>
+                <FlatList
+                  data={selection.options}
+                  keyExtractor={(item) => item.id}
+                  scrollEnabled={selection.options.length > 4}
+                  contentContainerStyle={{ gap: 3 }}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        handleSelectionChange(index, item.id)
+                        closeModal()
+                      }}
+                      style={{
+                        backgroundColor:
+                          selections[index]?.optionId === item.id
+                            ? theme.tertiaryContainer
+                            : theme.secondaryContainer,
+                        height: 50,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color:
+                            selections[index]?.optionId === item.id
+                              ? theme.onTertiaryContainer
+                              : theme.onSecondaryContainer,
+                        }}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
+          </AnimatedModal>
         </View>
       ))}
-
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => closeModal()}
-      >
-        <Animated.View 
-          style={[
-            StyleSheet.absoluteFill,
-            { opacity: opacityAnim }
-          ]}
-        >
-          <BlurView blurType="dark" blurAmount={5} style={StyleSheet.absoluteFill}>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={() => closeModal()}
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-            >
-              <Animated.View
-                style={{
-                  transform: [{ scale: scaleAnim }],
-                  opacity: opacityAnim,
-                }}
-              >
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={(e) => e.stopPropagation()}
-                style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, maxHeight: 250, width: 300 }}
-              >
-                {activeSelectionIndex !== null && (
-                  <FlatList
-                    data={attendance.selections[activeSelectionIndex].options}
-                    keyExtractor={(item) => item.id}
-                    scrollEnabled={attendance.selections[activeSelectionIndex].options.length > 4}
-                    contentContainerStyle={{ gap: 3 }}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        onPress={() => handleSelectionChange(activeSelectionIndex, item.id)}
-                        style={
-                          {
-                            backgroundColor:
-                              selections[activeSelectionIndex]?.optionId === item.id
-                                ? theme.tertiaryContainer
-                                : theme.secondaryContainer,
-                            height: 50, justifyContent: "center", alignItems: "center", borderRadius: 12
-                          }
-                        }
-                      >
-                        <Text
-                          style={[
-                            styles.pillText,
-                            {
-                              color:
-                                selections[activeSelectionIndex]?.optionId === item.id
-                                  ? theme.onTertiaryContainer
-                                  : theme.onSecondaryContainer,
-                            },
-                          ]}
-                        >
-                          {item.name}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  />
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-            </TouchableOpacity>
-          </BlurView>
-        </Animated.View>
-      </Modal>
     </>
   )
 }
