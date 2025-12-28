@@ -43,8 +43,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   const sheetAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
 
-  /* ---------------- Build flat list ---------------- */
-
   const listData: ListItem[] = useMemo(() => {
     const sorted = [...attendance.attendees].sort(
       (a, b) =>
@@ -92,8 +90,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     return data
   }, [attendance.attendees])
 
-  /* ---------------- Open / close animation ---------------- */
-
   useEffect(() => {
     if (!isMounted) return
 
@@ -132,8 +128,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     setIsOpen(false)
   }
 
-  /* ---------------- PanResponder (header only) ---------------- */
-
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -154,8 +148,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       },
     })
   ).current
-
-  /* ---------------- Render ---------------- */
 
   return (
     <>
@@ -180,7 +172,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       {isMounted && (
         <Modal transparent animationType="none" onRequestClose={closeModal}>
           <View style={{ flex: 1 }}>
-            {/* Backdrop */}
             <Animated.View
               style={[StyleSheet.absoluteFill, { opacity: backdropOpacity }]}
             >
@@ -193,7 +184,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
               </BlurView>
             </Animated.View>
 
-            {/* Sheet */}
             <Animated.View
               style={[
                 styles.bottomSheet,
@@ -248,8 +238,6 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   )
 }
 
-/* ---------------- Row ---------------- */
-
 const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => {
   const theme = useTheme()
   const isUser = attendee.userId === user.id
@@ -281,8 +269,6 @@ const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => 
   )
 }
 
-/* ---------------- Styles ---------------- */
-
 const styles = StyleSheet.create({
   button: {
     flexDirection: "row",
@@ -296,8 +282,7 @@ const styles = StyleSheet.create({
   bottomSheet: {
     position: "absolute",
     bottom: 0,
-    left: 0,
-    right: 0,
+    width: "100%",
     height: SHEET_HEIGHT,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -306,12 +291,12 @@ const styles = StyleSheet.create({
   dragHeader: {
     alignItems: "center",
     paddingVertical: 12,
+    gap: 8,
   },
   handle: {
     width: 40,
     height: 6,
     borderRadius: 3,
-    marginBottom: 8,
   },
   modalTitle: { fontSize: 20, fontWeight: "600" },
   sectionTitle: {
