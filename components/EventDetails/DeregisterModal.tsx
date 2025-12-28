@@ -4,12 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   FlatList,
 } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { BlurView } from "@react-native-community/blur"
 import { useTheme } from "../../utils/theme"
+import { AnimatedModal } from "../AnimatedModal"
 import type { Attendee, Event } from "../../types/event"
 
 export const DeregisterReasonTypes = {
@@ -84,103 +83,87 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
   }
 
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-      <BlurView blurType="dark" blurAmount={5} style={styles.blurContainer}>
-        <TouchableOpacity style={styles.overlay} onPress={() => setOpen(false)} activeOpacity={1}>
-          <View style={styles.centerContainer}>
-            <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
-              <TouchableOpacity
-                style={[
-                  styles.selectTrigger,
-                  {
-                    backgroundColor: theme.surfaceVariant,
-                  },
-                ]}
-                onPress={() => setShowDropdown(!showDropdown)}
-              >
-                <Text
-                  style={[
-                    styles.selectValue,
-                    {
-                      color: selectedReason ? theme.onSurface : theme.onSurfaceVariant,
-                    },
-                  ]}
-                >
-                  {selectedReason ? mapDeregisterReasonTypeToLabel(selectedReason) : "Velg avmeldingsgrunn"}
-                </Text>
-                <MaterialCommunityIcons
-                  name={showDropdown ? "chevron-up" : "chevron-down"}
-                  size={24}
-                  color={theme.onSurfaceVariant}
-                />
-              </TouchableOpacity>
+    <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={300} modalMaxWidth={350}>
+      {() => (
+        <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+          <TouchableOpacity
+            style={[
+              styles.selectTrigger,
+              {
+                backgroundColor: theme.surfaceVariant,
+              },
+            ]}
+            onPress={() => setShowDropdown(!showDropdown)}
+          >
+            <Text
+              style={[
+                styles.selectValue,
+                {
+                  color: selectedReason ? theme.onSurface : theme.onSurfaceVariant,
+                },
+              ]}
+            >
+              {selectedReason ? mapDeregisterReasonTypeToLabel(selectedReason) : "Velg avmeldingsgrunn"}
+            </Text>
+            <MaterialCommunityIcons
+              name={showDropdown ? "chevron-up" : "chevron-down"}
+              size={24}
+              color={theme.onSurfaceVariant}
+            />
+          </TouchableOpacity>
 
-              {showDropdown && (
-                <View
-                  style={[
-                    styles.dropdown,
-                    {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.outline,
-                    },
-                  ]}
-                >
-                  <FlatList
-                    data={DEREGISTER_REASON_TYPE_OPTIONS}
-                    scrollEnabled={false}
-                    nestedScrollEnabled={false}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={[
-                          styles.dropdownItem,
-                          {
-                            backgroundColor:
-                              selectedReason === item.value ? theme.primaryContainer : theme.surface,
-                            borderBottomColor: theme.outline,
-                          },
-                        ]}
-                        onPress={() => handleSelectReason(item.value)}
-                      >
-                        <Text
-                          style={[
-                            styles.dropdownItemText,
-                            {
-                              color:
-                                selectedReason === item.value ? theme.onPrimaryContainer : theme.onSurface,
-                            },
-                          ]}
-                        >
-                          {item.label}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    keyExtractor={(item) => item.value}
-                  />
-                </View>
-              )}
+          {showDropdown && (
+            <View
+              style={[
+                styles.dropdown,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.outline,
+                },
+              ]}
+            >
+              <FlatList
+                data={DEREGISTER_REASON_TYPE_OPTIONS}
+                scrollEnabled={false}
+                nestedScrollEnabled={false}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdownItem,
+                      {
+                        backgroundColor:
+                          selectedReason === item.value ? theme.primaryContainer : theme.surface,
+                        borderBottomColor: theme.outline,
+                      },
+                    ]}
+                    onPress={() => handleSelectReason(item.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownItemText,
+                        {
+                          color:
+                            selectedReason === item.value ? theme.onPrimaryContainer : theme.onSurface,
+                        },
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => item.value}
+              />
             </View>
-          </View>
-        </TouchableOpacity>
-      </BlurView>
-    </Modal>
+          )}
+        </View>
+      )}
+    </AnimatedModal>
   )
 }
 
 export default DeregisterModal
 
 const styles = StyleSheet.create({
-  blurContainer: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  centerContainer: {
-    width: "80%",
-    maxWidth: 300,
-  },
   modalContent: {
     borderRadius: 12,
     overflow: "hidden",
