@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useMemo } from "react"
 import {
   View,
   Text,
@@ -22,6 +22,10 @@ interface ViewAttendeesButtonProps {
   user: User | null
 }
 
+type ListItem =
+  | { type: "header"; id: string; title: string }
+  | { type: "attendee"; id: string; attendee: Attendee }
+
 const SCREEN_HEIGHT = Dimensions.get("window").height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.6
 const CLOSE_DISTANCE = 120
@@ -39,14 +43,54 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   const sheetAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
 
-  const allAttendees = [...attendance.attendees].sort(
-    (a, b) =>
-      new Date(a.earliestReservationAt).getTime() -
-      new Date(b.earliestReservationAt).getTime()
-  )
+  /* ---------------- Build flat list ---------------- */
 
-  const reservedAttendees = allAttendees.filter(a => a.reserved)
-  const waitlistAttendees = allAttendees.filter(a => !a.reserved)
+  const listData: ListItem[] = useMemo(() => {
+    const sorted = [...attendance.attendees].sort(
+      (a, b) =>
+        new Date(a.earliestReservationAt).getTime() -
+        new Date(b.earliestReservationAt).getTime()
+    )
+
+    const reserved = sorted.filter(a => a.reserved)
+    const waitlist = sorted.filter(a => !a.reserved)
+
+    const data: ListItem[] = []
+
+    if (reserved.length > 0) {
+      data.push({
+        type: "header",
+        id: "header-reserved",
+        title: "Påmeldte",
+      })
+
+      reserved.forEach(a =>
+        data.push({
+          type: "attendee",
+          id: a.id,
+          attendee: a,
+        })
+      )
+    }
+
+    if (waitlist.length > 0) {
+      data.push({
+        type: "header",
+        id: "header-waitlist",
+        title: "Venteliste",
+      })
+
+      waitlist.forEach(a =>
+        data.push({
+          type: "attendee",
+          id: a.id,
+          attendee: a,
+        })
+      )
+    }
+
+    return data
+  }, [attendance.attendees])
 
   /* ---------------- Open / close animation ---------------- */
 
@@ -88,23 +132,16 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     setIsOpen(false)
   }
 
-  /* ---------------- PanResponder (HANDLE ONLY) ---------------- */
+  /* ---------------- PanResponder (header only) ---------------- */
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-
-      onPanResponderMove: (_, gesture) => {
-        if (gesture.dy > 0) {
-          sheetAnim.setValue(gesture.dy)
-        }
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) sheetAnim.setValue(g.dy)
       },
-
-      onPanResponderRelease: (_, gesture) => {
-        const shouldClose =
-          gesture.dy > CLOSE_DISTANCE || gesture.vy > CLOSE_VELOCITY
-
-        if (shouldClose) {
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > CLOSE_DISTANCE || g.vy > CLOSE_VELOCITY) {
           closeModal()
         } else {
           Animated.spring(sheetAnim, {
@@ -127,10 +164,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
         onPress={openModal}
         style={[
           styles.button,
-          {
-            backgroundColor: theme.secondaryContainer,
-            opacity: !user ? 0.5 : 1,
-          },
+          { backgroundColor: theme.secondaryContainer, opacity: !user ? 0.5 : 1 },
         ]}
       >
         <MaterialIcons
@@ -144,19 +178,11 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       </TouchableOpacity>
 
       {isMounted && (
-        <Modal
-          visible
-          transparent
-          animationType="none"
-          onRequestClose={closeModal}
-        >
+        <Modal transparent animationType="none" onRequestClose={closeModal}>
           <View style={{ flex: 1 }}>
             {/* Backdrop */}
             <Animated.View
-              style={[
-                StyleSheet.absoluteFill,
-                { opacity: backdropOpacity },
-              ]}
+              style={[StyleSheet.absoluteFill, { opacity: backdropOpacity }]}
             >
               <BlurView blurType="dark" blurAmount={5} style={{ flex: 1 }}>
                 <TouchableOpacity
@@ -167,7 +193,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
               </BlurView>
             </Animated.View>
 
-            {/* Bottom sheet */}
+            {/* Sheet */}
             <Animated.View
               style={[
                 styles.bottomSheet,
@@ -177,46 +203,27 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                 },
               ]}
             >
-              {/* ✅ DRAGGABLE HEADER */}
-              <View
-                {...panResponder.panHandlers}
-                style={styles.dragHeader}
-              >
+              <View {...panResponder.panHandlers} style={styles.dragHeader}>
                 <View
                   style={[
                     styles.handle,
                     { backgroundColor: theme.onSurfaceVariant },
                   ]}
                 />
-
-                <Text
-                  style={[styles.modalTitle, { color: theme.onBackground }]}
-                >
+                <Text style={[styles.modalTitle, { color: theme.onBackground }]}>
                   Påmeldingsliste
                 </Text>
               </View>
 
-
               <FlatList
-                data={[
-                  {
-                    type: "reserved",
-                    title: "Påmeldte",
-                    attendees: reservedAttendees,
-                  },
-                  ...(waitlistAttendees.length > 0
-                    ? [
-                        {
-                          type: "waitlist",
-                          title: "Venteliste",
-                          attendees: waitlistAttendees,
-                        },
-                      ]
-                    : []),
-                ]}
-                keyExtractor={item => item.type}
-                renderItem={({ item }) => (
-                  <View>
+                data={listData}
+                keyExtractor={item => item.id}
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                removeClippedSubviews
+                renderItem={({ item }) =>
+                  item.type === "header" ? (
                     <Text
                       style={[
                         styles.sectionTitle,
@@ -228,28 +235,10 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                     >
                       {item.title}
                     </Text>
-
-                    {item.attendees.length > 0 ? (
-                      item.attendees.map((attendee, index) => (
-                        <AttendeeRow
-                          key={attendee.id}
-                          attendee={attendee}
-                          user={user!}
-                          index={index}
-                        />
-                      ))
-                    ) : (
-                      <Text
-                        style={[
-                          styles.emptyText,
-                          { color: theme.onSurfaceVariant },
-                        ]}
-                      >
-                        Ingen påmeldte
-                      </Text>
-                    )}
-                  </View>
-                )}
+                  ) : (
+                    <AttendeeRow attendee={item.attendee} user={user!} />
+                  )
+                }
               />
             </Animated.View>
           </View>
@@ -259,15 +248,9 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   )
 }
 
-/* ---------------- Attendee row ---------------- */
+/* ---------------- Row ---------------- */
 
-interface AttendeeRowProps {
-  attendee: Attendee
-  user: User
-  index: number
-}
-
-const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
+const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => {
   const theme = useTheme()
   const isUser = attendee.userId === user.id
 
@@ -275,36 +258,20 @@ const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
     <View
       style={[
         styles.attendeeRow,
-        {
-          backgroundColor: isUser
-            ? theme.primaryContainer
-            : "transparent",
-        },
+        { backgroundColor: isUser ? theme.primaryContainer : "transparent" },
       ]}
     >
-      <Text style={[styles.index, { color: theme.onSurfaceVariant }]}>
-        {index + 1}.
-      </Text>
-
       <Image
-        source={attendee.user.imageUrl ? { uri: attendee.user.imageUrl } : undefined}
+        source={
+          attendee.user.imageUrl ? { uri: attendee.user.imageUrl } : undefined
+        }
         style={styles.avatar}
       />
-
-      <View style={styles.userInfo}>
-        <Text
-          style={[styles.userName, { color: theme.onBackground }]}
-          numberOfLines={1}
-        >
+      <View>
+        <Text style={[styles.userName, { color: theme.onBackground }]}>
           {attendee.user.name}
         </Text>
-
-        <Text
-          style={[
-            styles.userGrade,
-            { color: theme.onSurfaceVariant },
-          ]}
-        >
+        <Text style={[styles.userGrade, { color: theme.onSurfaceVariant }]}>
           {attendee.userGrade
             ? `${attendee.userGrade}. klasse`
             : "Ingen klasse"}
@@ -319,17 +286,13 @@ const AttendeeRow = ({ attendee, user, index }: AttendeeRowProps) => {
 const styles = StyleSheet.create({
   button: {
     flexDirection: "row",
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  buttonText: { fontSize: 16, fontWeight: "600" },
   bottomSheet: {
     position: "absolute",
     bottom: 0,
@@ -340,73 +303,34 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingHorizontal: 16,
   },
-  handleContainer: {
+  dragHeader: {
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   handle: {
     width: 40,
     height: 6,
     borderRadius: 3,
-    alignSelf: "center"
+    marginBottom: 8,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 16,
-  },
+  modalTitle: { fontSize: 20, fontWeight: "600" },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     marginTop: 16,
     marginBottom: 8,
+    padding: 8,
     borderRadius: 8,
+    fontWeight: "600",
   },
   attendeeRow: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: 8,
-    marginVertical: 4,
+    gap: 12,
+    padding: 12,
     borderRadius: 8,
+    marginVertical: 4,
   },
-  index: {
-    fontSize: 12,
-    fontWeight: "600",
-    width: 30,
-    textAlign: "right",
-    marginRight: 8,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-    backgroundColor: "#ccc",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  userGrade: {
-    fontSize: 12,
-  },
-  emptyText: {
-    fontSize: 14,
-    marginHorizontal: 16,
-    marginVertical: 8,
-  },
-    dragHeader: {
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
+  avatar: { width: 40, height: 40, borderRadius: 20 },
+  userName: { fontWeight: "600" },
+  userGrade: { fontSize: 12 },
 })
 
 export default ViewAttendeesButton
