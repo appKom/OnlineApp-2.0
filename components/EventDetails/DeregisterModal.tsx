@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  TextInput,
 } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useTheme, elevate } from "../../utils/theme"
@@ -64,6 +65,7 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
   const theme = useTheme()
   const [selectedReason, setSelectedReason] = useState<DeregisterReasonType | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [begrunnelse, setBegrunnelse] = useState("")
 
   useEffect(() => {
     if (!open) {
@@ -123,7 +125,27 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
             </View>
           )}
 
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ color: theme.onPrimaryContainer, fontSize: 14, marginBottom: 8 }}>Begrunnelse</Text>
+            <TextInput
+              placeholder="Skriv inn begrunnelse..."
+              placeholderTextColor={elevate(theme.onPrimaryContainer, 30)}
+              multiline
+              numberOfLines={4}
+              value={begrunnelse}
+              onChangeText={setBegrunnelse}
+              style={{
+                backgroundColor: elevate(theme.primaryContainer, 10),
+                color: theme.onPrimaryContainer,
+                padding: 10,
+                borderRadius: 8,
+                fontFamily: 'System',
+                fontSize: 14,
+              }}
+            />
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 5 }}>
             <TouchableOpacity
               style={{ backgroundColor: theme.tertiaryContainer, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
               onPress={() => setOpen(false)}
@@ -138,7 +160,7 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
                 if (selectedReason) {
                   unregisterForAttendance({
                     type: selectedReason,
-                    details: null,
+                    details: begrunnelse || null,
                   })
                   setOpen(false)
                 }
