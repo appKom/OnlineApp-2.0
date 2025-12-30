@@ -7,7 +7,7 @@ import {
   FlatList,
 } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useTheme } from "../../utils/theme"
+import { useTheme, elevate } from "../../utils/theme"
 import { AnimatedModal } from "../AnimatedModal"
 import type { Attendee, Event } from "../../types/event"
 
@@ -26,11 +26,11 @@ export type DeregisterReasonType = (typeof DeregisterReasonTypes)[keyof typeof D
 const mapDeregisterReasonTypeToLabel = (type: DeregisterReasonType): string => {
   const labels: Record<DeregisterReasonType, string> = {
     SCHOOL: "Skole",
-    WORK: "Arbeid",
+    WORK: "Jobb",
     ECONOMY: "Økonomi",
-    TIME: "Tid",
+    TIME: "Tidsklemma",
     SICK: "Sykdom",
-    NO_FAMILIAR_FACES: "Kjenner ingen",
+    NO_FAMILIAR_FACES: "Ingen bekjentskap",
     OTHER: "Annet",
   }
   return labels[type] || "Velg grunn"
@@ -75,67 +75,40 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
   const handleSelectReason = (reason: DeregisterReasonType) => {
     setSelectedReason(reason)
     setShowDropdown(false)
-    unregisterForAttendance({
-      type: reason,
-      details: null,
-    })
-    setOpen(false)
   }
 
   return (
     <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={300} modalMaxWidth={350}>
       {() => (
-        <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+        <View style={{ backgroundColor: theme.primaryContainer, padding: 15, borderRadius: 12, gap: 5 }}>
+          <Text style={{ color: theme.onPrimaryContainer, fontSize: 17 }}>Er du sikker?</Text>
+
           <TouchableOpacity
-            style={[
-              styles.selectTrigger,
-              {
-                backgroundColor: theme.surfaceVariant,
-              },
-            ]}
+            style={ { backgroundColor: theme.tertiaryContainer, padding: 7, borderRadius: 15 }}
             onPress={() => setShowDropdown(!showDropdown)}
           >
-            <Text
-              style={[
-                styles.selectValue,
-                {
-                  color: selectedReason ? theme.onSurface : theme.onSurfaceVariant,
-                },
-              ]}
-            >
-              {selectedReason ? mapDeregisterReasonTypeToLabel(selectedReason) : "Velg avmeldingsgrunn"}
-            </Text>
-            <MaterialCommunityIcons
-              name={showDropdown ? "chevron-up" : "chevron-down"}
-              size={24}
-              color={theme.onSurfaceVariant}
-            />
+            <View style={{ backgroundColor: selectedReason ? elevate(theme.tertiaryContainer, 25) : elevate(theme.tertiaryContainer, 10), flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}>
+              <Text style={{ color: selectedReason ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10) }} >
+                {selectedReason ? mapDeregisterReasonTypeToLabel(selectedReason) : "Velg avmeldingsgrunn"}
+              </Text>
+              <MaterialCommunityIcons
+                name={showDropdown ? "chevron-up" : "chevron-down"}
+                size={24}
+                color={theme.onSurfaceVariant}
+              />
+            </View>
           </TouchableOpacity>
 
           {showDropdown && (
-            <View
-              style={[
-                styles.dropdown,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.outline,
-                },
-              ]}
-            >
+            <View style={{ backgroundColor: theme.tertiaryContainer, padding: 7, borderRadius: 15 }} >
               <FlatList
                 data={DEREGISTER_REASON_TYPE_OPTIONS}
                 scrollEnabled={false}
                 nestedScrollEnabled={false}
+                contentContainerStyle={{ gap: 4 }}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={[
-                      styles.dropdownItem,
-                      {
-                        backgroundColor:
-                          selectedReason === item.value ? theme.primaryContainer : theme.surface,
-                        borderBottomColor: theme.outline,
-                      },
-                    ]}
+                    style={{ backgroundColor: selectedReason === item.value ? elevate(theme.tertiaryContainer, 25) : elevate(theme.tertiaryContainer, 10), flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}
                     onPress={() => handleSelectReason(item.value)}
                   >
                     <Text
@@ -143,7 +116,7 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
                         styles.dropdownItemText,
                         {
                           color:
-                            selectedReason === item.value ? theme.onPrimaryContainer : theme.onSurface,
+                            selectedReason === item.value ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10),
                         },
                       ]}
                     >
@@ -155,6 +128,31 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
               />
             </View>
           )}
+
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              style={{ backgroundColor: theme.tertiaryContainer, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
+              onPress={() => setOpen(false)}
+            >
+              <Text style={[styles.buttonText, { color: theme.onTertiaryContainer }]}>Avbryt</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ backgroundColor: selectedReason ? theme.deregisterButton : theme.surfaceVariant, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
+              disabled={!selectedReason}
+              onPress={() => {
+                if (selectedReason) {
+                  unregisterForAttendance({
+                    type: selectedReason,
+                    details: null,
+                  })
+                  setOpen(false)
+                }
+              }}
+            >
+              <Text style={[styles.buttonText, { color: selectedReason ? theme.onDeregisterButton : theme.onSurfaceVariant }]}>Meld meg av</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </AnimatedModal>
@@ -164,31 +162,14 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
 export default DeregisterModal
 
 const styles = StyleSheet.create({
-  modalContent: {
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  selectTrigger: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  selectValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    flex: 1,
-  },
-  dropdown: {
-    borderTopWidth: 1,
-  },
-  dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  dropdownItemText: {
-    fontSize: 15,
-  },
+  modalContent: {},
+  title: {},
+  selectTrigger: {},
+  selectValue: {},
+  dropdown: {},
+  dropdownItem: {},
+  dropdownItemText: {},
+  buttonContainer: {},
+  button: {},
+  buttonText: {},
 })
