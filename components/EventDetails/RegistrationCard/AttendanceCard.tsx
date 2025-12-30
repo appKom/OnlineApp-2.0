@@ -72,21 +72,25 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     }
   }, [user])
 
+  const attendee = getAttendee(attendance, user)
+  const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
+
+  // Fetch attendance from server
+  const fetchAttendance = async () => {
+    try {
+      const bundle = await trpc.getEvent(event.id)
+      if (bundle?.attendance) setAttendance(bundle.attendance)
+    } catch (e) {
+      // ignore
+    }
+  }
+
   // Polling / subscription emulation: refetch attendance and punishment periodically.
   const [closeToEvent, setCloseToEvent] = useState(false)
   const pollingRef = useRef<number | null>(null)
 
   useEffect(() => {
     let mounted = true
-    async function fetchAttendance() {
-      try {
-        const bundle = await trpc.getEvent(event.id)
-        if (!mounted || !bundle) return
-        if (bundle.attendance) setAttendance(bundle.attendance)
-      } catch (e) {
-        // ignore
-      }
-    }
 
     // initial fetch
     void fetchAttendance()
@@ -111,9 +115,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event.id, closeToEvent])
-
-  const attendee = getAttendee(attendance, user)
-  const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -146,6 +147,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const registerForAttendance = async () => {
     try {
       await trpc.registerForEvent(attendance.id ?? "")
+      await fetchAttendance()
     } catch (e) {
       // ignore errors for stub
     }
@@ -154,6 +156,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const deregisterForAttendance = async (deregisterReason: { type: DeregisterReasonType; details?: string | null }) => {
     try {
       await trpc.deregisterForEvent(attendance.id ?? "", deregisterReason.type, deregisterReason.details ?? undefined)
+      await fetchAttendance()
     } catch (e) {
       // ignore errors for stub
     }
