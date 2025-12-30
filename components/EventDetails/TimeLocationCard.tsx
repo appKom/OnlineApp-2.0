@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Linking, TouchableOpacity } from "react-native";
 import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
@@ -92,7 +92,11 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
               </Text>
             )}
           </View>
-          <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
+          {event.event.locationLink && (
+            <TouchableOpacity onPress={() => Linking.openURL(event.event.locationLink!)}>
+              <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </LiquidGlassView>
