@@ -61,15 +61,19 @@ export const AnimatedModal: React.FC<ModalProps> = ({
   return (
     <Modal visible={visible} transparent onRequestClose={handleClose}>
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: opacityAnim }]}>
-        <BlurView blurType="dark" blurAmount={5} style={StyleSheet.absoluteFill}>
+        <View style={styles.backdrop}>
+          <BlurView blurType="dark" blurAmount={5} style={StyleSheet.absoluteFill} />
+
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={handleClose}
           />
+
           <View style={styles.centered}>
             <Animated.View
               style={[
+                styles.modal,
                 {
                   transform: [{ scale: scaleAnim }],
                   opacity: opacityAnim,
@@ -81,19 +85,24 @@ export const AnimatedModal: React.FC<ModalProps> = ({
               {typeof children === "function" ? children(handleClose) : children}
             </Animated.View>
           </View>
-        </BlurView>
+        </View>
       </Animated.View>
     </Modal>
-
   )
 }
 
 const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+  },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     pointerEvents: "box-none",
+  },
+  modal: {
+    alignSelf: "center",
   },
 })
 
