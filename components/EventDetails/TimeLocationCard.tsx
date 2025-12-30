@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, Linking, TouchableOpacity } from "react-native";
+import * as Calendar from "expo-calendar";
 import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
@@ -56,6 +57,20 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
     }
   };
 
+  const handleAddToCalendar = async () => {
+    try {
+      await Calendar.createEventInCalendarAsync({
+        title: event.event.title,
+        startDate: event.event.start,
+        endDate: event.event.end,
+        location: event.event.locationAddress || event.event.locationTitle || '',
+        notes: event.event.description || '',
+      });
+    } catch (error) {
+      console.error('Error adding to calendar:', error);
+    }
+  };
+
   return (
     <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground, }]}> 
       <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
@@ -63,7 +78,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
       </Text>
 
       {/* Date and time with icon */}
-      <View style={[styles.detailRow, { marginBottom: 12 }]}>
+      <TouchableOpacity onPress={handleAddToCalendar} style={[styles.detailRow, { marginBottom: 12 }]}>
         <MaterialCommunityIcons name="clock-outline" size={24} color={colors.textPrimary} style={styles.icon} />
         <View style={styles.textContainer}>
           <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
@@ -74,7 +89,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
           </Text>
         </View>
         <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
-      </View>
+      </TouchableOpacity>
 
       {/* Location with icon */}
       {(event.event.locationTitle || event.event.locationAddress) && (
