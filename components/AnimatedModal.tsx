@@ -6,7 +6,7 @@ interface ModalProps {
   visible: boolean
   onClose: () => void
   children: React.ReactNode | ((closeModal: () => void) => React.ReactNode)
-  modalWidth?: string | number
+  modalWidth?: number | `${number}%`
   modalMaxWidth?: number
 }
 
@@ -45,12 +45,12 @@ export const AnimatedModal: React.FC<ModalProps> = ({
     Animated.parallel([
       Animated.timing(scaleAnim, {
         toValue: 0,
-        duration: 200,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 0,
-        duration: 200,
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -59,43 +59,42 @@ export const AnimatedModal: React.FC<ModalProps> = ({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { opacity: opacityAnim },
-        ]}
-      >
+    <Modal visible={visible} transparent onRequestClose={handleClose}>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: opacityAnim }]}>
         <BlurView blurType="dark" blurAmount={5} style={StyleSheet.absoluteFill}>
           <TouchableOpacity
+            style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={handleClose}
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-          >
+          />
+          <View style={styles.centered}>
             <Animated.View
               style={[
                 {
                   transform: [{ scale: scaleAnim }],
                   opacity: opacityAnim,
-                } as any,
-                {
-                  width: modalWidth as number | `${number}%`,
+                  width: modalWidth,
                   maxWidth: modalMaxWidth,
                 },
               ]}
             >
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={(e) => e.stopPropagation()}
-              >
-                {typeof children === 'function' ? children(handleClose) : children}
-              </TouchableOpacity>
+              {typeof children === "function" ? children(handleClose) : children}
             </Animated.View>
-          </TouchableOpacity>
+          </View>
         </BlurView>
       </Animated.View>
     </Modal>
+
   )
 }
+
+const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    pointerEvents: "box-none",
+  },
+})
 
 export default AnimatedModal
