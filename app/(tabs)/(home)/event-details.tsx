@@ -1,6 +1,6 @@
 import AttendanceCard from "components/EventDetails/AttendanceCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
-import RegistrationCard from "components/EventDetails/RegistrationCard";
+import RegistrationCard from "components/EventDetails/RegistrationCard/AttendanceCard";
 import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
@@ -16,9 +16,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheet from "@gorhom/bottom-sheet";
-import { getEvent, getRegistrationAvailability } from "utils/trpc";
+import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
+import type { Punishment } from "types/punishment";
 import Authenticator from "utils/authenticator";
-import { UserUtils } from "utils/user-utils";
+import { getUserPoolIndex } from "utils/user-utils";
 import { EventAttendanceBundle } from "types/event";
 import {
   isRegistrationEvent,
@@ -28,6 +29,9 @@ import {
   sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme } from "utils/theme";
+
+const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
+type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES [number]
 
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -39,6 +43,7 @@ const EventDetails: React.FC = () => {
   const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [punishment, setPunishment] = useState<Punishment | null>(null);
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
@@ -48,7 +53,7 @@ const EventDetails: React.FC = () => {
 
   const userPoolIndex = useMemo(() => {
     if (!user || !event?.attendance?.pools) return null;
-    return UserUtils.getUserPoolIndex(user, event.attendance.pools) ?? null;
+    return getUserPoolIndex(user, event.attendance.pools) ?? null;
   }, [user, event?.attendance?.pools]);
 
   const sortedAttendees = useMemo(
@@ -62,9 +67,47 @@ const EventDetails: React.FC = () => {
   );
 
   const registrationPeriod = useMemo(
-    () => formatRegistrationPeriod(event?.attendance, formatNorwegianDate),
+    () => formatRegistrationPeriod(event?.attendance),
     [event?.attendance]
   );
+
+  const [registering, setRegistering] = useState(false);
+
+  const handleRegisterPress = async () => {
+    if (!event?.attendance?.id) return;
+    setRegistering(true);
+    try {
+      const result = await registerForEvent(event.attendance.id);
+      if (result && (result as any).success) {
+        // Refresh availability or re-fetch event to update UI
+        await getRegistrationAvailability(event.attendance.id);
+      } else {
+        console.warn("Registration failed:", result);
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const handleDeregisterPress = async () => {
+    if (!event?.attendance?.id) return;    try {
+      const result = await deregisterForEvent(event.attendance.id, DEREGISTER_REASON_TYPES[6] , "test");
+      if (result && (result as any).success) {
+        // Refresh availability or re-fetch event to update UI
+        await getRegistrationAvailability(event.attendance.id);
+      } else {
+        console.warn("Registration failed:", result);
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+
 
   // Use shared theme tokens for colors
   const colors = {
@@ -108,6 +151,15 @@ const EventDetails: React.FC = () => {
           console.log(
             eventData == null ? "event is null" : "attendance is null"
           );
+        }
+
+        // Fetch server-computed punishment for the signed-in user (if any)
+        if (user) {
+          void getExpiryDateForUser(user.id).then((p) => {
+            setPunishment((p as Punishment) ?? null);
+          }).catch(() => {
+            // ignore errors here; keep punishment null
+          });
         }
       })
       .catch((error) => {
@@ -160,11 +212,12 @@ const EventDetails: React.FC = () => {
 
           {isRegistration ? (
             <RegistrationCard
-              attendance={event.attendance!}
-              registrationStatus={registrationStatus}
-              registrationPeriod={registrationPeriod}
-              onOpenAttendeesBottomSheet={handleOpenAttendeesBottomSheet}
-              sortedAttendees={sortedAttendees}
+              user={user}
+              event={event.event}
+              initialAttendance={event.attendance!}
+              initialPunishment={punishment}
+              parentEvent={event.parentEvent ?? null}
+              parentAttendance={event.parentAttendance ?? null}
             />
           ) : (
             <View style={styles.noRegistrationContainer}>

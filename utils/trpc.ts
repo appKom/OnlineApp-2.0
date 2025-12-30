@@ -4,7 +4,10 @@ import Authenticator from "./authenticator";
 import { jwtDecode } from "jwt-decode";
 import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
-import { RegistrationAvailabilityResult, EventAttendanceBundle } from "types/event";
+import { RegistrationAvailabilityResult, EventAttendanceBundle, AttendanceSelectionResponse } from "types/event";
+
+export const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
+export type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES[number]
 
 const client = createTRPCUntypedClient({
   links: [
@@ -85,4 +88,65 @@ export async function getRegistrationAvailability(
   console.log("Availability:", result);
 
   return result as RegistrationAvailabilityResult;
+}
+
+export async function registerForEvent(
+  attendanceId: string
+): Promise<RegistrationAvailabilityResult | null> {
+  const result = await client.mutation("event.attendance.registerForEvent", {
+    attendanceId: attendanceId,
+  });
+
+  console.log("Register result:", result);
+
+  return result as RegistrationAvailabilityResult;
+}
+
+export async function deregisterForEvent (
+  attendanceId: string,
+  deregisterType: DeregisterReasonType,
+  deregisterReason?: string
+): Promise<RegistrationAvailabilityResult | null> {
+  const result = await client.mutation("event.attendance.deregisterForEvent", {
+    attendanceId: attendanceId,
+    deregisterReason: {
+      type: deregisterType,
+      details: deregisterReason ?? null
+    }
+  });
+
+   return result as RegistrationAvailabilityResult;
+}
+
+export async function findChargeAttendeeScheduleDate(attendeeId: string): Promise<Date | null> {
+  try {
+    const result = await client.query("event.attendance.findChargeAttendeeScheduleDate", { attendeeId });
+    return (result as string) ? new Date(result as string) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function getExpiryDateForUser(userId: string): Promise<any | null> {
+  try {
+    const result = await client.query("personalMark.getExpiryDateForUser", { userId });
+    return result ?? null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function setSelectionsOptions(
+  attendeeId: string,
+  selections: AttendanceSelectionResponse[]
+): Promise<void> {
+  try {
+    await client.mutation("event.attendance.updateSelectionResponses", {
+      attendeeId,
+      options: selections,
+    });
+  } catch (e) {
+    console.error("Error setting selections:", e);
+    throw e;
+  }
 }

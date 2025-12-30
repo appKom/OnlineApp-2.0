@@ -3,6 +3,8 @@ import { Membership, User } from "./user";
 export interface EventAttendanceBundle {
   event: Event;
   attendance?: Attendance;
+  parentEvent?: Event | null;
+  parentAttendance?: Attendance | null;
 }
 
 export interface Event {
@@ -10,16 +12,17 @@ export interface Event {
   type?: string;
   id: string;
   title: string;
-  start?: string;
-  end?: string;
+  start: Date;
+  end: Date;
   description?: string;
   subtitle?: string;
   imageUrl?: string;
+  locationTitle?: string;
   locationAddress?: string;
   locationLink?: string;
-  attendanceId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  attendanceId?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
   parentId?: string;
   metadataImportId?: number;
   companies?: any[]; // No idea about the format here
@@ -36,8 +39,8 @@ interface HostingGroup {
   imageUrl?: string;
   email?: string;
   contactUrl?: string;
-  createdAt?: string;
-  deactivatedAt?: string;
+  createdAt?: Date;
+  deactivatedAt?: Date | null;
   roles?: Role[];
 }
 
@@ -49,17 +52,34 @@ interface Role {
 }
 
 export interface Attendance {
-  id?: string;
-  registerStart?: string;
-  registerEnd?: string;
-  deregisterDeadline?: string;
-  selections?: []; // No idea what the model here looks like
-  createdAt?: string;
-  updatedAt?: string;
+  id: string;
+  registerStart: Date;
+  registerEnd: Date;
+  deregisterDeadline: Date;
+  selections: AttendanceSelection[];
+  createdAt: Date;
+  updatedAt: Date;
   attendancePrice?: number;
   pools: AttendancePool[];
   attendees: Attendee[];
-  // TODO: Much more info can be found in here
+}
+
+export interface AttendanceSelection {
+  id: string;
+  name: string;
+  options: AttendanceSelectionOption[];
+}
+
+export interface AttendanceSelectionOption {
+  id: string;
+  name: string;
+}
+
+export interface AttendanceSelectionResponse {
+  selectionId: string;
+  selectionName: string;
+  optionId: string;
+  optionName: string;
 }
 
 export interface AttendancePool {
@@ -79,19 +99,19 @@ export interface Attendee {
   userId: string;
   userGrade: number | null;
   attendancePoolId: string;
-  selections: any[]; // No idea what the model here looks like
+  selections: AttendanceSelectionResponse[];
   reserved: boolean;
-  earliestReservationAt: string | null;
-  attendedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  paymentDeadline: string | null;
+  earliestReservationAt: Date;
+  attendedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  paymentDeadline: Date | null;
   paymentLink: string | null;
   paymentId: string | null;
-  paymentReservedAt: string | null;
-  paymentChargeDeadline: string | null;
-  paymentChargedAt: string | null;
-  paymentRefundedAt: string | null;
+  paymentReservedAt: Date | null;
+  paymentChargeDeadline: Date | null;
+  paymentChargedAt: Date | null;
+  paymentRefundedAt: Date | null;
   paymentRefundedById: string | null;
   user: User;
 }

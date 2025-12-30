@@ -7,8 +7,7 @@ export const isRegistrationEvent = (
   return !!(event?.attendance && event.attendance.pools?.length > 0);
 };
 
-export const formatNorwegianDate = (dateString: string): string => {
-  const date = new Date(dateString);
+export const formatNorwegianDate = (date: Date): string => {
   const formatter = new Intl.DateTimeFormat("nb-NO", {
     timeZone: "Europe/Oslo",
     day: "numeric",
@@ -27,8 +26,8 @@ export const getRegistrationStatus = (
   if (!attendance || !attendance.registerStart || !attendance.registerEnd) return "Stengt";
 
   const now = new Date();
-  const registerStart = new Date(attendance.registerStart as string);
-  const registerEnd = new Date(attendance.registerEnd as string);
+  const registerStart = attendance.registerStart;
+  const registerEnd = attendance.registerEnd;
 
   if (now >= registerStart && now <= registerEnd) {
     return "Åpen";
@@ -38,11 +37,10 @@ export const getRegistrationStatus = (
 
 export const formatRegistrationPeriod = (
   attendance: EventAttendanceBundle["attendance"],
-  formatDate: (date: string) => string
 ): string | null => {
   if (!attendance || !attendance.registerStart || !attendance.registerEnd) return null;
-  const start = formatDate(attendance.registerStart as string);
-  const end = formatDate(attendance.registerEnd as string);
+  const start = attendance.registerStart;
+  const end = attendance.registerEnd;
   return `${start} - ${end}`;
 };
 

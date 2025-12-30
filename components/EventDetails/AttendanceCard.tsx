@@ -2,10 +2,11 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useTheme } from "utils/theme";
+import { EventAttendanceBundle } from "types/event";
 
 interface AttendanceCardProps {
-  event: any;
-  formatNorwegianDate: (dateString: string) => string;
+  event: EventAttendanceBundle;
+  formatNorwegianDate: (date: Date) => string;
 }
 
 const AttendanceCard: React.FC<AttendanceCardProps> = ({
@@ -20,9 +21,7 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
   };
 
   // Smart date formatting function
-  const formatDateRange = (startDateString: string, endDateString: string) => {
-    const startDate = new Date(startDateString);
-    const endDate = new Date(endDateString);
+  const formatDateRange = (startDate: Date, endDate: Date) => {
 
     // Check if both dates are on the same day
     const isSameDay =
@@ -32,7 +31,8 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
     if (isSameDay) {
       // Same day: "Date, start time - end time"
-      const dateOnly = formatNorwegianDate(startDateString).split(",")[0]; // Remove time part if present
+      const dateOnly =  startDate.getDate();
+      const monthOnly = startDate.toLocaleString('nb-NO', { month: 'long' });
       const startTime = startDate.toLocaleTimeString("nb-NO", {
         hour: "2-digit",
         minute: "2-digit",
@@ -42,11 +42,11 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
         minute: "2-digit",
       });
 
-      return `${dateOnly}, ${startTime} - ${endTime}`;
+      return `${dateOnly}. ${monthOnly}, ${startTime} - ${endTime}`;
     } else {
       // Different days: keep original format
-      return `${formatNorwegianDate(startDateString)} - ${formatNorwegianDate(
-        endDateString
+      return `${formatNorwegianDate(startDate)} - ${formatNorwegianDate(
+        endDate
       )}`;
     }
   };
@@ -66,9 +66,9 @@ const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       {event.event.locationTitle && (
         <View style={styles.detailRow}>
-          {/* <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+          <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>
             Sted:
-          </Text> */}
+          </Text>
           <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
             {event.event.locationTitle}
           </Text>

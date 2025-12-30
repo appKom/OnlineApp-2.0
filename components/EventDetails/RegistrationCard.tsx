@@ -4,7 +4,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Attendance } from "types/event";
 import Authenticator from "utils/authenticator";
-import { UserUtils } from "utils/user-utils";
+import { getUserPoolIndex } from "utils/user-utils";
 import { useTheme, useThemeMode } from "utils/theme";
 
 interface RegistrationCardProps {
@@ -13,6 +13,8 @@ interface RegistrationCardProps {
   registrationPeriod: string | null;
   onOpenAttendeesBottomSheet: () => void;
   sortedAttendees: PoolAttendees[]; // Pre-sorted attendees passed from parent
+  onRegisterPress?: () => void;
+  loading?: boolean;
 }
 
 // RegistrationCard Component
@@ -22,6 +24,8 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   registrationPeriod,
   onOpenAttendeesBottomSheet,
   sortedAttendees,
+  onRegisterPress,
+  loading = false,
 }) => {
   const { mode } = useThemeMode();
   const isDark = mode === "dark";
@@ -45,11 +49,10 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
   };
 
   // Format date-time helper (converts ISO to "DD.MM, HH:MM")
-  const formatDateTime = (dateString?: string): string => {
-    if (!dateString) return "—";
+  const formatDateTime = (date?: Date): string => {
+    if (!date) return "—";
 
     try {
-      const date = new Date(dateString);
       if (isNaN(date.getTime())) return "—";
 
       const day = String(date.getDate()).padStart(2, "0");
@@ -65,7 +68,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
 
   // TODO: Figure out pool index based on your class
   const poolIndex = user
-    ? UserUtils.getUserPoolIndex(user, attendance.pools) ?? null
+    ? getUserPoolIndex(user, attendance.pools) ?? null
     : null;
 
   // Extract real data from attendance object
@@ -89,7 +92,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
         {/* Header with title and status */}
         <View style={styles.registrationHeader}>
           <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-            Registrering
+            Påmelding
           </Text>
           <View
             style={[
@@ -204,6 +207,9 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
               <TouchableOpacity
                 style={styles.registrationButtonWrapper}
                 activeOpacity={0.7}
+                onPress={onRegisterPress}
+                accessibilityRole="button"
+                disabled={loading}
               >
                 <LiquidGlassView
                   style={[
@@ -214,6 +220,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                       borderRadius: 25,
                       overflow: "hidden",
                       borderColor: colors.buttonBackground,
+                      opacity: loading ? 0.8 : 1,
                     },
                   ]}
                 >
@@ -223,7 +230,7 @@ const RegistrationCard: React.FC<RegistrationCardProps> = ({
                       { color: colors.buttonText },
                     ]}
                   >
-                    Registrer deg
+                    {loading ? "Laster…" : "Meld deg på"}
                   </Text>
                 </LiquidGlassView>
               </TouchableOpacity>
