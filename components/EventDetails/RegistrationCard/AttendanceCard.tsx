@@ -180,7 +180,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
   return (
     <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.primaryContainer}]}>
-      <Text style={[styles.title, { color: theme.onBackground }]}>{"Påmelding"}</Text>
+      <Text style={{ color: theme.onBackground, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
 
       <AttendanceDateInfo attendance={attendance} attendee={attendee} chargeScheduleDate={null} />
 
@@ -213,7 +213,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
         chargeScheduleDate={null}
       />
 
-      <View style={styles.ruleRow}>
+      <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
         <EventRules />
         <TouchableOpacity onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")} style={{ marginLeft: 8 }}>
           <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
@@ -243,10 +243,6 @@ const styles = StyleSheet.create({
     elevation: 5,
     gap: 20,
   },
-  title: { fontSize: 20, fontWeight: "700"},
-  section: { marginVertical: 8 },
-  subtitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
-  ruleRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
 })
 
 export default AttendanceCard
