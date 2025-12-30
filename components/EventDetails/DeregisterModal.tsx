@@ -80,7 +80,7 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
   }
 
   return (
-    <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={300} modalMaxWidth={350}>
+    <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={330} modalMaxWidth={350}>
       {() => (
         <View style={{ backgroundColor: theme.primaryContainer, padding: 15, borderRadius: 12, gap: 5 }}>
           <Text style={{ color: theme.onPrimaryContainer, fontSize: 17 }}>Er du sikker?</Text>

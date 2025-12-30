@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native"
 import { Octicons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
-import { useTheme } from "../../../utils/theme"
+import { useTheme, elevate } from "../../../utils/theme"
 import { AnimatedModal } from "../../AnimatedModal"
 
 interface Props {
@@ -51,7 +51,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
   )
 
   return (
-    <>
+    <View style={{ backgroundColor: elevate(theme.primaryContainer, 10), padding: 15, borderRadius: 12, gap: 12 }}>
       {attendance.selections.map((selection, index) => (
         <View key={selection.id}>
           <TouchableOpacity
@@ -59,9 +59,9 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
             style={styles.selectionRow}
           >
             <View style={styles.selectionInfo}>
-              <Text style={[styles.selectionTitle, { color: theme.onBackground }]}>{selection.name}</Text>
+              <Text style={[styles.selectionTitle, { color: elevate(theme.onPrimaryContainer, 10) }]}>{selection.name}</Text>
               {selections[index]?.optionName ? (
-                <Text style={[styles.selectedOption, { color: theme.onSurfaceVariant }]}>
+                <Text style={[styles.selectedOption, { color: elevate(theme.onPrimaryContainer, 10) }]}>
                   Ditt valg: {selections[index].optionName}
                 </Text>
               ) : (
@@ -129,7 +129,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
           </AnimatedModal>
         </View>
       ))}
-    </>
+    </View>
   )
 }
 

@@ -187,17 +187,17 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       <MainPoolCard attendance={attendance} user={user} authorizeUrl={undefined} chargeScheduleDate={null} />
 
-      {attendee?.reserved && (attendance.selections?.length ?? 0) > 0 && (
-        <View style={styles.section}>
+      <View style={{ gap: 8 }}> 
+        {attendee?.reserved && (attendance.selections?.length ?? 0) > 0 && (
           <SelectionsForm attendance={attendance} attendee={attendee} onSubmit={handleSelectionChange} disabled={attendanceStatus === "Closed"} />
+        )}
+
+        <NonAttendablePoolsBox attendance={attendance} user={user} />
+
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {attendee?.reserved && <TicketButton attendee={attendee} />}
+          <ViewAttendeesButton attendance={attendance} user={user} />
         </View>
-      )}
-
-      <NonAttendablePoolsBox attendance={attendance} user={user} />
-
-      <View style={styles.row}>
-        {attendee?.reserved && <TicketButton attendee={attendee} />}
-        <ViewAttendeesButton attendance={attendance} user={user} />
       </View>
 
       <RegistrationButton
@@ -242,7 +242,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700"},
   section: { marginVertical: 8 },
   subtitle: { fontSize: 16, fontWeight: "600", marginBottom: 8 },
-  row: { flexDirection: "row", gap: 12 },
   ruleRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
 })
 

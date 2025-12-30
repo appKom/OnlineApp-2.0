@@ -156,15 +156,15 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
         onPress={openModal}
         style={[
           styles.button,
-          { backgroundColor: theme.secondaryContainer, opacity: !user ? 0.5 : 1 },
+          { backgroundColor: theme.tertiaryContainer, opacity: !user ? 0.5 : 1 },
         ]}
       >
         <MaterialIcons
           name="people"
           size={20}
-          color={theme.onSecondaryContainer}
+          color={theme.onTertiaryContainer}
         />
-        <Text style={[styles.buttonText, { color: theme.onSecondaryContainer }]}>
+        <Text style={[styles.buttonText, { color: theme.onTertiaryContainer }]}>
           Vis påmeldte
         </Text>
       </TouchableOpacity>

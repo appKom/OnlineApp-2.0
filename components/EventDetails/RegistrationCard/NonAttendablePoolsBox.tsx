@@ -41,7 +41,7 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
   return (
     <View
       style={{
-        backgroundColor: withAlpha(theme.secondaryContainer, 0.99),
+        backgroundColor: theme.tertiaryContainer,
         padding: 12,
         borderRadius: 10,
       }}
@@ -52,7 +52,7 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Text
                 style={{
-                  color: theme.onSecondaryContainer,
+                  color: theme.onTertiaryContainer,
                   fontSize: 17,
                   marginBottom: 5,
                 }}
@@ -65,7 +65,7 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
               <Animated.View style={{ transform: [{ rotate: rotation }] }}>
                 <MaterialIcons
                   name="keyboard-arrow-down"
-                  color={theme.onSecondaryContainer}
+                  color={theme.onTertiaryContainer}
                   size={30}
                 />
               </Animated.View>
@@ -109,7 +109,7 @@ const AttendanceBoxPoolSmall = ({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: elevate(theme.secondaryContainer, 20),
+        backgroundColor: elevate(theme.tertiaryContainer, 20),
         paddingHorizontal: 10,
         borderRadius: 10,
         height: 35,
@@ -117,27 +117,27 @@ const AttendanceBoxPoolSmall = ({
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-        <Text style={{ color: theme.onSecondaryContainer }}>
+        <Text style={{ color: theme.onTertiaryContainer }}>
           {pool.title}
         </Text>
 
         {pool.mergeDelayHours ? (
           <DelayPill
             mergeDelayHours={pool.mergeDelayHours}
-            color={theme.onSecondaryContainer}
-            backgroundColor={elevate(theme.secondaryContainer, 35)}
+            color={theme.onTertiaryContainer}
+            backgroundColor={elevate(theme.tertiaryContainer, 35)}
           />
         ) : null}
       </View>
 
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: theme.onSecondaryContainer }}>
+        <Text style={{ color: theme.onTertiaryContainer }}>
           {reservedAttendeeCount}
           {pool.capacity > 0 && `/${pool.capacity}`}
         </Text>
 
         {unreservedAttendeeCount > 0 && (
-          <Text style={{ color: theme.onSecondaryContainer }}>
+          <Text style={{ color: theme.onTertiaryContainer }}>
             +{unreservedAttendeeCount} i kø
           </Text>
         )}
