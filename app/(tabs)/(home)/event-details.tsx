@@ -1,6 +1,6 @@
-import AttendanceCard from "components/EventDetails/AttendanceCard";
+import TimeLocationCard from "components/EventDetails/TimeLocationCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
-import RegistrationCard from "components/EventDetails/RegistrationCard/AttendanceCard";
+import AttendanceCard from "components/EventDetails/AttendanceCard/AttendanceCard";
 import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
@@ -198,7 +198,7 @@ const EventDetails: React.FC = () => {
             resizeMode="contain"
           />
 
-          <AttendanceCard
+          <TimeLocationCard
             event={event}
             formatNorwegianDate={formatNorwegianDate}
           />
@@ -211,7 +211,7 @@ const EventDetails: React.FC = () => {
           />
 
           {isRegistration ? (
-            <RegistrationCard
+            <AttendanceCard
               user={user}
               event={event.event}
               initialAttendance={event.attendance!}

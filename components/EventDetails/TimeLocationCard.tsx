@@ -4,12 +4,12 @@ import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
 
-interface AttendanceCardProps {
+interface TimeLocationCardProps {
   event: EventAttendanceBundle;
   formatNorwegianDate: (date: Date) => string;
 }
 
-const AttendanceCard: React.FC<AttendanceCardProps> = ({
+const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
   event,
   formatNorwegianDate,
 }) => {
@@ -127,4 +127,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AttendanceCard;
+export default TimeLocationCard;
