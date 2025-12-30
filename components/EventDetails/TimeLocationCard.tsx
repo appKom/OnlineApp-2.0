@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface TimeLocationCardProps {
   event: EventAttendanceBundle;
@@ -30,8 +31,8 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
       startDate.getDate() === endDate.getDate();
 
     if (isSameDay) {
-      // Same day: "Date, start time - end time"
-      const dateOnly =  startDate.getDate();
+      // Same day: return date and time separately
+      const dateOnly = startDate.getDate();
       const monthOnly = startDate.toLocaleString('nb-NO', { month: 'long' });
       const startTime = startDate.toLocaleTimeString("nb-NO", {
         hour: "2-digit",
@@ -42,47 +43,56 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
         minute: "2-digit",
       });
 
-      return `${dateOnly}. ${monthOnly}, ${startTime} - ${endTime}`;
+      return {
+        date: `${dateOnly}. ${monthOnly}`,
+        time: `kl. ${startTime} - ${endTime}`,
+      };
     } else {
-      // Different days: keep original format
-      return `${formatNorwegianDate(startDate)} - ${formatNorwegianDate(
-        endDate
-      )}`;
+      // Different days: return combined format
+      return {
+        date: formatNorwegianDate(startDate),
+        time: `- ${formatNorwegianDate(endDate)}`,
+      };
     }
   };
 
   return (
-    <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground }]}> 
+    <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground, }]}> 
       <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-        Tid & Sted
+        Oppmøte
       </Text>
 
-      {/* Smart date range */}
-      <View style={styles.detailRow}>
-        <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-          {formatDateRange(event.event.start, event.event.end)}
-        </Text>
-      </View>
-
-      {event.event.locationTitle && (
-        <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>
-            Sted:
+      {/* Date and time with icon */}
+      <View style={[styles.detailRow, { marginBottom: 12 }]}>
+        <MaterialCommunityIcons name="clock-outline" size={24} color={colors.textPrimary} style={styles.icon} />
+        <View style={styles.textContainer}>
+          <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+            {formatDateRange(event.event.start, event.event.end).date}
           </Text>
           <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-            {event.event.locationTitle}
+            {formatDateRange(event.event.start, event.event.end).time}
           </Text>
         </View>
-      )}
+        <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
+      </View>
 
-      {event.event.locationAddress && (
+      {/* Location with icon */}
+      {(event.event.locationTitle || event.event.locationAddress) && (
         <View style={styles.detailRow}>
-          <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>
-            Adresse:
-          </Text>
-          <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-            {event.event.locationAddress}
-          </Text>
+          <MaterialCommunityIcons name="map-marker-outline" size={24} color={colors.textPrimary} style={styles.icon} />
+          <View style={styles.textContainer}>
+            {event.event.locationTitle && (
+              <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+                {event.event.locationTitle}
+              </Text>
+            )}
+            {event.event.locationAddress && (
+              <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+                {event.event.locationAddress}
+              </Text>
+            )}
+          </View>
+          <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
         </View>
       )}
     </LiquidGlassView>
@@ -111,19 +121,20 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
+    alignItems: "center",
+    gap: 16,
   },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: "600",
+  icon: {
+    marginTop: 0,
+  },
+  textContainer: {
     flex: 1,
   },
   detailValue: {
     fontSize: 16,
-    flex: 2,
-    textAlign: "left",
+  },
+  externalIcon: {
+    marginTop: 0,
   },
 });
 
