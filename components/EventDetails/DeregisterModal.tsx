@@ -93,14 +93,14 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
               </Text>
               <MaterialCommunityIcons
                 name={showDropdown ? "chevron-up" : "chevron-down"}
-                size={24}
-                color={theme.onSurfaceVariant}
+                size={20}
+                color={selectedReason ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10)}
               />
             </View>
           </TouchableOpacity>
 
           {showDropdown && (
-            <View style={{ backgroundColor: theme.tertiaryContainer, padding: 7, borderRadius: 15 }} >
+            <View style={{ position: "absolute", top: 90, left: 15, right: 15, backgroundColor: theme.tertiaryContainer, padding: 7, borderRadius: 15, zIndex: 1000 }} >
               <FlatList
                 data={DEREGISTER_REASON_TYPE_OPTIONS}
                 scrollEnabled={false}
@@ -112,13 +112,7 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
                     onPress={() => handleSelectReason(item.value)}
                   >
                     <Text
-                      style={[
-                        styles.dropdownItemText,
-                        {
-                          color:
-                            selectedReason === item.value ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10),
-                        },
-                      ]}
+                      style={{ color: selectedReason === item.value ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10),  height: 20, }}
                     >
                       {item.label}
                     </Text>
@@ -129,7 +123,7 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
             </View>
           )}
 
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
             <TouchableOpacity
               style={{ backgroundColor: theme.tertiaryContainer, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
               onPress={() => setOpen(false)}
