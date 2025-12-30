@@ -16,7 +16,7 @@ export const EventRules: React.FC<EventRulesProps> = () => {
   return (
     <>
       <TouchableOpacity onPress={() => setOpen(true)}>
-        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+        <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
           <Octicons name="book" size={16} color={theme.onBackground} />
           <Text style={{ fontSize: 14, color: theme.onBackground }}>Arrangementregler</Text>
         </View>

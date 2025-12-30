@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react"
-import { View, ScrollView, Text, StyleSheet, Button } from "react-native"
+import { View, ScrollView, Text, StyleSheet, Linking, TouchableOpacity } from "react-native"
+import { MaterialIcons } from "@expo/vector-icons"
 import type {
   Attendance,
   Event as EventType,
@@ -214,12 +215,15 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       <View style={styles.ruleRow}>
         <EventRules />
-        <View style={{ marginLeft: 8 }}>
-          <Button title="Oppdater matallergier" onPress={() => {}} />
-        </View>
+        <TouchableOpacity onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")} style={{ marginLeft: 8 }}>
+          <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
+            <MaterialIcons name="edit" size={16} color={theme.onBackground} />
+            <Text style={{ fontSize: 14, color: theme.onBackground }}>Matallergier</Text>
+          </View>
+        </TouchableOpacity>
+        {attendance.attendancePrice && <PaymentExplanationDialog />}
       </View>
 
-      {attendance.attendancePrice && <PaymentExplanationDialog />}
     </ScrollView>
   )
 }
