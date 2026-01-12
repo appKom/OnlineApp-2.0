@@ -45,11 +45,18 @@ const AllEvents: React.FC = () => {
       const data = await getAllEvents();
       const eventsArray = data?.items ?? [];
       const now = new Date();
+      
       const futureEvents = eventsArray.filter(bundle => {
         const eventEnd = new Date(bundle.event.end);
         return eventEnd > now;
       });
-      setAllEvents(futureEvents.reverse());
+
+      const pastEvents = eventsArray.filter(bundle => {
+        const eventEnd = new Date(bundle.event.end);
+        return eventEnd < now;
+      });
+      
+      setAllEvents([...futureEvents.reverse(), ...pastEvents]);
       setAllEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load all events:", error);
@@ -62,12 +69,7 @@ const AllEvents: React.FC = () => {
     try {
       const data = user ? await getAllEventsByAttendingUserId(user.id) : null;
       const eventsArray = data?.items ?? [];
-      const now = new Date();
-      const futureEvents = eventsArray.filter(bundle => {
-        const eventEnd = new Date(bundle.event.end);
-        return eventEnd > now;
-      });
-      setMyEvents(futureEvents.reverse());
+      setMyEvents(eventsArray.reverse());
       setMyEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load my events:", error);
