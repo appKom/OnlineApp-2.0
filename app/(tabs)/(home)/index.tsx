@@ -246,22 +246,44 @@ const AllEvents: React.FC = () => {
         renderItem={
           loading && !refreshing
             ? null // Don't render items during loading
-            : ({ item }) => (
-                <Pressable
-                    style={{ padding: 12, borderBottomWidth: 1, borderColor: theme.surfaceContainerHigh }}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/event-details",
-                      params: { 
-                        eventId: item.event.id,
-                        headerTitle: item.event.title,
-                      },
-                    })
-                  }
-                >
-                  <Text style={{ color: theme.onBackground }}>{item.event.title ?? "NULL"}</Text>
-                </Pressable>
-              )
+            : ({ item, index }) => {
+                const now = new Date();
+                const isCurrentPast = new Date(item.event.start) <= now;
+                const isPrevPast = index > 0 ? new Date(currentEvents[index - 1].event.start) <= now : false;
+                
+                return (
+                  <>
+                    {index === 0 && (
+                      <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: theme.surfaceContainerHigh }}>
+                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.onBackground }}>
+                          Kommende arrangementer
+                        </Text>
+                      </View>
+                    )}
+                    {isCurrentPast && !isPrevPast && (
+                      <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: theme.surfaceContainerHigh }}>
+                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.onBackground }}>
+                          Tidligere arrangementer
+                        </Text>
+                      </View>
+                    )}
+                    <Pressable
+                        style={{ padding: 12, borderBottomWidth: 1, borderColor: theme.surfaceContainerHigh }}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/event-details",
+                          params: { 
+                            eventId: item.event.id,
+                            headerTitle: item.event.title,
+                          },
+                        })
+                      }
+                    >
+                      <Text style={{ color: theme.onBackground }}>{item.event.title ?? "NULL"}</Text>
+                    </Pressable>
+                  </>
+                );
+              }
         }
       />
     </View>
