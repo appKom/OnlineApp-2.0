@@ -15,6 +15,7 @@ import {
   getAllEventsByAttendingUserId,
 } from "../../../utils/trpc";
 import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
+import EventCard from "../../../components/EventCard";
 import Authenticator from "utils/authenticator";
 import { useTheme } from "utils/theme";
 
@@ -332,8 +333,8 @@ const AllEvents: React.FC = () => {
                         </Text>
                       </View>
                     )}
-                    <Pressable
-                        style={{ padding: 12, borderBottomWidth: 1, borderColor: theme.surfaceContainerHigh }}
+                    <EventCard
+                      event={item}
                       onPress={() =>
                         router.push({
                           pathname: "/event-details",
@@ -343,9 +344,7 @@ const AllEvents: React.FC = () => {
                           },
                         })
                       }
-                    >
-                      <Text style={{ color: theme.onBackground }}>{item.event.title ?? "NULL"}</Text>
-                    </Pressable>
+                    />
                   </>
                 );
               }
