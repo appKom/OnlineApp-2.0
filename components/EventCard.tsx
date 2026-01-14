@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, View, Text, StyleSheet } from "react-native";
+import { Pressable, View, Text, StyleSheet, Image } from "react-native";
 import { EventAttendanceBundle } from "../types/event";
 import { useTheme } from "../utils/theme";
 
@@ -28,34 +28,36 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
         borderBottomWidth: 1,
         borderColor: theme.surfaceContainerHigh,
         backgroundColor: theme.background,
+        flexDirection: "row",
+        gap: 8
       }}
       onPress={onPress}
     >
-      {/* Event Title */}
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "600",
-          color: theme.onBackground,
-          marginBottom: 8,
-        }}
-      >
-        {event.event.title ?? "No Title"}
-      </Text>
+      <View style={{ justifyContent: "center" }}>
+        <Image
+          source={{ uri: event.event.imageUrl }}
+          style={{
+            width: 100,
+            height: 70,
+            borderRadius: 4,
+          }}
+          resizeMode="cover"
+        />
+      </View>
+      <View>
+        {/* Event Title */}
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: "600",
+            color: theme.onBackground,
+            marginBottom: 8,
+          }}
+        >
+          {event.event.title ?? "No Title"}
+        </Text>
 
-      {/* Event Date and Time */}
-      <Text
-        style={{
-          fontSize: 14,
-          color: theme.onSurfaceVariant,
-          marginBottom: 4,
-        }}
-      >
-        📅 {formatDate(event.event.start)}
-      </Text>
-
-      {/* Event Location */}
-      {event.event.locationTitle && (
+        {/* Event Date and Time */}
         <Text
           style={{
             fontSize: 14,
@@ -63,23 +65,37 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
             marginBottom: 4,
           }}
         >
-          📍 {event.event.locationTitle}
+          📅 {formatDate(event.event.start)}
         </Text>
-      )}
 
-      {/* Subtitle or Description Preview */}
-      {event.event.subtitle && (
-        <Text
-          style={{
-            fontSize: 13,
-            color: theme.onSurfaceVariant,
-            fontStyle: "italic",
-          }}
-          numberOfLines={1}
-        >
-          {event.event.subtitle}
-        </Text>
-      )}
+        {/* Event Location */}
+        {event.event.locationTitle && (
+          <Text
+            style={{
+              fontSize: 14,
+              color: theme.onSurfaceVariant,
+              marginBottom: 4,
+            }}
+          >
+            📍 {event.event.locationTitle}
+          </Text>
+        )}
+
+        {/* Subtitle or Description Preview */}
+        {event.event.subtitle && (
+          <Text
+            style={{
+              fontSize: 13,
+              color: theme.onSurfaceVariant,
+              fontStyle: "italic",
+            }}
+            numberOfLines={1}
+          >
+            {event.event.subtitle}
+          </Text>
+        )}
+      </View>
+      
     </Pressable>
   );
 };
