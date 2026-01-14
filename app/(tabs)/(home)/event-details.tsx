@@ -13,8 +13,10 @@ import {
   StyleSheet,
   Text,
   View,
+  ImageBackground,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlurView } from "@react-native-community/blur";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
 import type { Punishment } from "types/punishment";
@@ -180,7 +182,7 @@ const EventDetails: React.FC = () => {
     );
   }
 
-  const imageHeight = screenWidth / imageAspectRatio;
+  const imageHeight = screenWidth / Math.max(5/3, Math.min(6/3, imageAspectRatio));
 
   return (
     <>
@@ -189,14 +191,23 @@ const EventDetails: React.FC = () => {
           style={styles.scrollContainer}
           contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         >
-          <Image
-            source={{ uri: event.event.imageUrl }}
-            style={[
-              styles.image,
-              { width: screenWidth, height: imageHeight, backgroundColor: theme.surfaceContainerLow },
-            ]}
-            resizeMode="contain"
-          />
+          <View style={{ width: screenWidth, height: imageHeight, overflow: "hidden" }}>
+            <ImageBackground
+              source={{ uri: event.event.imageUrl }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            >
+              <BlurView blurType="dark" blurAmount={10} style={StyleSheet.absoluteFill} />
+            </ImageBackground>
+            <Image
+              source={{ uri: event.event.imageUrl }}
+              style={[
+                styles.image,
+                { width: screenWidth, height: imageHeight, position: "absolute" },
+              ]}
+              resizeMode="contain"
+            />
+          </View>
 
           <TimeLocationCard
             event={event}
