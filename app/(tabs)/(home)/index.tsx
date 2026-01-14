@@ -66,8 +66,12 @@ const AllEvents: React.FC = () => {
         });
         setAllEvents([...futureEvents.reverse(), ...pastEvents]);
       } else {
-        // Load more - append to existing
-        setAllEvents(prev => [...prev, ...eventsArray]);
+        // Load more - append to existing, filter duplicates by event ID
+        setAllEvents(prev => {
+          const existingIds = new Set(prev.map(e => e.event.id));
+          const newEvents = eventsArray.filter(bundle => !existingIds.has(bundle.event.id));
+          return [...prev, ...newEvents];
+        });
       }
       
       setAllEventsLoaded(true);
@@ -90,8 +94,12 @@ const AllEvents: React.FC = () => {
         // First load
         setMyEvents(eventsArray.reverse());
       } else {
-        // Load more - append to existing
-        setMyEvents(prev => [...prev, ...eventsArray.reverse()]);
+        // Load more - append to existing, filter duplicates by event ID
+        setMyEvents(prev => {
+          const existingIds = new Set(prev.map(e => e.event.id));
+          const newEvents = eventsArray.filter(bundle => !existingIds.has(bundle.event.id));
+          return [...prev, ...newEvents.reverse()];
+        });
       }
       
       setMyEventsLoaded(true);
