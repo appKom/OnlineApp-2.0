@@ -29,25 +29,32 @@ const client = createTRPCUntypedClient({
   ],
 });
 
-export async function getAllEvents(): Promise<{ items?: EventAttendanceBundle[] }> {
-  const result = await client.query("event.all");
+export async function getAllEvents(limit: number = 20, cursor?: string): Promise<{ items?: EventAttendanceBundle[], nextCursor?: string }> {
+  const params: any = { take: limit };
+  if (cursor) {
+    params.cursor = cursor;
+  }
+  const result = await client.query("event.all", params);
   // The TRPC client is untyped here; cast to the expected shape so callers
   // can access `items` safely. If the backend response shape changes this
   // cast may be incorrect and should be updated.
-  return result as { items?: EventAttendanceBundle[] };
+  return result as { items?: EventAttendanceBundle[], nextCursor?: string };
 }
 
-export async function getAllEventsByAttendingUserId(userId: string): Promise<{ items?: EventAttendanceBundle[] } | null> {
+export async function getAllEventsByAttendingUserId(userId: string, limit: number = 20, cursor?: string): Promise<{ items?: EventAttendanceBundle[], nextCursor?: string } | null> {
   const credentials = await Authenticator.getCurrentCredentials();
 
   if (!credentials) return null;
 
   var decoded = jwtDecode<UserClaims>(credentials.idToken);
 
-  const result = await client.query("event.allByAttendingUserId", {
-    id: decoded.sub,
-  });
-  return result as { items?: EventAttendanceBundle[] };
+  const params: any = { id: decoded.sub, take: limit };
+  if (cursor) {
+    params.cursor = cursor;
+  }
+
+  const result = await client.query("event.allByAttendingUserId", params);
+  return result as { items?: EventAttendanceBundle[], nextCursor?: string };
 }
 
 export async function getEvent(eventId: string): Promise<EventAttendanceBundle | null> {

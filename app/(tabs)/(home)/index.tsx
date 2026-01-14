@@ -33,6 +33,11 @@ const AllEvents: React.FC = () => {
   const [allEventsLoaded, setAllEventsLoaded] = useState(false);
   const [myEventsLoaded, setMyEventsLoaded] = useState(false);
 
+  // Pagination cursors
+  const [allEventsCursor, setAllEventsCursor] = useState<string | undefined>();
+  const [myEventsCursor, setMyEventsCursor] = useState<string | undefined>();
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const router = useRouter();
   const theme = useTheme();
 
@@ -42,21 +47,29 @@ const AllEvents: React.FC = () => {
   // Function to fetch all events
   const fetchAllEvents = async () => {
     try {
-      const data = await getAllEvents();
+      const data = await getAllEvents(20, allEventsCursor);
       const eventsArray = data?.items ?? [];
-      const now = new Date();
       
-      const futureEvents = eventsArray.filter(bundle => {
-        const eventEnd = new Date(bundle.event.end);
-        return eventEnd > now;
-      });
+      // Save cursor for next page
+      setAllEventsCursor(data?.nextCursor);
 
-      const pastEvents = eventsArray.filter(bundle => {
-        const eventEnd = new Date(bundle.event.end);
-        return eventEnd < now;
-      });
+      if (!allEventsCursor) {
+        // First load - filter and sort
+        const now = new Date();
+        const futureEvents = eventsArray.filter(bundle => {
+          const eventEnd = new Date(bundle.event.end);
+          return eventEnd > now;
+        });
+        const pastEvents = eventsArray.filter(bundle => {
+          const eventEnd = new Date(bundle.event.end);
+          return eventEnd < now;
+        });
+        setAllEvents([...futureEvents.reverse(), ...pastEvents]);
+      } else {
+        // Load more - append to existing
+        setAllEvents(prev => [...prev, ...eventsArray]);
+      }
       
-      setAllEvents([...futureEvents.reverse(), ...pastEvents]);
       setAllEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load all events:", error);
@@ -67,9 +80,20 @@ const AllEvents: React.FC = () => {
   // Function to fetch user's events
   const fetchMyEvents = async () => {
     try {
-      const data = user ? await getAllEventsByAttendingUserId(user.id) : null;
+      const data = user ? await getAllEventsByAttendingUserId(user.id, 20, myEventsCursor) : null;
       const eventsArray = data?.items ?? [];
-      setMyEvents(eventsArray.reverse());
+      
+      // Save cursor for next page
+      setMyEventsCursor(data?.nextCursor);
+
+      if (!myEventsCursor) {
+        // First load
+        setMyEvents(eventsArray.reverse());
+      } else {
+        // Load more - append to existing
+        setMyEvents(prev => [...prev, ...eventsArray.reverse()]);
+      }
+      
       setMyEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load my events:", error);
@@ -140,6 +164,8 @@ const AllEvents: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     setError(null);
+    setAllEventsCursor(undefined);
+    setMyEventsCursor(undefined);
 
     try {
       await loadCurrentTabData(true); // Force refresh
@@ -147,6 +173,28 @@ const AllEvents: React.FC = () => {
       setError("Failed to refresh events");
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Handle loading more when scrolling to end
+  const handleEndReached = async () => {
+    if (currentTab === "alle") {
+      if (loadingMore || !allEventsCursor) return;
+    } else {
+      if (loadingMore || !myEventsCursor) return;
+    }
+    
+    setLoadingMore(true);
+    try {
+      if (currentTab === "alle") {
+        await fetchAllEvents();
+      } else {
+        await fetchMyEvents();
+      }
+    } catch (error) {
+      console.error("Failed to load more events:", error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -243,6 +291,15 @@ const AllEvents: React.FC = () => {
         ListEmptyComponent={renderContent}
         refreshing={refreshing}
         onRefresh={handleRefresh}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={{ paddingVertical: 16, alignItems: "center" }}>
+              <ActivityIndicator color={theme.onBackground} />
+            </View>
+          ) : null
+        }
         renderItem={
           loading && !refreshing
             ? null // Don't render items during loading
