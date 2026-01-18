@@ -19,26 +19,19 @@ export default function RootLayout() {
 
   const initializeAuth = async () => {
     try {
-      // TODO: Use env variables here
-
-      // Initialize Auth0
       Authenticator.initialize(
         "auth.online.ntnu.no",
-        "EniGfQ4MlcVuS2FWbUMmCjaFB65EqjzZ"
+        "EniGfQ4MlcVuS2FWbUMmCjaFB65EqjzZ",
       );
 
-      // Listen to auth state changes
       const removeListener = Authenticator.addLoginStateListener(setIsLoggedIn);
-
-      // Check for stored credentials (this will auto-refresh if needed)
       const storedCredentials = await Authenticator.fetchStoredCredentials();
 
       console.log(
-        storedCredentials ? "✅ User is logged in" : "ℹ️ User needs to log in"
+        storedCredentials ? "✅ User is logged in" : "ℹ️ User needs to log in",
       );
 
       setIsAuthReady(true);
-
       return removeListener;
     } catch (error) {
       console.log("❌ Auth initialization error:", error);
@@ -46,24 +39,19 @@ export default function RootLayout() {
     }
   };
 
-  // if (!isAuthReady) {
-  //   return <ActivityIndicator />; // Show loading while checking auth
-  // }
-
   return (
-    <>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <Stack
-            screenOptions={{
-              contentStyle: { backgroundColor: isDark ? "#000000" : "#ffffff" },
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="auto" />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: isDark ? "#000000" : "#ffffff" },
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+        <StatusBar style="auto" />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

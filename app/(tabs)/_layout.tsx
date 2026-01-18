@@ -1,51 +1,49 @@
-import { Tabs } from "expo-router";
-import { Ionicons, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
+import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 import { useTheme } from "../../utils/theme";
-
-type TabIconProps = { color: string; size?: number };
+import { Platform, DynamicColorIOS } from "react-native";
 
 export default function TabLayout() {
   const theme = useTheme();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: theme.secondary ?? theme.primary,
-        tabBarInactiveTintColor: theme.outline ?? "#999999",
-        tabBarStyle: { backgroundColor: theme.surface },
-        headerShown: false,
+    <NativeTabs
+      minimizeBehavior="onScrollDown" // iOS 26 liquid glass minimize behavior
+      tintColor={
+        Platform.OS === "ios"
+          ? DynamicColorIOS({ light: theme.primary, dark: theme.primary })
+          : theme.primary
+      }
+      backgroundColor={theme.surface}
+      labelStyle={{
+        color:
+          Platform.OS === "ios"
+            ? DynamicColorIOS({
+                light: theme.outline ?? "#999999",
+                dark: theme.outline ?? "#999999",
+              })
+            : theme.outline ?? "#999999",
       }}
     >
-      <Tabs.Screen
-        name="(home)"
-        options={{
-          title: "Hjem",
-          animation: "none",
-          tabBarIcon: ({ color, size }: TabIconProps) => (
-            <MaterialIcons name="event" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(games)"
-        options={{
-          title: "Spill",
-          animation: "none",
-          tabBarIcon: ({ color, size }: TabIconProps) => (
-            <FontAwesome6 name="dice" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(profile)"
-        options={{
-          title: "Profil",
-          animation: "none",
-          tabBarIcon: ({ color, size }: TabIconProps) => (
-            <Ionicons name="person" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tabs>
+      <NativeTabs.Trigger name="(home)">
+        <Label>Hjem</Label>
+        <Icon
+          sf="calendar"
+          drawable="ic_menu_my_calendar" // Use built-in Android drawable or add custom
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="(games)">
+        <Label>Spill</Label>
+        <Icon
+          sf="dice.fill"
+          drawable="ic_menu_view" // Replace with custom drawable if needed
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="(profile)">
+        <Label>Profil</Label>
+        <Icon sf="person.fill" drawable="ic_menu_preferences" />
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
