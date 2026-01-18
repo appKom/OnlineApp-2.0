@@ -1,4 +1,6 @@
-import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
+import { NativeTabs, Icon, Label, VectorIcon } from "expo-router/unstable-native-tabs";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useTheme } from "../../utils/theme";
 import { Platform, DynamicColorIOS } from "react-native";
 
@@ -11,24 +13,15 @@ export default function TabLayout() {
       tintColor={
         Platform.OS === "ios"
           ? DynamicColorIOS({ light: "#fab759", dark: "#fab759" })
-          : "#fab759" // Change this line
+          : "#fab759"
       }
       backgroundColor={theme.surface}
-      labelStyle={{
-        color:
-          Platform.OS === "ios"
-            ? DynamicColorIOS({
-                light: theme.outline ?? "#999999",
-                dark: theme.outline ?? "#999999",
-              })
-            : (theme.outline ?? "#999999"),
-      }}
     >
-      <NativeTabs.Trigger name="(home)">
-        <Label>Hjem</Label>
-        <Icon
+      <NativeTabs.Trigger name="(events)">
+        <Label>Events</Label>
+        <Icon 
           sf="calendar"
-          drawable="ic_menu_my_calendar" // Use built-in Android drawable or add custom
+          src={<VectorIcon family={MaterialCommunityIcons} name="calendar" />}
         />
       </NativeTabs.Trigger>
 
@@ -36,13 +29,16 @@ export default function TabLayout() {
         <Label>Spill</Label>
         <Icon
           sf="dice.fill"
-          drawable="ic_menu_view" // Replace with custom drawable if needed
+          src={<VectorIcon family={MaterialCommunityIcons} name="dice-multiple" />}
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(profile)">
         <Label>Profil</Label>
-        <Icon sf="person.fill" drawable="ic_menu_preferences" />
+        <Icon 
+          sf="person.fill" 
+          src={<VectorIcon family={MaterialIcons} name="person" />}
+        />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
