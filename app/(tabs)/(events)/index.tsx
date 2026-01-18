@@ -18,6 +18,7 @@ import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
 import EventCard from "../../../components/EventCard";
 import Authenticator from "utils/authenticator";
 import { useTheme } from "utils/theme";
+import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 type TabType = "alle" | "mine";
 
@@ -303,95 +304,97 @@ const AllEvents: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      {renderHeader()}
-      <FlatList
-        data={loading && !refreshing ? [] : currentEvents}
-        keyExtractor={(bundle) => bundle.event.id}
-        contentInsetAdjustmentBehavior="automatic"
-        style={{ flex: 1, backgroundColor: theme.background }}
-        ListHeaderComponent={null}
-        ListEmptyComponent={renderContent}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.3}
-        ListFooterComponent={
-          loadingMore ? (
-            <View style={{ paddingVertical: 16, alignItems: "center" }}>
-              <ActivityIndicator color={theme.onBackground} />
-            </View>
-          ) : null
-        }
-        renderItem={
-          loading && !refreshing
-            ? null // Don't render items during loading
-            : ({ item, index }) => {
-                const now = new Date();
-                const isCurrentPast = new Date(item.event.start) <= now;
-                const isPrevPast =
-                  index > 0
-                    ? new Date(currentEvents[index - 1].event.start) <= now
-                    : false;
+    <TabScreenContainer>
+      <View style={{ flex: 1 }}>
+        {renderHeader()}
+        <FlatList
+          data={loading && !refreshing ? [] : currentEvents}
+          keyExtractor={(bundle) => bundle.event.id}
+          contentInsetAdjustmentBehavior="automatic"
+          style={{ flex: 1, backgroundColor: theme.background }}
+          ListHeaderComponent={null}
+          ListEmptyComponent={renderContent}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 16, alignItems: "center" }}>
+                <ActivityIndicator color={theme.onBackground} />
+              </View>
+            ) : null
+          }
+          renderItem={
+            loading && !refreshing
+              ? null // Don't render items during loading
+              : ({ item, index }) => {
+                  const now = new Date();
+                  const isCurrentPast = new Date(item.event.start) <= now;
+                  const isPrevPast =
+                    index > 0
+                      ? new Date(currentEvents[index - 1].event.start) <= now
+                      : false;
 
-                return (
-                  <>
-                    {index === 0 && (
-                      <View
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 12,
-                          backgroundColor: theme.surfaceContainerHigh,
-                        }}
-                      >
-                        <Text
+                  return (
+                    <>
+                      {index === 0 && (
+                        <View
                           style={{
-                            fontSize: 16,
-                            fontWeight: "600",
-                            color: theme.onBackground,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            backgroundColor: theme.surfaceContainerHigh,
                           }}
                         >
-                          Kommende arrangementer
-                        </Text>
-                      </View>
-                    )}
-                    {isCurrentPast && !isPrevPast && (
-                      <View
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 12,
-                          backgroundColor: theme.surfaceContainerHigh,
-                        }}
-                      >
-                        <Text
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "600",
+                              color: theme.onBackground,
+                            }}
+                          >
+                            Kommende arrangementer
+                          </Text>
+                        </View>
+                      )}
+                      {isCurrentPast && !isPrevPast && (
+                        <View
                           style={{
-                            fontSize: 16,
-                            fontWeight: "600",
-                            color: theme.onBackground,
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            backgroundColor: theme.surfaceContainerHigh,
                           }}
                         >
-                          Tidligere arrangementer
-                        </Text>
-                      </View>
-                    )}
-                    <EventCard
-                      event={item}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/event-details",
-                          params: {
-                            eventId: item.event.id,
-                            headerTitle: item.event.title,
-                          },
-                        })
-                      }
-                    />
-                  </>
-                );
-              }
-        }
-      />
-    </View>
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "600",
+                              color: theme.onBackground,
+                            }}
+                          >
+                            Tidligere arrangementer
+                          </Text>
+                        </View>
+                      )}
+                      <EventCard
+                        event={item}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/event-details",
+                            params: {
+                              eventId: item.event.id,
+                              headerTitle: item.event.title,
+                            },
+                          })
+                        }
+                      />
+                    </>
+                  );
+                }
+          }
+        />
+      </View>
+    </TabScreenContainer>
   );
 };
 
