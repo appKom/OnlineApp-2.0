@@ -7,11 +7,11 @@ export default function TabLayout() {
 
   return (
     <NativeTabs
-      minimizeBehavior="onScrollDown" // iOS 26 liquid glass minimize behavior
+      minimizeBehavior="onScrollDown"
       tintColor={
         Platform.OS === "ios"
-          ? DynamicColorIOS({ light: theme.primary, dark: theme.primary })
-          : theme.primary
+          ? DynamicColorIOS({ light: "#fab759", dark: "#fab759" })
+          : "#fab759" // Change this line
       }
       backgroundColor={theme.surface}
       labelStyle={{
@@ -21,7 +21,7 @@ export default function TabLayout() {
                 light: theme.outline ?? "#999999",
                 dark: theme.outline ?? "#999999",
               })
-            : theme.outline ?? "#999999",
+            : (theme.outline ?? "#999999"),
       }}
     >
       <NativeTabs.Trigger name="(home)">
