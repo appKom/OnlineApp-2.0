@@ -10,11 +10,7 @@ export default function TabLayout() {
   return (
     <NativeTabs
       minimizeBehavior="onScrollDown"
-      tintColor={
-        Platform.OS === "ios"
-          ? DynamicColorIOS({ light: "#fab759", dark: "#fab759" })
-          : "#fab759"
-      }
+      tintColor = { theme.secondary }
       backgroundColor={theme.surface}
     >
       <NativeTabs.Trigger name="(events)">
