@@ -7,6 +7,7 @@ import {
   Text,
   useColorScheme,
 } from "react-native";
+import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 // Define the game data structure
 interface Game {
@@ -60,20 +61,22 @@ export default function GamesScreen() {
   );
 
   return (
-    <FlatList
-      data={games}
-      keyExtractor={(item) => item.id}
-      renderItem={renderGameItem}
-      contentInsetAdjustmentBehavior="automatic"
-      style={{
-        flex: 1,
-        backgroundColor: isDark ? "#000" : "#fff",
-      }}
-      contentContainerStyle={{
-        padding: 20,
-      }}
-      showsVerticalScrollIndicator={false}
-    />
+    <TabScreenContainer>
+      <FlatList
+        data={games}
+        keyExtractor={(item) => item.id}
+        renderItem={renderGameItem}
+        contentInsetAdjustmentBehavior="automatic"
+        style={{
+          flex: 1,
+          backgroundColor: isDark ? "#000" : "#fff",
+        }}
+        contentContainerStyle={{
+          padding: 20,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+    </TabScreenContainer>
   );
 }
 
