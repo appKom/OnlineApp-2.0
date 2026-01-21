@@ -45,6 +45,10 @@ const AllEvents: React.FC = () => {
   const pastCursorRef = useRef<string | undefined>(undefined);
   const myEventsCursorRef = useRef<string | undefined>(undefined);
   
+  // Fetch locks to prevent parallel calls
+  const allEventsFetchingRef = useRef(false);
+  const myEventsFetchingRef = useRef(false);
+  
   const [loadingMore, setLoadingMore] = useState(false);
   
   // Track if we've exhausted future events
@@ -65,11 +69,18 @@ const AllEvents: React.FC = () => {
 
   // Function to fetch all events
   const fetchAllEvents = async () => {
+    // Prevent parallel calls
+    if (allEventsFetchingRef.current) return;
+    allEventsFetchingRef.current = true;
+
+    console.log("🎣 fetchAllEvents called from:", new Error().stack?.split('\n')[2]);
     try {
       if (!futureDone) {
         // Fetch future events
         const data = await getAllFutureEvents(10, futureCursorRef.current);
         const events = data?.items ?? [];
+
+        console.log("📥 Fetched future events:", events.length, events.map(e => e.event.id));
         
         setFutureEvents((prev) => [...prev, ...events]);
         futureCursorRef.current = data?.nextCursor;
@@ -91,11 +102,18 @@ const AllEvents: React.FC = () => {
     } catch (error) {
       console.error("Failed to load all events:", error);
       throw error;
+    } finally {
+      allEventsFetchingRef.current = false;
     }
   };
 
   // Function to fetch user's events
   const fetchMyEvents = async () => {
+    // Prevent parallel calls
+    if (myEventsFetchingRef.current) return;
+    myEventsFetchingRef.current = true;
+
+    console.log("🎣 fetchMyEvents called from:", new Error().stack?.split('\n')[2]);
     try {
       if (!user) return;
 
@@ -103,6 +121,8 @@ const AllEvents: React.FC = () => {
         // Fetch future events for user
         const data = await getAllFutureEventsByAttendingUserId(user.id, 10, myEventsCursorRef.current);
         const events = data?.items ?? [];
+
+        console.log("📥 Fetched future my events:", events.length, events.map(e => e.event.id));
         
         setMyEvents((prev) => [...prev, ...events]);
         myEventsCursorRef.current = data?.nextCursor;
@@ -116,6 +136,8 @@ const AllEvents: React.FC = () => {
         const data = await getAllPastEventsByAttendingUserId(user.id, 10, myEventsCursorRef.current);
         const events = data?.items ?? [];
         
+        console.log("📥 Fetched past my events:", events.length, events.map(e => e.event.id));
+        
         setMyEvents((prev) => [...prev, ...events]);
         myEventsCursorRef.current = data?.nextCursor;
       }
@@ -124,29 +146,37 @@ const AllEvents: React.FC = () => {
     } catch (error) {
       console.error("Failed to load my events:", error);
       throw error;
+    } finally {
+      myEventsFetchingRef.current = false;
     }
   };
 
   // Function to load data based on current tab
   const loadCurrentTabData = async (isRefresh = false) => {
+    console.log("📍 loadCurrentTabData called, currentTab:", currentTab);
     if (currentTab === "alle") {
       if (!allEventsLoaded || isRefresh) {
+        console.log("📍 -> calling fetchAllEvents");
         await fetchAllEvents();
       }
     } else {
       if (!myEventsLoaded || isRefresh) {
+        console.log("📍 -> calling fetchMyEvents");
         await fetchMyEvents();
       }
     }
   };
 
   // Initial load
-  useEffect(() => {    
+  useEffect(() => {
+    console.log("🔄 useEffect running - initial load");
+    
     const loadInitialData = async () => {
       setLoading(true);
       setError(null);
 
       try {
+        console.log("🔄 -> calling loadCurrentTabData from useEffect");
         await loadCurrentTabData();
       } catch (error) {
         setError("Failed to load events");
@@ -197,6 +227,8 @@ const AllEvents: React.FC = () => {
     futureCursorRef.current = undefined;
     pastCursorRef.current = undefined;
     myEventsCursorRef.current = undefined;
+    allEventsFetchingRef.current = false;
+    myEventsFetchingRef.current = false;
     setFutureDone(false);
     setMyEventsFutureDone(false);
     setAllEventsLoaded(false);
@@ -213,10 +245,12 @@ const AllEvents: React.FC = () => {
 
   // Handle loading more when scrolling to end
   const handleEndReached = async () => {
+    console.log("📍 handleEndReached called, currentTab:", currentTab, "initialLoadComplete:", initialLoadComplete);
     
     // Don't load more until initial load is done
     if (!initialLoadComplete) return;
     
+    console.log("📍 handleEndReached called, currentTab:", currentTab);
     if (currentTab === "alle") {
       if (loadingMore) return;
     } else {
@@ -226,8 +260,10 @@ const AllEvents: React.FC = () => {
     setLoadingMore(true);
     try {
       if (currentTab === "alle") {
+        console.log("📍 -> calling fetchAllEvents from handleEndReached");
         await fetchAllEvents();
       } else {
+        console.log("📍 -> calling fetchMyEvents from handleEndReached");
         await fetchMyEvents();
       }
     } catch (error) {
