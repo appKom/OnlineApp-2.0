@@ -8,6 +8,7 @@ import {
   RegistrationAvailabilityResult,
   EventAttendanceBundle,
   AttendanceSelectionResponse,
+  EventFilterParams
 } from "types/event";
 
 export const DEREGISTER_REASON_TYPES = [
@@ -44,18 +45,24 @@ const client = createTRPCUntypedClient({
 type order = "asc" | "desc";
 
 export async function getAllEvents(
-  take: number = 50,
+  take: number = 20,
   cursor?: string,
-  orderBy: order = "asc",
+  orderBy: order = "desc",
+  filter?: EventFilterParams,
 ): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
   const params = {
     take,
     cursor,
     filter: {
-      byStartDate: {
+      byStartDate: filter?.byStartDate ?? {
         max: null,
         // min: "2025-01-01T00:00:00.000Z",
-        min: new Date().toISOString(),
+        //min: new Date().toISOString(),
+        min: null,
+      },
+      byEndDate: filter?.byEndDate ?? {
+        max: null,
+        min: null,
       },
       orderBy,
     },
@@ -66,24 +73,29 @@ export async function getAllEvents(
 }
 
 export async function getAllPastEvents(
-  take: number = 50,
+  take: number = 20,
   cursor?: string,
   orderBy: order = "desc",
 ): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
-  const params = {
-    take,
-    cursor,
-    filter: {
-      byStartDate: {
-        min: null,
-        max: new Date().toISOString(),
-      },
-      orderBy,
+  return getAllEvents(take, cursor, orderBy, {
+    byStartDate: {
+      min: null,
+      max: new Date().toISOString(),
     },
-  };
+  });
+}
 
-  const result = await client.query("event.all", params);
-  return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
+export async function getAllFutureEvents(
+  take: number = 20,
+  cursor?: string,
+  orderBy: order = "asc",
+): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
+  return getAllEvents(take, cursor, orderBy, {
+    byStartDate: {
+      min: new Date().toISOString(),
+      max: null,
+    },
+  });
 }
 
 export async function getAllEventsByAttendingUserId(
