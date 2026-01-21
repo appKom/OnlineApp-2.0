@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -38,10 +38,11 @@ const AllEvents: React.FC = () => {
   const [allEventsLoaded, setAllEventsLoaded] = useState(false);
   const [myEventsLoaded, setMyEventsLoaded] = useState(false);
 
-  // Pagination cursors
-  const [futureCursor, setFutureCursor] = useState<string | undefined>();
-  const [pastCursor, setPastCursor] = useState<string | undefined>();
-  const [myEventsCursor, setMyEventsCursor] = useState<string | undefined>();
+  // Pagination cursors - using refs for immediate mutability
+  const futureCursorRef = useRef<string | undefined>(undefined);
+  const pastCursorRef = useRef<string | undefined>(undefined);
+  const myEventsCursorRef = useRef<string | undefined>(undefined);
+  
   const [loadingMore, setLoadingMore] = useState(false);
   
   // Track if we've exhausted future events
@@ -63,13 +64,13 @@ const AllEvents: React.FC = () => {
     try {
       if (!futureDone) {
         // Fetch future events
-        const data = await getAllFutureEvents(10, futureCursor);
+        const data = await getAllFutureEvents(10, futureCursorRef.current);
         const events = data?.items ?? [];
 
         console.log("📥 Fetched future events:", events.length, events.map(e => e.event.id));
         
         setFutureEvents((prev) => [...prev, ...events]);
-        setFutureCursor(data?.nextCursor);
+        futureCursorRef.current = data?.nextCursor;
         
         // If no cursor, we're done with future events
         if (!data?.nextCursor) {
@@ -77,11 +78,11 @@ const AllEvents: React.FC = () => {
         }
       } else {
         // Fetch past events
-        const data = await getAllPastEvents(2, pastCursor);
+        const data = await getAllPastEvents(10, pastCursorRef.current);
         const events = data?.items ?? [];
         
         setPastEvents((prev) => [...prev, ...events]);
-        setPastCursor(data?.nextCursor);
+        pastCursorRef.current = data?.nextCursor;
       }
 
       setAllEventsLoaded(true);
@@ -95,14 +96,14 @@ const AllEvents: React.FC = () => {
   const fetchMyEvents = async () => {
     try {
       const data = user
-        ? await getAllEventsByAttendingUserId(user.id, 20, myEventsCursor)
+        ? await getAllEventsByAttendingUserId(user.id, 20, myEventsCursorRef.current)
         : null;
       const eventsArray = data?.items ?? [];
 
       // Save cursor for next page
-      setMyEventsCursor(data?.nextCursor);
+      myEventsCursorRef.current = data?.nextCursor;
 
-      if (!myEventsCursor) {
+      if (!myEventsCursorRef.current) {
         // First load
         setMyEvents(eventsArray.reverse());
       } else {
@@ -195,10 +196,11 @@ const AllEvents: React.FC = () => {
     setError(null);
     setFutureEvents([]);
     setPastEvents([]);
-    setFutureCursor(undefined);
-    setPastCursor(undefined);
+    setMyEvents([]);
+    futureCursorRef.current = undefined;
+    pastCursorRef.current = undefined;
+    myEventsCursorRef.current = undefined;
     setFutureDone(false);
-    setMyEventsCursor(undefined);
 
     try {
       await loadCurrentTabData(true); // Force refresh
