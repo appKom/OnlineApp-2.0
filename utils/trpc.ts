@@ -102,20 +102,58 @@ export async function getAllEventsByAttendingUserId(
   userId: string,
   limit: number = 20,
   cursor?: string,
+  orderBy: order = "desc",
+  filter?: EventFilterParams,
 ): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
-  const credentials = await Authenticator.getCurrentCredentials();
-
-  if (!credentials) return null;
-
-  var decoded = jwtDecode<UserClaims>(credentials.idToken);
-
-  const params: any = { id: decoded.sub, take: limit };
+  const params: any = { 
+    id: userId, 
+    take: limit,
+    filter: {
+      byStartDate: filter?.byStartDate ?? {
+        max: null,
+        min: null,
+      },
+      byEndDate: filter?.byEndDate ?? {
+        max: null,
+        min: null,
+      },
+      orderBy,
+    },
+  };
   if (cursor) {
     params.cursor = cursor;
   }
 
   const result = await client.query("event.allByAttendingUserId", params);
   return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
+}
+
+export async function getAllPastEventsByAttendingUserId(
+  userId: string,
+  limit: number = 20,
+  cursor?: string,
+  orderBy: order = "desc",
+): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
+  return getAllEventsByAttendingUserId(userId, limit, cursor, orderBy, {
+    byStartDate: {
+      min: null,
+      max: new Date().toISOString(),
+    },
+  });
+}
+
+export async function getAllFutureEventsByAttendingUserId(
+  userId: string,
+  limit: number = 20,
+  cursor?: string,
+  orderBy: order = "asc",
+): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
+  return getAllEventsByAttendingUserId(userId, limit, cursor, orderBy, {
+    byStartDate: {
+      min: new Date().toISOString(),
+      max: null,
+    },
+  });
 }
 
 export async function getEvent(
