@@ -197,7 +197,6 @@ import { useEffect, useState } from "react";
 import Authenticator from "../../../utils/authenticator";
 import { getUser } from "utils/trpc"; // You'll need to create this
 import { User } from "types/user";
-import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
@@ -314,53 +313,50 @@ export default function ProfileScreen() {
 
   if (!isLoggedIn) {
     return (
-      <TabScreenContainer>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={[
-            styles.container,
-            { backgroundColor: isDark ? "#000" : "#fff" },
-          ]}
-        >
-          <View style={styles.content}>
-            <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>
-              Velkommen til Online-Appen!
-            </Text>
-            <Text style={[styles.subtitle, { color: isDark ? "#ccc" : "#666" }]}>
-              Vennligst logg inn for å se og administrere profilen din.
-            </Text>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={[
+          styles.container,
+          { backgroundColor: isDark ? "#000" : "#fff" },
+        ]}
+      >
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>
+            Velkommen til Online-Appen!
+          </Text>
+          <Text style={[styles.subtitle, { color: isDark ? "#ccc" : "#666" }]}>
+            Vennligst logg inn for å se og administrere profilen din.
+          </Text>
 
-            <TouchableOpacity
-              style={[styles.loginButton, { opacity: isLoading ? 0.6 : 1 }]}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              <Text style={styles.loginButtonText}>
-                {isLoading ? "Logger Inn..." : "Logg Inn"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </TabScreenContainer>
+          <TouchableOpacity
+            style={[styles.loginButton, { opacity: isLoading ? 0.6 : 1 }]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.loginButtonText}>
+              {isLoading ? "Logger Inn..." : "Logg Inn"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     );
   }
 
   return (
-    <TabScreenContainer>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={[styles.container, { backgroundColor: isDark ? "#000" : "#fff" }]}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.content}>
-          {error && (
-            <View
-              style={[
-                styles.errorContainer,
-                { backgroundColor: isDark ? "#330000" : "#ffebee" },
-              ]}
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      style={[styles.container, { backgroundColor: isDark ? "#000" : "#fff" }]}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+      }
+    >
+      <View style={styles.content}>
+        {error && (
+          <View
+            style={[
+              styles.errorContainer,
+              { backgroundColor: isDark ? "#330000" : "#ffebee" },
+            ]}
           >
             <Text
               style={[
@@ -738,7 +734,6 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
-    </TabScreenContainer>
   );
 }
 
