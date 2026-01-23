@@ -17,9 +17,9 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
 }) => {
   const theme = useTheme();
   const colors = {
-    cardBackground: theme.tertiaryContainer,
-    textPrimary: theme.onPrimaryContainer,
-    textSecondary: theme.onTertiaryContainer,
+    cardBackground: theme.surfaceContainer,
+    textPrimary: theme.primary,
+    textSecondary: theme.onSurface,
   };
 
   // Smart date formatting function
@@ -78,7 +78,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
       </Text>
 
       {/* Date and time with icon */}
-      <TouchableOpacity onPress={handleAddToCalendar} style={[styles.detailRow, { marginBottom: 12 }]}>
+      <View style={[styles.detailRow, { marginBottom: 12, backgroundColor: theme.surfaceContainerHighest }]}>
         <MaterialCommunityIcons name="clock-outline" size={24} color={colors.textPrimary} style={styles.icon} />
         <View style={styles.textContainer}>
           <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
@@ -88,12 +88,14 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
             {formatDateRange(event.event.start, event.event.end).time}
           </Text>
         </View>
-        <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
-      </TouchableOpacity>
+        <TouchableOpacity onPress={handleAddToCalendar}>
+          <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
+        </TouchableOpacity>
+      </View>
 
       {/* Location with icon */}
       {(event.event.locationTitle || event.event.locationAddress) && (
-        <View style={styles.detailRow}>
+        <View style={[styles.detailRow, { backgroundColor: theme.surfaceContainerHighest }]}>
           <MaterialCommunityIcons name="map-marker-outline" size={24} color={colors.textPrimary} style={styles.icon} />
           <View style={styles.textContainer}>
             {event.event.locationTitle && (
@@ -142,6 +144,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
+    borderRadius: 10,
+    padding: 4,
+    paddingHorizontal: 10
   },
   icon: {
     marginTop: 0,
