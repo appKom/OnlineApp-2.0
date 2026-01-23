@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
+import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -213,18 +214,20 @@ const DiceRoll: React.FC = () => {
   });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.centerContainer}>
-        <GestureDetector gesture={tapGesture}>
-          <View style={styles.diceButton}>
-            <Animated.View style={animatedStyle}>
-              <DiceComponent diceValue={diceValue} size={250} />
-            </Animated.View>
-          </View>
-        </GestureDetector>
-        <InstructionText isRolling={isRolling} />
+    <TabScreenContainer>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.centerContainer}>
+          <GestureDetector gesture={tapGesture}>
+            <View style={styles.diceButton}>
+              <Animated.View style={animatedStyle}>
+                <DiceComponent diceValue={diceValue} size={250} />
+              </Animated.View>
+            </View>
+          </GestureDetector>
+          <InstructionText isRolling={isRolling} />
+        </View>
       </View>
-    </View>
+    </TabScreenContainer>
   );
 };
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
+import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -220,27 +221,29 @@ const SpinLine: React.FC = () => {
   });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.centerContainer}>
-        <GestureDetector gesture={panGesture}>
-          <View style={styles.spinButton}>
-            <Animated.View style={animatedStyle}>
-              <Image
-                source={require("assets/svg/online_hvit_o.svg")}
-                style={{ width: 300, height: 300 }}
-                contentFit="contain"
-              />
-            </Animated.View>
-          </View>
-        </GestureDetector>
-        <InstructionText isSpinning={isAnimating} />
-        <ChevronIndicator
-          dragValue={dragY}
-          maxDrag={MAX_DRAG}
-          isSpinning={isAnimating}
-        />
+    <TabScreenContainer>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.centerContainer}>
+          <GestureDetector gesture={panGesture}>
+            <View style={styles.spinButton}>
+              <Animated.View style={animatedStyle}>
+                <Image
+                  source={require("assets/svg/online_hvit_o.svg")}
+                  style={{ width: 300, height: 300 }}
+                  contentFit="contain"
+                />
+              </Animated.View>
+            </View>
+          </GestureDetector>
+          <InstructionText isSpinning={isAnimating} />
+          <ChevronIndicator
+            dragValue={dragY}
+            maxDrag={MAX_DRAG}
+            isSpinning={isAnimating}
+          />
+        </View>
       </View>
-    </View>
+    </TabScreenContainer>
   );
 };
 
