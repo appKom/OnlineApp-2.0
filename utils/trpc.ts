@@ -4,10 +4,22 @@ import Authenticator from "./authenticator";
 import { jwtDecode } from "jwt-decode";
 import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
-import { RegistrationAvailabilityResult, EventAttendanceBundle, AttendanceSelectionResponse } from "types/event";
+import {
+  RegistrationAvailabilityResult,
+  EventAttendanceBundle,
+  AttendanceSelectionResponse,
+} from "types/event";
 
-export const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
-export type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES[number]
+export const DEREGISTER_REASON_TYPES = [
+  "SCHOOL",
+  "WORK",
+  "ECONOMY",
+  "TIME",
+  "SICK",
+  "NO_FAMILIAR_FACES",
+  "OTHER",
+] as const;
+export type DeregisterReasonType = (typeof DEREGISTER_REASON_TYPES)[number];
 
 const client = createTRPCUntypedClient({
   links: [
@@ -29,19 +41,56 @@ const client = createTRPCUntypedClient({
   ],
 });
 
-export async function getAllEvents(limit: number = 20, cursor?: string): Promise<{ items?: EventAttendanceBundle[], nextCursor?: string }> {
-  const params: any = { take: limit };
-  if (cursor) {
-    params.cursor = cursor;
-  }
+type order = "asc" | "desc";
+
+export async function getAllEvents(
+  take: number = 50,
+  cursor?: string,
+  orderBy: order = "asc",
+): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
+  const params = {
+    take,
+    cursor,
+    filter: {
+      byStartDate: {
+        max: null,
+        // min: "2025-01-01T00:00:00.000Z",
+        min: new Date().toISOString(),
+      },
+      orderBy,
+    },
+  };
+
   const result = await client.query("event.all", params);
-  // The TRPC client is untyped here; cast to the expected shape so callers
-  // can access `items` safely. If the backend response shape changes this
-  // cast may be incorrect and should be updated.
-  return result as { items?: EventAttendanceBundle[], nextCursor?: string };
+  return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
 }
 
-export async function getAllEventsByAttendingUserId(userId: string, limit: number = 20, cursor?: string): Promise<{ items?: EventAttendanceBundle[], nextCursor?: string } | null> {
+export async function getAllPastEvents(
+  take: number = 50,
+  cursor?: string,
+  orderBy: order = "desc",
+): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
+  const params = {
+    take,
+    cursor,
+    filter: {
+      byStartDate: {
+        min: null,
+        max: new Date().toISOString(),
+      },
+      orderBy,
+    },
+  };
+
+  const result = await client.query("event.all", params);
+  return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
+}
+
+export async function getAllEventsByAttendingUserId(
+  userId: string,
+  limit: number = 20,
+  cursor?: string,
+): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
   const credentials = await Authenticator.getCurrentCredentials();
 
   if (!credentials) return null;
@@ -54,10 +103,12 @@ export async function getAllEventsByAttendingUserId(userId: string, limit: numbe
   }
 
   const result = await client.query("event.allByAttendingUserId", params);
-  return result as { items?: EventAttendanceBundle[], nextCursor?: string };
+  return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
 }
 
-export async function getEvent(eventId: string): Promise<EventAttendanceBundle | null> {
+export async function getEvent(
+  eventId: string,
+): Promise<EventAttendanceBundle | null> {
   const result = await client.query("event.get", eventId);
   // Cast the untyped TRPC response to our EventAttendanceBundle shape.
   // If the backend returns null/undefined, normalize to null.
@@ -76,7 +127,7 @@ export async function getUser(): Promise<User | null> {
 }
 
 export async function getRegistrationAvailability(
-  attendanceId: string
+  attendanceId: string,
 ): Promise<RegistrationAvailabilityResult | null> {
   const credentials = await Authenticator.getCurrentCredentials();
 
@@ -89,7 +140,7 @@ export async function getRegistrationAvailability(
     {
       attendanceId: attendanceId,
       userId: decoded.sub,
-    }
+    },
   );
 
   console.log("Availability:", result);
@@ -98,7 +149,7 @@ export async function getRegistrationAvailability(
 }
 
 export async function registerForEvent(
-  attendanceId: string
+  attendanceId: string,
 ): Promise<RegistrationAvailabilityResult | null> {
   const result = await client.mutation("event.attendance.registerForEvent", {
     attendanceId: attendanceId,
@@ -109,34 +160,43 @@ export async function registerForEvent(
   return result as RegistrationAvailabilityResult;
 }
 
-export async function deregisterForEvent (
+export async function deregisterForEvent(
   attendanceId: string,
   deregisterType: DeregisterReasonType,
-  deregisterReason?: string
+  deregisterReason?: string,
 ): Promise<RegistrationAvailabilityResult | null> {
   const result = await client.mutation("event.attendance.deregisterForEvent", {
     attendanceId: attendanceId,
     deregisterReason: {
       type: deregisterType,
-      details: deregisterReason ?? null
-    }
+      details: deregisterReason ?? null,
+    },
   });
 
-   return result as RegistrationAvailabilityResult;
+  return result as RegistrationAvailabilityResult;
 }
 
-export async function findChargeAttendeeScheduleDate(attendeeId: string): Promise<Date | null> {
+export async function findChargeAttendeeScheduleDate(
+  attendeeId: string,
+): Promise<Date | null> {
   try {
-    const result = await client.query("event.attendance.findChargeAttendeeScheduleDate", { attendeeId });
+    const result = await client.query(
+      "event.attendance.findChargeAttendeeScheduleDate",
+      { attendeeId },
+    );
     return (result as string) ? new Date(result as string) : null;
   } catch (e) {
     return null;
   }
 }
 
-export async function getExpiryDateForUser(userId: string): Promise<any | null> {
+export async function getExpiryDateForUser(
+  userId: string,
+): Promise<any | null> {
   try {
-    const result = await client.query("personalMark.getExpiryDateForUser", { userId });
+    const result = await client.query("personalMark.getExpiryDateForUser", {
+      userId,
+    });
     return result ?? null;
   } catch (e) {
     return null;
@@ -145,7 +205,7 @@ export async function getExpiryDateForUser(userId: string): Promise<any | null> 
 
 export async function setSelectionsOptions(
   attendeeId: string,
-  selections: AttendanceSelectionResponse[]
+  selections: AttendanceSelectionResponse[],
 ): Promise<void> {
   try {
     await client.mutation("event.attendance.updateSelectionResponses", {

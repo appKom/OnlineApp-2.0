@@ -18,6 +18,7 @@ import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
 import EventCard from "../../../components/EventCard";
 import Authenticator from "utils/authenticator";
 import { useTheme } from "utils/theme";
+import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 type TabType = "alle" | "mine";
 
@@ -50,31 +51,33 @@ const AllEvents: React.FC = () => {
     try {
       const data = await getAllEvents(20, allEventsCursor);
       const eventsArray = data?.items ?? [];
-      
+
       // Save cursor for next page
       setAllEventsCursor(data?.nextCursor);
 
       if (!allEventsCursor) {
         // First load - filter and sort
         const now = new Date();
-        const futureEvents = eventsArray.filter(bundle => {
+        const futureEvents = eventsArray.filter((bundle) => {
           const eventEnd = new Date(bundle.event.end);
           return eventEnd > now;
         });
-        const pastEvents = eventsArray.filter(bundle => {
+        const pastEvents = eventsArray.filter((bundle) => {
           const eventEnd = new Date(bundle.event.end);
           return eventEnd < now;
         });
-        setAllEvents([...futureEvents.reverse(), ...pastEvents]);
+        setAllEvents([...futureEvents, ...pastEvents]);
       } else {
         // Load more - append to existing, filter duplicates by event ID
-        setAllEvents(prev => {
-          const existingIds = new Set(prev.map(e => e.event.id));
-          const newEvents = eventsArray.filter(bundle => !existingIds.has(bundle.event.id));
+        setAllEvents((prev) => {
+          const existingIds = new Set(prev.map((e) => e.event.id));
+          const newEvents = eventsArray.filter(
+            (bundle) => !existingIds.has(bundle.event.id),
+          );
           return [...prev, ...newEvents];
         });
       }
-      
+
       setAllEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load all events:", error);
@@ -85,9 +88,11 @@ const AllEvents: React.FC = () => {
   // Function to fetch user's events
   const fetchMyEvents = async () => {
     try {
-      const data = user ? await getAllEventsByAttendingUserId(user.id, 20, myEventsCursor) : null;
+      const data = user
+        ? await getAllEventsByAttendingUserId(user.id, 20, myEventsCursor)
+        : null;
       const eventsArray = data?.items ?? [];
-      
+
       // Save cursor for next page
       setMyEventsCursor(data?.nextCursor);
 
@@ -96,13 +101,15 @@ const AllEvents: React.FC = () => {
         setMyEvents(eventsArray.reverse());
       } else {
         // Load more - append to existing, filter duplicates by event ID
-        setMyEvents(prev => {
-          const existingIds = new Set(prev.map(e => e.event.id));
-          const newEvents = eventsArray.filter(bundle => !existingIds.has(bundle.event.id));
+        setMyEvents((prev) => {
+          const existingIds = new Set(prev.map((e) => e.event.id));
+          const newEvents = eventsArray.filter(
+            (bundle) => !existingIds.has(bundle.event.id),
+          );
           return [...prev, ...newEvents.reverse()];
         });
       }
-      
+
       setMyEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load my events:", error);
@@ -192,7 +199,7 @@ const AllEvents: React.FC = () => {
     } else {
       if (loadingMore || !myEventsCursor) return;
     }
-    
+
     setLoadingMore(true);
     try {
       if (currentTab === "alle") {
@@ -244,16 +251,19 @@ const AllEvents: React.FC = () => {
         buttons={["Alle", "Mine"]}
         selectedIndex={selectedIndex}
         onPress={handleTabIndexChange}
-        containerStyle={{ 
-          borderRadius: 13, 
+        containerStyle={{
+          borderRadius: 13,
           backgroundColor: theme.primaryContainer,
           padding: 3,
-          overflow: 'hidden',
+          overflow: "hidden",
         }}
-        buttonStyle={{ backgroundColor: 'transparent' }}
+        buttonStyle={{ backgroundColor: "transparent" }}
         selectedTextStyle={{ color: theme.onSecondaryFixed }}
         textStyle={{ color: theme.onPrimaryContainer }}
-        highlightStyle={{ backgroundColor: theme.secondaryFixedDim, opacity: 1 }}
+        highlightStyle={{
+          backgroundColor: theme.secondaryFixedDim,
+          opacity: 1,
+        }}
         highlightInset={6}
       />
     </View>
@@ -278,7 +288,12 @@ const AllEvents: React.FC = () => {
     if (error && !refreshing) {
       return (
         <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center", minHeight: 200 }}
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 200,
+          }}
         >
           <Text style={{ color: "red" }}>{error}</Text>
         </View>
@@ -289,68 +304,97 @@ const AllEvents: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      {renderHeader()}
-      <FlatList
-        data={loading && !refreshing ? [] : currentEvents}
-        keyExtractor={(bundle) => bundle.event.id}
-        contentInsetAdjustmentBehavior="automatic"
-        style={{ flex: 1, backgroundColor: theme.background }}
-        ListHeaderComponent={null}
-        ListEmptyComponent={renderContent}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.3}
-        ListFooterComponent={
-          loadingMore ? (
-            <View style={{ paddingVertical: 16, alignItems: "center" }}>
-              <ActivityIndicator color={theme.onBackground} />
-            </View>
-          ) : null
-        }
-        renderItem={
-          loading && !refreshing
-            ? null // Don't render items during loading
-            : ({ item, index }) => {
-                const now = new Date();
-                const isCurrentPast = new Date(item.event.start) <= now;
-                const isPrevPast = index > 0 ? new Date(currentEvents[index - 1].event.start) <= now : false;
-                
-                return (
-                  <>
-                    {index === 0 && (
-                      <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: theme.surfaceContainerHigh }}>
-                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.onBackground }}>
-                          Kommende arrangementer
-                        </Text>
-                      </View>
-                    )}
-                    {isCurrentPast && !isPrevPast && (
-                      <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: theme.surfaceContainerHigh }}>
-                        <Text style={{ fontSize: 16, fontWeight: "600", color: theme.onBackground }}>
-                          Tidligere arrangementer
-                        </Text>
-                      </View>
-                    )}
-                    <EventCard
-                      event={item}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/event-details",
-                          params: { 
-                            eventId: item.event.id,
-                            headerTitle: item.event.title,
-                          },
-                        })
-                      }
-                    />
-                  </>
-                );
-              }
-        }
-      />
-    </View>
+    <TabScreenContainer>
+      <View style={{ flex: 1 }}>
+        {renderHeader()}
+        <FlatList
+          data={loading && !refreshing ? [] : currentEvents}
+          keyExtractor={(bundle) => bundle.event.id}
+          contentInsetAdjustmentBehavior="automatic"
+          style={{ flex: 1, backgroundColor: theme.background }}
+          ListHeaderComponent={null}
+          ListEmptyComponent={renderContent}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 16, alignItems: "center" }}>
+                <ActivityIndicator color={theme.onBackground} />
+              </View>
+            ) : null
+          }
+          renderItem={
+            loading && !refreshing
+              ? null // Don't render items during loading
+              : ({ item, index }) => {
+                  const now = new Date();
+                  const isCurrentPast = new Date(item.event.start) <= now;
+                  const isPrevPast =
+                    index > 0
+                      ? new Date(currentEvents[index - 1].event.start) <= now
+                      : false;
+
+                  return (
+                    <>
+                      {index === 0 && (
+                        <View
+                          style={{
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            backgroundColor: theme.surfaceContainerHigh,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "600",
+                              color: theme.onBackground,
+                            }}
+                          >
+                            Kommende arrangementer
+                          </Text>
+                        </View>
+                      )}
+                      {isCurrentPast && !isPrevPast && (
+                        <View
+                          style={{
+                            paddingHorizontal: 16,
+                            paddingVertical: 12,
+                            backgroundColor: theme.surfaceContainerHigh,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "600",
+                              color: theme.onBackground,
+                            }}
+                          >
+                            Tidligere arrangementer
+                          </Text>
+                        </View>
+                      )}
+                      <EventCard
+                        event={item}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/event-details",
+                            params: {
+                              eventId: item.event.id,
+                              headerTitle: item.event.title,
+                            },
+                          })
+                        }
+                      />
+                    </>
+                  );
+                }
+          }
+        />
+      </View>
+    </TabScreenContainer>
   );
 };
 

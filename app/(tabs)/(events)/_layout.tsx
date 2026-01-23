@@ -1,11 +1,8 @@
-import { Stack } from "expo-router";
-import { useSegments, useGlobalSearchParams } from "expo-router";
+import { Stack, useSegments, useGlobalSearchParams } from "expo-router";
 import Header from "../../../components/Header";
 
 export default function HomeLayout() {
-
   const { headerTitle } = useGlobalSearchParams<{ headerTitle?: string }>();
-
   const segments = useSegments();
   const current = segments[segments.length - 1] ?? "index";
 
@@ -18,8 +15,13 @@ export default function HomeLayout() {
   return (
     <>
       <Header title={title} />
-
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: true,
+          animation: "default",
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="event-details" />
       </Stack>
