@@ -9,7 +9,7 @@ export default function TabLayout() {
     <NativeTabs
       minimizeBehavior="onScrollDown"
       tintColor={theme.secondary}
-      backgroundColor={theme.surface}
+      backgroundColor={theme.surfaceContainerLowest}
       labelStyle={{
         color:
           Platform.OS === "ios"

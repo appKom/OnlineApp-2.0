@@ -29,9 +29,9 @@ export default function Header({
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: logoBgColor }]}>
-      <View style={[styles.logoSection, ] }>
+      {/* <View style={[styles.logoSection, ] }>
         <Image source={logoSource} style={{ width: logoWidth, height: logoHeight, resizeMode: "contain" }} />
-      </View>
+      </View> */}
 
       {title ? (
         <View style={[styles.titleSection, { backgroundColor: titleBgColor }] }>
