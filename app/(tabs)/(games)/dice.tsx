@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
+import { useTheme } from "../../../utils/theme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -91,6 +92,7 @@ const DiceComponent: React.FC<{
 const InstructionText: React.FC<{ isRolling: SharedValue<boolean> }> = ({
   isRolling,
 }) => {
+  const theme = useTheme();
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: isRolling.value ? 0.3 : 1,
   }));
@@ -99,7 +101,7 @@ const InstructionText: React.FC<{ isRolling: SharedValue<boolean> }> = ({
     <Animated.Text
       style={[
         {
-          color: "#fff",
+          color: theme.onBackground,
           fontSize: 18,
           textAlign: "center",
           marginTop: 20,
@@ -115,6 +117,7 @@ const InstructionText: React.FC<{ isRolling: SharedValue<boolean> }> = ({
 
 const DiceRoll: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
 
   // Animation values - exactly like spin-the-bottle
   const rotation = useSharedValue(0);
@@ -215,7 +218,7 @@ const DiceRoll: React.FC = () => {
 
   return (
     <TabScreenContainer>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
         <View style={styles.centerContainer}>
           <GestureDetector gesture={tapGesture}>
             <View style={styles.diceButton}>
@@ -234,7 +237,6 @@ const DiceRoll: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
     position: "relative",
   },
   centerContainer: {
