@@ -31,7 +31,6 @@ import {
   sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme } from "utils/theme";
-import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
 type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES [number]
@@ -186,71 +185,70 @@ const EventDetails: React.FC = () => {
   const imageHeight = screenWidth / Math.max(5/3, Math.min(6/3, imageAspectRatio));
 
   return (
-    <TabScreenContainer>
-      <>
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-          <ScrollView
-            style={styles.scrollContainer}
-          >
-            <View style={{ width: screenWidth, height: imageHeight, overflow: "hidden" }}>
-              <ImageBackground
-                source={{ uri: event.event.imageUrl }}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
-              >
-                <BlurView blurType="dark" blurAmount={10} style={StyleSheet.absoluteFill} />
-              </ImageBackground>
-              <Image
-                source={{ uri: event.event.imageUrl }}
-                style={[
-                  styles.image,
-                  { width: screenWidth, height: imageHeight, position: "absolute" },
-                ]}
-                resizeMode="contain"
-              />
+    <>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        >
+          <View style={{ width: screenWidth, height: imageHeight, overflow: "hidden" }}>
+            <ImageBackground
+              source={{ uri: event.event.imageUrl }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            >
+              <BlurView blurType="dark" blurAmount={10} style={StyleSheet.absoluteFill} />
+            </ImageBackground>
+            <Image
+              source={{ uri: event.event.imageUrl }}
+              style={[
+                styles.image,
+                { width: screenWidth, height: imageHeight, position: "absolute" },
+              ]}
+              resizeMode="contain"
+            />
+          </View>
+
+          <TimeLocationCard
+            event={event}
+            formatNorwegianDate={formatNorwegianDate}
+          />
+
+          <DescriptionCard
+            description={event.event.description ?? ""}
+            screenWidth={screenWidth}
+            descriptionExpanded={descriptionExpanded}
+            onToggleDescription={toggleDescription}
+          />
+
+          {isRegistration ? (
+            <AttendanceCard
+              user={user}
+              event={event.event}
+              initialAttendance={event.attendance!}
+              initialPunishment={punishment}
+              parentEvent={event.parentEvent ?? null}
+              parentAttendance={event.parentAttendance ?? null}
+            />
+          ) : (
+            <View style={styles.noRegistrationContainer}>
+              <Text style={[styles.noRegistrationText, { color: theme.onSurfaceVariant }]}>
+                Dette er ikke et påmeldingsarrangement.
+              </Text>
             </View>
-
-            <TimeLocationCard
-              event={event}
-              formatNorwegianDate={formatNorwegianDate}
-            />
-
-            <DescriptionCard
-              description={event.event.description ?? ""}
-              screenWidth={screenWidth}
-              descriptionExpanded={descriptionExpanded}
-              onToggleDescription={toggleDescription}
-            />
-
-            {isRegistration ? (
-              <AttendanceCard
-                user={user}
-                event={event.event}
-                initialAttendance={event.attendance!}
-                initialPunishment={punishment}
-                parentEvent={event.parentEvent ?? null}
-                parentAttendance={event.parentAttendance ?? null}
-              />
-            ) : (
-              <View style={styles.noRegistrationContainer}>
-                <Text style={[styles.noRegistrationText, { color: theme.onSurfaceVariant }]}>
-                  Dette er ikke et påmeldingsarrangement.
-                </Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {isRegistration && (
-            <AttendeesBottomSheet
-              bottomSheetRef={bottomSheetRef}
-              attendance={event.attendance!}
-              userPoolIndex={userPoolIndex}
-              sortedAttendees={sortedAttendees}
-            />
           )}
-        </View>
-      </>
-    </TabScreenContainer>
+        </ScrollView>
+
+        {isRegistration && (
+          <AttendeesBottomSheet
+            bottomSheetRef={bottomSheetRef}
+            attendance={event.attendance!}
+            userPoolIndex={userPoolIndex}
+            sortedAttendees={sortedAttendees}
+          />
+        )}
+      </View>
+    </>
   );
 };
 

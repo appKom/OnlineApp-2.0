@@ -1,41 +1,51 @@
-import { NativeTabs, Icon, Label, VectorIcon } from "expo-router/unstable-native-tabs";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Tabs } from "expo-router";
+import { Ionicons, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "../../utils/theme";
-import { Platform, DynamicColorIOS } from "react-native";
+
+type TabIconProps = { color: string; size?: number };
 
 export default function TabLayout() {
   const theme = useTheme();
 
   return (
-    <NativeTabs
-      minimizeBehavior="onScrollDown"
-      tintColor = { theme.secondary }
-      backgroundColor={theme.surface}
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: theme.secondary ?? theme.primary,
+        tabBarInactiveTintColor: theme.outline ?? "#999999",
+        tabBarStyle: { backgroundColor: theme.surface },
+        headerShown: false,
+      }}
     >
-      <NativeTabs.Trigger name="(events)">
-        <Label>Events</Label>
-        <Icon 
-          sf="calendar"
-          src={<VectorIcon family={MaterialCommunityIcons} name="calendar" />}
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="(games)">
-        <Label>Spill</Label>
-        <Icon
-          sf="dice.fill"
-          src={<VectorIcon family={MaterialCommunityIcons} name="dice-multiple" />}
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="(profile)">
-        <Label>Profil</Label>
-        <Icon 
-          sf="person.fill" 
-          src={<VectorIcon family={MaterialIcons} name="person" />}
-        />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+      <Tabs.Screen
+        name="(home)"
+        options={{
+          title: "Hjem",
+          animation: "none",
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <MaterialIcons name="event" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="(games)"
+        options={{
+          title: "Spill",
+          animation: "none",
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <FontAwesome6 name="dice" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="(profile)"
+        options={{
+          title: "Profil",
+          animation: "none",
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <Ionicons name="person" color={color} size={size} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
