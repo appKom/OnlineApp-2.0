@@ -8,11 +8,7 @@ export default function TabLayout() {
   return (
     <NativeTabs
       minimizeBehavior="onScrollDown"
-      tintColor={
-        Platform.OS === "ios"
-          ? DynamicColorIOS({ light: "#fab759", dark: "#fab759" })
-          : "#fab759" // Change this line
-      }
+      tintColor={theme.secondary}
       backgroundColor={theme.surface}
       labelStyle={{
         color:
@@ -28,7 +24,7 @@ export default function TabLayout() {
         <Label>Hjem</Label>
         <Icon
           sf="calendar"
-          drawable="ic_menu_my_calendar" // Use built-in Android drawable or add custom
+          drawable="ic_calendar" // Use built-in Android drawable or add custom
         />
       </NativeTabs.Trigger>
 
@@ -36,13 +32,16 @@ export default function TabLayout() {
         <Label>Spill</Label>
         <Icon
           sf="dice.fill"
-          drawable="ic_menu_view" // Replace with custom drawable if needed
+          drawable="ic_dice" // Replace with custom drawable if needed
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(profile)">
         <Label>Profil</Label>
-        <Icon sf="person.fill" drawable="ic_menu_preferences" />
+        <Icon 
+          sf="person.fill" 
+          drawable="ic_person" 
+        />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
