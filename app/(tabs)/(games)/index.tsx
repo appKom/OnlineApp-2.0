@@ -8,6 +8,7 @@ import {
   useColorScheme,
 } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
+import { useTheme } from "../../../utils/theme";
 
 // Define the game data structure
 interface Game {
@@ -34,8 +35,7 @@ const games: Game[] = [
 ];
 
 export default function GamesScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const theme = useTheme();
   const router = useRouter();
 
   const renderGameItem = ({ item }: { item: Game }) => (
@@ -47,12 +47,12 @@ export default function GamesScreen() {
         },
       ]}
     >
-      <LiquidGlassView style={styles.gameItem}>
-        <Text style={[styles.gameTitle, { color: isDark ? "#fff" : "#000" }]}>
+      <LiquidGlassView style={[styles.gameItem, { backgroundColor: theme.surfaceContainer }]}>
+        <Text style={[styles.gameTitle, { color: theme.onSurface }]}>
           {item.title}
         </Text>
         <Text
-          style={[styles.gameDescription, { color: isDark ? "#ccc" : "#666" }]}
+          style={[styles.gameDescription, { color: theme.onSurfaceVariant }]}
         >
           {item.description}
         </Text>
@@ -69,7 +69,7 @@ export default function GamesScreen() {
         contentInsetAdjustmentBehavior="automatic"
         style={{
           flex: 1,
-          backgroundColor: isDark ? "#000" : "#fff",
+          backgroundColor: theme.background,
         }}
         contentContainerStyle={{
           padding: 20,

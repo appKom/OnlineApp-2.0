@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
+import { useTheme } from "../../../utils/theme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,7 +39,8 @@ const ChevronIndicator: React.FC<{
   dragValue: SharedValue<number>;
   maxDrag: number;
   isSpinning: SharedValue<boolean>;
-}> = ({ dragValue, maxDrag, isSpinning }) => {
+  chevronColor: string;
+}> = ({ dragValue, maxDrag, isSpinning, chevronColor }) => {
   // Opacity for the whole indicator (hide during spinning)
   const containerStyle = useAnimatedStyle(() => ({
     opacity: isSpinning.value ? 0 : 1,
@@ -76,7 +78,7 @@ const ChevronIndicator: React.FC<{
 
           return (
             <Animated.View key={i} style={animatedStyle}>
-              <Chevron fill={"white"} />
+              <Chevron fill={chevronColor} />
             </Animated.View>
           );
         })}
@@ -85,8 +87,9 @@ const ChevronIndicator: React.FC<{
   );
 };
 
-const InstructionText: React.FC<{ isSpinning: SharedValue<boolean> }> = ({
+const InstructionText: React.FC<{ isSpinning: SharedValue<boolean>; textColor: string }> = ({
   isSpinning,
+  textColor,
 }) => {
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: isSpinning.value ? 0 : 1,
@@ -95,7 +98,7 @@ const InstructionText: React.FC<{ isSpinning: SharedValue<boolean> }> = ({
     <Animated.Text
       style={[
         {
-          color: "#fff",
+          color: textColor,
           fontSize: 18,
           textAlign: "center",
           marginTop: 10,
@@ -110,6 +113,7 @@ const InstructionText: React.FC<{ isSpinning: SharedValue<boolean> }> = ({
 };
 
 const SpinLine: React.FC = () => {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   // Animation values
@@ -222,7 +226,7 @@ const SpinLine: React.FC = () => {
 
   return (
     <TabScreenContainer>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
         <View style={styles.centerContainer}>
           <GestureDetector gesture={panGesture}>
             <View style={styles.spinButton}>
@@ -235,11 +239,12 @@ const SpinLine: React.FC = () => {
               </Animated.View>
             </View>
           </GestureDetector>
-          <InstructionText isSpinning={isAnimating} />
+          <InstructionText isSpinning={isAnimating} textColor={theme.onBackground} />
           <ChevronIndicator
             dragValue={dragY}
             maxDrag={MAX_DRAG}
             isSpinning={isAnimating}
+            chevronColor={theme.onBackground}
           />
         </View>
       </View>
@@ -250,7 +255,6 @@ const SpinLine: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
     position: "relative",
   },
   centerContainer: {
