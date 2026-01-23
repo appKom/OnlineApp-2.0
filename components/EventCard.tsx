@@ -1,7 +1,8 @@
 import React from "react";
 import { Pressable, View, Text, StyleSheet, Image } from "react-native";
 import { EventAttendanceBundle } from "../types/event";
-import { useTheme } from "../utils/theme";
+import { useTheme, elevate } from "../utils/theme";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface EventCardProps {
   event: EventAttendanceBundle;
@@ -10,6 +11,27 @@ interface EventCardProps {
 
 const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const theme = useTheme();
+
+  const getBadgeColor = (eventType: string | undefined): string => {
+    switch (eventType?.toUpperCase()) {
+      case "SOCIAL":
+        return theme.socialBadge;
+      case "ACADEMIC":
+        return theme.academicBadbe;
+      case "COMPANY":
+        return theme.companyBadge;
+      case "GENERAL_ASSEMBLY":
+        return theme.generalAssemblyBadge;
+      case "INTERNAL":
+        return theme.internalBadge;
+      case "OTHER":
+        return theme.otherBadge;
+      case "WELCOME":
+        return theme.welcomeBadge;
+      default:
+        return theme.otherBadge;
+    }
+  };
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("no-NO", {
@@ -58,18 +80,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
         </Text>
 
         {/* Event Date and Time */}
-        <Text
-          style={{
-            fontSize: 14,
-            color: theme.onSurfaceVariant,
-            marginBottom: 4,
-          }}
-        >
-          📅 {formatDate(event.event.start)}
-        </Text>
-
-        {/* Event Location */}
-        {event.event.locationTitle && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+          <MaterialCommunityIcons 
+            name="calendar-blank"
+            size={17}
+            color={theme.onSurfaceVariant}
+          />
           <Text
             style={{
               fontSize: 14,
@@ -77,23 +93,25 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
               marginBottom: 4,
             }}
           >
-            📍 {event.event.locationTitle}
+            {formatDate(event.event.start)}
           </Text>
-        )}
-
-        {/* Subtitle or Description Preview */}
-        {event.event.subtitle && (
-          <Text
-            style={{
-              fontSize: 13,
-              color: theme.onSurfaceVariant,
-              fontStyle: "italic",
-            }}
-            numberOfLines={1}
-          >
-            {event.event.subtitle}
+        </View>
+        <View style={{
+          alignSelf: 'flex-start',
+          backgroundColor: getBadgeColor(event.event.type),
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+          borderRadius: 4
+        }}>
+          <Text 
+            style={{ 
+              color: elevate(getBadgeColor(event.event.type), 150), 
+              fontSize: 12,
+              fontWeight: '500'
+            }}>
+            {event.event.type}
           </Text>
-        )}
+        </View>
       </View>
       
     </Pressable>
