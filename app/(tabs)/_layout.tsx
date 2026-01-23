@@ -1,6 +1,4 @@
-import { NativeTabs, Icon, Label, VectorIcon } from "expo-router/unstable-native-tabs";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
 import { useTheme } from "../../utils/theme";
 import { Platform, DynamicColorIOS } from "react-native";
 
@@ -10,14 +8,27 @@ export default function TabLayout() {
   return (
     <NativeTabs
       minimizeBehavior="onScrollDown"
-      tintColor = { theme.secondary }
+      tintColor={
+        Platform.OS === "ios"
+          ? DynamicColorIOS({ light: "#fab759", dark: "#fab759" })
+          : "#fab759" // Change this line
+      }
       backgroundColor={theme.surface}
+      labelStyle={{
+        color:
+          Platform.OS === "ios"
+            ? DynamicColorIOS({
+                light: theme.outline ?? "#999999",
+                dark: theme.outline ?? "#999999",
+              })
+            : (theme.outline ?? "#999999"),
+      }}
     >
       <NativeTabs.Trigger name="(events)">
-        <Label>Events</Label>
-        <Icon 
+        <Label>Hjem</Label>
+        <Icon
           sf="calendar"
-          src={<VectorIcon family={MaterialCommunityIcons} name="calendar" />}
+          drawable="ic_menu_my_calendar" // Use built-in Android drawable or add custom
         />
       </NativeTabs.Trigger>
 
@@ -25,16 +36,13 @@ export default function TabLayout() {
         <Label>Spill</Label>
         <Icon
           sf="dice.fill"
-          src={<VectorIcon family={MaterialCommunityIcons} name="dice-multiple" />}
+          drawable="ic_menu_view" // Replace with custom drawable if needed
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="(profile)">
         <Label>Profil</Label>
-        <Icon 
-          sf="person.fill" 
-          src={<VectorIcon family={MaterialIcons} name="person" />}
-        />
+        <Icon sf="person.fill" drawable="ic_menu_preferences" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

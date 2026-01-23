@@ -158,3 +158,15 @@ export type RegistrationAvailabilitySuccess = {
 export type RegistrationAvailabilityResult =
   | RegistrationAvailabilitySuccess
   | RegistrationAvailabilityFailure;
+
+
+export interface EventFilterParams {
+  byStartDate?: {
+    min?: string | null;
+    max?: string | null;
+  };
+  byEndDate?: {
+    min?: string | null;
+    max?: string | null;
+  };
+}

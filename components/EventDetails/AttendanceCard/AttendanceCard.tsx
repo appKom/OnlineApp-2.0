@@ -179,8 +179,8 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const hasPunishment = Boolean(punishment && (punishment.delay > 0 || punishment.suspended))
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.primaryContainer}]}>
-      <Text style={{ color: theme.onBackground, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
+    <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.surfaceContainer}]}>
+      <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
 
       <AttendanceDateInfo attendance={attendance} attendee={attendee} chargeScheduleDate={null} />
 

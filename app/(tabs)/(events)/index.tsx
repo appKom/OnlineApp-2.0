@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,10 @@ import { EventAttendanceBundle } from "../../../types/event";
 import {
   getAllEvents,
   getAllEventsByAttendingUserId,
+  getAllPastEvents,
+  getAllFutureEvents,
+  getAllPastEventsByAttendingUserId,
+  getAllFutureEventsByAttendingUserId,
 } from "../../../utils/trpc";
 import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
 import EventCard from "../../../components/EventCard";
@@ -23,7 +27,8 @@ import { TabScreenContainer } from "../../../components/TabScreenContainer";
 type TabType = "alle" | "mine";
 
 const AllEvents: React.FC = () => {
-  const [allEvents, setAllEvents] = useState<EventAttendanceBundle[]>([]);
+  const [futureEvents, setFutureEvents] = useState<EventAttendanceBundle[]>([]);
+  const [pastEvents, setPastEvents] = useState<EventAttendanceBundle[]>([]);
   const [myEvents, setMyEvents] = useState<EventAttendanceBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,96 +40,128 @@ const AllEvents: React.FC = () => {
   const [allEventsLoaded, setAllEventsLoaded] = useState(false);
   const [myEventsLoaded, setMyEventsLoaded] = useState(false);
 
-  // Pagination cursors
-  const [allEventsCursor, setAllEventsCursor] = useState<string | undefined>();
-  const [myEventsCursor, setMyEventsCursor] = useState<string | undefined>();
+  // Pagination cursors - using refs for immediate mutability
+  const futureCursorRef = useRef<string | undefined>(undefined);
+  const pastCursorRef = useRef<string | undefined>(undefined);
+  const myEventsCursorRef = useRef<string | undefined>(undefined);
+  
+  // Fetch locks to prevent parallel calls
+  const allEventsFetchingRef = useRef(false);
+  const myEventsFetchingRef = useRef(false);
+  
   const [loadingMore, setLoadingMore] = useState(false);
+  
+  // Track if we've exhausted future events
+  const [futureDone, setFutureDone] = useState(false);
+
+  // Track if we've exhausted future my events
+  const [myEventsFutureDone, setMyEventsFutureDone] = useState(false);
+
+  // Track if initial load is complete
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const router = useRouter();
   const theme = useTheme();
 
   const currentTab: TabType = selectedIndex === 0 ? "alle" : "mine";
+  const allEvents = [...futureEvents, ...pastEvents];
   const currentEvents = currentTab === "alle" ? allEvents : myEvents;
 
   // Function to fetch all events
   const fetchAllEvents = async () => {
+    // Prevent parallel calls
+    if (allEventsFetchingRef.current) return;
+    allEventsFetchingRef.current = true;
+
+    console.log("🎣 fetchAllEvents called from:", new Error().stack?.split('\n')[2]);
     try {
-      const data = await getAllEvents(20, allEventsCursor);
-      const eventsArray = data?.items ?? [];
+      if (!futureDone) {
+        // Fetch future events
+        const data = await getAllFutureEvents(10, futureCursorRef.current);
+        const events = data?.items ?? [];
 
-      // Save cursor for next page
-      setAllEventsCursor(data?.nextCursor);
-
-      if (!allEventsCursor) {
-        // First load - filter and sort
-        const now = new Date();
-        const futureEvents = eventsArray.filter((bundle) => {
-          const eventEnd = new Date(bundle.event.end);
-          return eventEnd > now;
-        });
-        const pastEvents = eventsArray.filter((bundle) => {
-          const eventEnd = new Date(bundle.event.end);
-          return eventEnd < now;
-        });
-        setAllEvents([...futureEvents, ...pastEvents]);
+        console.log("📥 Fetched future events:", events.length, events.map(e => e.event.id));
+        
+        setFutureEvents((prev) => [...prev, ...events]);
+        futureCursorRef.current = data?.nextCursor;
+        
+        // If no cursor, we're done with future events
+        if (!data?.nextCursor) {
+          setFutureDone(true);
+        }
       } else {
-        // Load more - append to existing, filter duplicates by event ID
-        setAllEvents((prev) => {
-          const existingIds = new Set(prev.map((e) => e.event.id));
-          const newEvents = eventsArray.filter(
-            (bundle) => !existingIds.has(bundle.event.id),
-          );
-          return [...prev, ...newEvents];
-        });
+        // Fetch past events
+        const data = await getAllPastEvents(10, pastCursorRef.current);
+        const events = data?.items ?? [];
+        
+        setPastEvents((prev) => [...prev, ...events]);
+        pastCursorRef.current = data?.nextCursor;
       }
 
       setAllEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load all events:", error);
       throw error;
+    } finally {
+      allEventsFetchingRef.current = false;
     }
   };
 
   // Function to fetch user's events
   const fetchMyEvents = async () => {
+    // Prevent parallel calls
+    if (myEventsFetchingRef.current) return;
+    myEventsFetchingRef.current = true;
+
+    console.log("🎣 fetchMyEvents called from:", new Error().stack?.split('\n')[2]);
     try {
-      const data = user
-        ? await getAllEventsByAttendingUserId(user.id, 20, myEventsCursor)
-        : null;
-      const eventsArray = data?.items ?? [];
+      if (!user) return;
 
-      // Save cursor for next page
-      setMyEventsCursor(data?.nextCursor);
+      if (!myEventsFutureDone) {
+        // Fetch future events for user
+        const data = await getAllFutureEventsByAttendingUserId(user.id, 10, myEventsCursorRef.current);
+        const events = data?.items ?? [];
 
-      if (!myEventsCursor) {
-        // First load
-        setMyEvents(eventsArray.reverse());
+        console.log("📥 Fetched future my events:", events.length, events.map(e => e.event.id));
+        
+        setMyEvents((prev) => [...prev, ...events]);
+        myEventsCursorRef.current = data?.nextCursor;
+        
+        // If no cursor, we're done with future my events
+        if (!data?.nextCursor) {
+          setMyEventsFutureDone(true);
+        }
       } else {
-        // Load more - append to existing, filter duplicates by event ID
-        setMyEvents((prev) => {
-          const existingIds = new Set(prev.map((e) => e.event.id));
-          const newEvents = eventsArray.filter(
-            (bundle) => !existingIds.has(bundle.event.id),
-          );
-          return [...prev, ...newEvents.reverse()];
-        });
+        // Fetch past events for user
+        const data = await getAllPastEventsByAttendingUserId(user.id, 10, myEventsCursorRef.current);
+        const events = data?.items ?? [];
+        
+        console.log("📥 Fetched past my events:", events.length, events.map(e => e.event.id));
+        
+        setMyEvents((prev) => [...prev, ...events]);
+        myEventsCursorRef.current = data?.nextCursor;
       }
 
       setMyEventsLoaded(true);
     } catch (error) {
       console.error("Failed to load my events:", error);
       throw error;
+    } finally {
+      myEventsFetchingRef.current = false;
     }
   };
 
   // Function to load data based on current tab
   const loadCurrentTabData = async (isRefresh = false) => {
+    console.log("📍 loadCurrentTabData called, currentTab:", currentTab);
     if (currentTab === "alle") {
       if (!allEventsLoaded || isRefresh) {
+        console.log("📍 -> calling fetchAllEvents");
         await fetchAllEvents();
       }
     } else {
       if (!myEventsLoaded || isRefresh) {
+        console.log("📍 -> calling fetchMyEvents");
         await fetchMyEvents();
       }
     }
@@ -132,16 +169,20 @@ const AllEvents: React.FC = () => {
 
   // Initial load
   useEffect(() => {
+    console.log("🔄 useEffect running - initial load");
+    
     const loadInitialData = async () => {
       setLoading(true);
       setError(null);
 
       try {
+        console.log("🔄 -> calling loadCurrentTabData from useEffect");
         await loadCurrentTabData();
       } catch (error) {
         setError("Failed to load events");
       } finally {
         setLoading(false);
+        setInitialLoadComplete(true);
       }
     };
 
@@ -180,8 +221,18 @@ const AllEvents: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     setError(null);
-    setAllEventsCursor(undefined);
-    setMyEventsCursor(undefined);
+    setFutureEvents([]);
+    setPastEvents([]);
+    setMyEvents([]);
+    futureCursorRef.current = undefined;
+    pastCursorRef.current = undefined;
+    myEventsCursorRef.current = undefined;
+    allEventsFetchingRef.current = false;
+    myEventsFetchingRef.current = false;
+    setFutureDone(false);
+    setMyEventsFutureDone(false);
+    setAllEventsLoaded(false);
+    setMyEventsLoaded(false);
 
     try {
       await loadCurrentTabData(true); // Force refresh
@@ -194,17 +245,25 @@ const AllEvents: React.FC = () => {
 
   // Handle loading more when scrolling to end
   const handleEndReached = async () => {
+    console.log("📍 handleEndReached called, currentTab:", currentTab, "initialLoadComplete:", initialLoadComplete);
+    
+    // Don't load more until initial load is done
+    if (!initialLoadComplete) return;
+    
+    console.log("📍 handleEndReached called, currentTab:", currentTab);
     if (currentTab === "alle") {
-      if (loadingMore || !allEventsCursor) return;
+      if (loadingMore) return;
     } else {
-      if (loadingMore || !myEventsCursor) return;
+      if (loadingMore) return;
     }
 
     setLoadingMore(true);
     try {
       if (currentTab === "alle") {
+        console.log("📍 -> calling fetchAllEvents from handleEndReached");
         await fetchAllEvents();
       } else {
+        console.log("📍 -> calling fetchMyEvents from handleEndReached");
         await fetchMyEvents();
       }
     } catch (error) {

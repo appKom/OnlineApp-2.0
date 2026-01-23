@@ -4,7 +4,7 @@ import type { Attendance, Attendee } from "../../../types/event"
 import { hasAttendeePaid } from "utils/attendance"
 import { format as formatDate, isEqual, isPast, isThisYear, min } from "date-fns"
 import { da, nb } from "date-fns/locale"
-import { useTheme } from "utils/theme";
+import { useTheme, elevate } from "utils/theme";
 
 
 interface AttendanceDateInfoProps {
@@ -28,11 +28,11 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
   const showDeregisterDeadlineNotice = hasPaid && !isEqual(actualDeregisterDeadline, deregisterDeadline)
   
   const theme = useTheme();
-  const blockColor = showDeregisterDeadlineNotice ? theme.error : theme.tertiaryContainer;
+  const blockColor = showDeregisterDeadlineNotice ? theme.error : theme.surfaceContainerHighest;
 
   const makeDateElement = (label: string, date: Date, time: string, showNotice?: boolean, icon?: React.ReactNode) => {
     const shortDateStr = formatDate(date, isThisYear(date) ? "dd. MMM" : "dd.MM.yyyy", { locale: nb })
-    const textColor = showNotice ? theme.onError : theme.onTertiaryContainer;
+    const textColor = showNotice ? theme.onError : theme.onSurface;
     return (
       <View>
         <View style={styles.row}>

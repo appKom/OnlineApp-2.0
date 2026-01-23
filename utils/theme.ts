@@ -69,6 +69,14 @@ export type ThemeScheme = {
   onDeregisterButton: string;
   registerForWaitlist: string;
   onRegisterForWaitlist: string;
+
+  socialBadge: string;
+  academicBadbe: string;
+  companyBadge: string;
+  generalAssemblyBadge: string;
+  internalBadge: string;
+  otherBadge: string;
+  welcomeBadge: string;
 };
 
 export const light: ThemeScheme = {
@@ -134,6 +142,14 @@ export const light: ThemeScheme = {
   onDeregisterButton: "#4a0a0a",
   registerForWaitlist: "#fff085",
   onRegisterForWaitlist: "#3d3000",
+
+  socialBadge: "#b9f8cf",
+  academicBadbe: "#bedbff",
+  companyBadge: "#ffc9c9",
+  generalAssemblyBadge: "#fee685",
+  internalBadge: "#fee685",
+  otherBadge: "#fee685",
+  welcomeBadge: "#fee685",
 };
 
 export const dark: ThemeScheme = {
@@ -199,6 +215,14 @@ export const dark: ThemeScheme = {
   onDeregisterButton: "#ffd9d6",
   registerForWaitlist: "#894b00",
   onRegisterForWaitlist: "#ffe7b0",
+
+  socialBadge: "#032e15",
+  academicBadbe: "#162556",
+  companyBadge: "#460809",
+  generalAssemblyBadge: "#461901",
+  internalBadge: "#461901",
+  otherBadge: "#461901",
+  welcomeBadge: "#461901",
 };
 
 const themes = { light, dark } as const;

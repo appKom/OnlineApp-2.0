@@ -20,11 +20,11 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   // Use centralized theme tokens
   const theme = useTheme();
   const colors = {
-    cardBackground: theme.secondaryContainer,
-    textPrimary: theme.onTertiaryContainer,
-    textSecondary: theme.onSecondaryContainer,
-    toggleText: theme.onTertiaryContainer,
-    toggleTextBackground: theme.tertiaryContainer,
+    cardBackground: theme.surfaceContainer,
+    textPrimary: theme.secondary,
+    textSecondary: theme.onSurface,
+    toggleText: theme.onSecondaryContainer,
+    toggleTextBackground: theme.secondaryContainer,
   };
 
   // Strip HTML tags for length check
