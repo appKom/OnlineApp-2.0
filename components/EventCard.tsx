@@ -1,9 +1,8 @@
 import React from "react";
 import { Pressable, View, Text, StyleSheet, Image } from "react-native";
 import { EventAttendanceBundle } from "../types/event";
-import { useTheme, elevate } from "../utils/theme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-
+import { useTheme, useThemeMode, elevate } from "../utils/theme";
+import { MaterialCommunityIcons } from "@expo/vector-icons";import { getReservedAttendeeCount, getUnreservedAttendeeCount, getAttendablePool } from "../utils/attendance";
 interface EventCardProps {
   event: EventAttendanceBundle;
   onPress: () => void;
@@ -11,6 +10,13 @@ interface EventCardProps {
 
 const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const theme = useTheme();
+  const { mode } = useThemeMode();
+
+  const getFallbackImage = () => {
+    return mode === 'dark'
+      ? require('../assets/eventFallback/fallback_dark.png')
+      : require('../assets/eventFallback/fallback_light.png');
+  };
 
   const getBadgeColor = (eventType: string | undefined): string => {
     switch (eventType?.toUpperCase()) {
@@ -51,13 +57,14 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
         borderColor: theme.surfaceContainerHigh,
         backgroundColor: theme.background,
         flexDirection: "row",
-        gap: 8
+        gap: 8,
+        alignItems: "center",
       }}
       onPress={onPress}
     >
       <View style={{ justifyContent: "center" }}>
         <Image
-          source={{ uri: event.event.imageUrl }}
+          source={event.event.imageUrl ? { uri: event.event.imageUrl } : getFallbackImage()}
           style={{
             width: 100,
             height: 70,
@@ -66,18 +73,60 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
           resizeMode="cover"
         />
       </View>
-      <View>
+      <View style={{ flex: 1 }}>
         {/* Event Title */}
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-            color: theme.onBackground,
-            marginBottom: 8,
-          }}
-        >
-          {event.event.title ?? "No Title"}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4, gap: 5 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: theme.onBackground,
+              flex: 1,
+            }}
+            numberOfLines={1}
+          >
+            {event.event.title ?? "No Title"}
+          </Text>
+          
+          {event.attendance && (
+            <View style={{ 
+              flexDirection: "row", 
+              alignItems: "flex-end", 
+              backgroundColor: theme.surfaceContainerHigh, 
+              paddingVertical: 2,
+              paddingHorizontal: 6,
+              borderRadius: 6,
+              gap: 3,
+            }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: theme.onBackground,
+                }}
+              >
+                {getReservedAttendeeCount(event.attendance, event.attendance.pools[0]?.id ?? "")}
+                {event.attendance.pools[0]?.capacity > 0 && `/${event.attendance.pools[0]?.capacity}`}
+              </Text>
+              
+              {getUnreservedAttendeeCount(event.attendance, event.attendance.pools[0]?.id ?? "") > 0 && (
+                <View style={{
+                  alignSelf: 'flex-end'
+                }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: theme.onBackground,
+                      fontWeight: "500",
+                    }}
+                  >
+                    +{getUnreservedAttendeeCount(event.attendance, event.attendance.pools[0]?.id ?? "")}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
 
         {/* Event Date and Time */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
