@@ -197,11 +197,11 @@ import { useEffect, useState } from "react";
 import Authenticator from "../../../utils/authenticator";
 import { getUser } from "utils/trpc"; // You'll need to create this
 import { User } from "types/user";
+import { useTheme } from "../../../utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 export default function ProfileScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const theme = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -319,14 +319,14 @@ export default function ProfileScreen() {
           contentInsetAdjustmentBehavior="automatic"
           style={[
             styles.container,
-            { backgroundColor: isDark ? "#000" : "#fff" },
+            { backgroundColor: theme.background },
           ]}
         >
           <View style={styles.content}>
-            <Text style={[styles.title, { color: isDark ? "#fff" : "#000" }]}>
+            <Text style={[styles.title, { color: theme.onBackground }]}>
               Velkommen til Online-Appen!
             </Text>
-            <Text style={[styles.subtitle, { color: isDark ? "#ccc" : "#666" }]}>
+            <Text style={[styles.subtitle, { color: theme.onSurfaceVariant }]}>
               Vennligst logg inn for å se og administrere profilen din.
             </Text>
 
@@ -349,7 +349,7 @@ export default function ProfileScreen() {
     <TabScreenContainer>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={[styles.container, { backgroundColor: isDark ? "#000" : "#fff" }]}
+        style={[styles.container, { backgroundColor: theme.background }]}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
@@ -359,13 +359,13 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.errorContainer,
-                { backgroundColor: isDark ? "#330000" : "#ffebee" },
+                { backgroundColor: theme.errorContainer },
               ]}
           >
             <Text
               style={[
                 styles.errorText,
-                { color: isDark ? "#ff6b6b" : "#c62828" },
+                { color: theme.onErrorContainer },
               ]}
             >
               {error}
@@ -385,7 +385,7 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.profileHeader,
-                { backgroundColor: isDark ? "#111" : "#f8f9fa" },
+                { backgroundColor: theme.surfaceContainer },
               ]}
             >
               {user.imageUrl ? (
@@ -394,13 +394,13 @@ export default function ProfileScreen() {
                 <View
                   style={[
                     styles.avatarPlaceholder,
-                    { backgroundColor: isDark ? "#333" : "#ddd" },
+                    { backgroundColor: theme.surfaceVariant },
                   ]}
                 >
                   <Text
                     style={[
                       styles.avatarText,
-                      { color: isDark ? "#fff" : "#666" },
+                      { color: theme.onSurfaceVariant },
                     ]}
                   >
                     {user.name?.charAt(0)?.toUpperCase() ||
@@ -410,18 +410,18 @@ export default function ProfileScreen() {
                 </View>
               )}
 
-              <Text style={[styles.name, { color: isDark ? "#fff" : "#000" }]}>
+              <Text style={[styles.name, { color: theme.onBackground }]}>
                 {user.name || "Unknown User"}
               </Text>
 
-              <Text style={[styles.email, { color: isDark ? "#ccc" : "#666" }]}>
+              <Text style={[styles.email, { color: theme.onSurfaceVariant }]}>
                 {user.email}
               </Text>
 
               <Text
                 style={[
                   styles.profileSlug,
-                  { color: isDark ? "#888" : "#999" },
+                  { color: theme.onSurfaceVariant },
                 ]}
               >
                 @{user.profileSlug}
@@ -433,13 +433,13 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.section,
-                  { backgroundColor: isDark ? "#111" : "#f8f9fa" },
+                  { backgroundColor: theme.surfaceContainer },
                 ]}
               >
                 <Text
                   style={[
                     styles.sectionTitle,
-                    { color: isDark ? "#fff" : "#000" },
+                    { color: theme.onBackground },
                   ]}
                 >
                   Biografi
@@ -447,7 +447,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.sectionContent,
-                    { color: isDark ? "#ccc" : "#666" },
+                    { color: theme.onSurfaceVariant },
                   ]}
                 >
                   {user.biography}
@@ -459,13 +459,13 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.section,
-                { backgroundColor: isDark ? "#111" : "#f8f9fa" },
+                { backgroundColor: theme.surfaceContainer },
               ]}
             >
               <Text
                 style={[
                   styles.sectionTitle,
-                  { color: isDark ? "#fff" : "#000" },
+                  { color: theme.onBackground },
                 ]}
               >
                 Personlig Informasjon
@@ -476,7 +476,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoLabel,
-                      { color: isDark ? "#888" : "#666" },
+                      { color: theme.onSurfaceVariant },
                     ]}
                   >
                     Telefonnummer:
@@ -484,7 +484,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoValue,
-                      { color: isDark ? "#ccc" : "#000" },
+                      { color: theme.onBackground },
                     ]}
                   >
                     {user.phone}
@@ -497,7 +497,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoLabel,
-                      { color: isDark ? "#888" : "#666" },
+                      { color: theme.onSurfaceVariant },
                     ]}
                   >
                     Kjønn:
@@ -505,7 +505,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoValue,
-                      { color: isDark ? "#ccc" : "#000" },
+                      { color: theme.onBackground },
                     ]}
                   >
                     {user.gender}
@@ -518,7 +518,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoLabel,
-                      { color: isDark ? "#888" : "#666" },
+                      { color: theme.onSurfaceVariant },
                     ]}
                   >
                     Dietære Restriksjoner:
@@ -526,7 +526,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoValue,
-                      { color: isDark ? "#ccc" : "#000" },
+                      { color: theme.onBackground },
                     ]}
                   >
                     {user.dietaryRestrictions}
@@ -539,7 +539,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoLabel,
-                      { color: isDark ? "#888" : "#666" },
+                      { color: theme.onSurfaceVariant },
                     ]}
                   >
                     NTNU Brukernavn:
@@ -547,7 +547,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.infoValue,
-                      { color: isDark ? "#ccc" : "#000" },
+                      { color: theme.onBackground },
                     ]}
                   >
                     {user.ntnuUsername}
@@ -561,13 +561,13 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.section,
-                  { backgroundColor: isDark ? "#111" : "#f8f9fa" },
+                  { backgroundColor: theme.surfaceContainer },
                 ]}
               >
                 <Text
                   style={[
                     styles.sectionTitle,
-                    { color: isDark ? "#fff" : "#000" },
+                    { color: theme.onBackground },
                   ]}
                 >
                   Medlemskap ({user.memberships.length})
@@ -578,17 +578,17 @@ export default function ProfileScreen() {
                     key={membership.id}
                     style={[
                       styles.membershipCard,
-                      { backgroundColor: isDark ? "#1a1a1a" : "#fff" },
+                      { backgroundColor: theme.surfaceContainerHigh },
                     ]}
                   >
-                    <Text style={[styles.membershipType, { color: "#fab759" }]}>
+                    <Text style={[styles.membershipType, { color: theme.secondary }]}>
                       {formatMembershipType(membership.type)}
                     </Text>
 
                     <Text
                       style={[
                         styles.membershipSpec,
-                        { color: isDark ? "#ccc" : "#666" },
+                        { color: theme.onSurfaceVariant },
                       ]}
                     >
                       {formatSpecialization(membership.specialization)}
@@ -597,7 +597,7 @@ export default function ProfileScreen() {
                     <Text
                       style={[
                         styles.membershipDates,
-                        { color: isDark ? "#888" : "#999" },
+                        { color: theme.onSurfaceVariant },
                       ]}
                     >
                       {new Date(membership.start).toLocaleDateString()} -{" "}
@@ -646,13 +646,13 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.section,
-                { backgroundColor: isDark ? "#111" : "#f8f9fa" },
+                { backgroundColor: theme.surfaceContainer },
               ]}
             >
               <Text
                 style={[
                   styles.sectionTitle,
-                  { color: isDark ? "#fff" : "#000" },
+                  { color: theme.onBackground },
                 ]}
               >
                 Kontoinformasjon
@@ -662,7 +662,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.infoLabel,
-                    { color: isDark ? "#888" : "#666" },
+                    { color: theme.onSurfaceVariant },
                   ]}
                 >
                   Studieår
@@ -670,7 +670,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.infoValue,
-                    { color: isDark ? "#ccc" : "#000" },
+                    { color: theme.onBackground },
                   ]}
                 >
                   {new Date(user.createdAt).toLocaleDateString()}
@@ -681,7 +681,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.infoLabel,
-                    { color: isDark ? "#888" : "#666" },
+                    { color: theme.onSurfaceVariant },
                   ]}
                 >
                   Medlem siden:
@@ -689,7 +689,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.infoValue,
-                    { color: isDark ? "#ccc" : "#000" },
+                    { color: theme.onBackground },
                   ]}
                 >
                   {new Date(user.createdAt).toLocaleDateString()}
@@ -700,7 +700,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.infoLabel,
-                    { color: isDark ? "#888" : "#666" },
+                    { color: theme.onSurfaceVariant },
                   ]}
                 >
                   Sist oppdatert:
@@ -708,7 +708,7 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.infoValue,
-                    { color: isDark ? "#ccc" : "#000" },
+                    { color: theme.onBackground },
                   ]}
                 >
                   {new Date(user.updatedAt).toLocaleDateString()}
@@ -719,7 +719,7 @@ export default function ProfileScreen() {
         ) : (
           <View style={styles.loadingContainer}>
             <Text
-              style={[styles.loadingText, { color: isDark ? "#ccc" : "#666" }]}
+              style={[styles.loadingText, { color: theme.onSurfaceVariant }]}
             >
               Laster profil...
             </Text>
@@ -728,11 +728,11 @@ export default function ProfileScreen() {
 
         {/* Logout Button */}
         <TouchableOpacity
-          style={[styles.logoutButton, { opacity: isLoading ? 0.6 : 1 }]}
+          style={[styles.logoutButton, { backgroundColor: theme.deregisterButton, opacity: isLoading ? 0.6 : 1 }]}
           onPress={handleLogout}
           disabled={isLoading}
         >
-          <Text style={styles.logoutButtonText}>
+          <Text style={[styles.logoutButtonText, { color: theme.onDeregisterButton }]}>
             {isLoading ? "Logger Ut..." : "Logg Ut"}
           </Text>
         </TouchableOpacity>
@@ -860,19 +860,16 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   loginButton: {
-    backgroundColor: "#1976d2",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 8,
     alignItems: "center",
   },
   loginButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },
   logoutButton: {
-    backgroundColor: "#d32f2f",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 8,
@@ -880,7 +877,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   logoutButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },
