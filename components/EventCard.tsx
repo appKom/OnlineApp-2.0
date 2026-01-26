@@ -39,6 +39,27 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
     }
   };
 
+  const getEventTypeLabel = (eventType: string | undefined): string => {
+    switch (eventType?.toUpperCase()) {
+      case "SOCIAL":
+        return "Sosialt";
+      case "ACADEMIC":
+        return "Kurs";
+      case "COMPANY":
+        return "Bedpres";
+      case "GENERAL_ASSEMBLY":
+        return "Generalforsamling";
+      case "INTERNAL":
+        return "Intern";
+      case "OTHER":
+        return "Annet";
+      case "WELCOME":
+        return "Fadderuke";
+      default:
+        return "Annet";
+    }
+  };
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("no-NO", {
       weekday: "short",
@@ -158,7 +179,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
               fontSize: 12,
               fontWeight: '500'
             }}>
-            {event.event.type}
+            {getEventTypeLabel(event.event.type)}
           </Text>
         </View>
       </View>
