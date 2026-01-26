@@ -30,7 +30,7 @@ import {
   formatRegistrationPeriod,
   sortAttendeesByPool,
 } from "utils/event-utils";
-import { useTheme } from "utils/theme";
+import { useTheme, useThemeMode } from "utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
 const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
@@ -42,6 +42,13 @@ const EventDetails: React.FC = () => {
   const insets = useSafeAreaInsets();
   const user = Authenticator.user;
   const theme = useTheme();
+  const { mode } = useThemeMode();
+
+  const getFallbackImage = () => {
+    return mode === 'dark'
+      ? require('../../../assets/eventFallback/fallback_dark.png')
+      : require('../../../assets/eventFallback/fallback_light.png');
+  };
 
   const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,14 +201,14 @@ const EventDetails: React.FC = () => {
           >
             <View style={{ width: screenWidth, height: imageHeight, overflow: "hidden" }}>
               <ImageBackground
-                source={{ uri: event.event.imageUrl }}
+                source={event.event.imageUrl ? { uri: event.event.imageUrl } : getFallbackImage()}
                 style={{ width: "100%", height: "100%" }}
                 resizeMode="cover"
               >
                 <BlurView blurType="dark" blurAmount={10} style={StyleSheet.absoluteFill} />
               </ImageBackground>
               <Image
-                source={{ uri: event.event.imageUrl }}
+                source={event.event.imageUrl ? { uri: event.event.imageUrl } : getFallbackImage()}
                 style={[
                   styles.image,
                   { width: screenWidth, height: imageHeight, position: "absolute" },
