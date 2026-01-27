@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback } from "react";
 import { View, Text, StyleSheet, Switch } from "react-native";
 import { useTheme } from "../utils/theme";
 
@@ -24,12 +24,15 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 }) => {
   const theme = useTheme();
 
-  const handleToggle = (key: keyof NotificationPreferences, value: boolean) => {
-    onPreferencesChange({
-      ...preferences,
-      [key]: value,
-    });
-  };
+  const handleToggle = useCallback(
+    (key: keyof NotificationPreferences, value: boolean) => {
+      onPreferencesChange({
+        ...preferences,
+        [key]: value,
+      });
+    },
+    [preferences, onPreferencesChange]
+  );
 
   return (
     <View
@@ -227,4 +230,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NotificationSettings;
+export default React.memo(NotificationSettings);
