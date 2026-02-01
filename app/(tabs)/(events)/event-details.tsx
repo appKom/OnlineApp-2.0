@@ -18,7 +18,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "@react-native-community/blur";
 import BottomSheet from "@gorhom/bottom-sheet";
-import { getEvent, getRegistrationAvailability, registerForEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
+import {
+  getEvent,
+  getRegistrationAvailability,
+  registerForEvent,
+  deregisterForEvent,
+  getExpiryDateForUser,
+} from "utils/trpc";
 import type { Punishment } from "types/punishment";
 import Authenticator from "utils/authenticator";
 import { getUserPoolIndex } from "utils/user-utils";
@@ -31,10 +37,17 @@ import {
   sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme, useThemeMode } from "utils/theme";
-import { TabScreenContainer } from "../../../components/TabScreenContainer";
 
-const DEREGISTER_REASON_TYPES = ["SCHOOL", "WORK", "ECONOMY", "TIME", "SICK", "NO_FAMILIAR_FACES", "OTHER"] as const
-type DeregisterReasonType = typeof DEREGISTER_REASON_TYPES [number]
+const DEREGISTER_REASON_TYPES = [
+  "SCHOOL",
+  "WORK",
+  "ECONOMY",
+  "TIME",
+  "SICK",
+  "NO_FAMILIAR_FACES",
+  "OTHER",
+] as const;
+type DeregisterReasonType = (typeof DEREGISTER_REASON_TYPES)[number];
 
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -45,9 +58,9 @@ const EventDetails: React.FC = () => {
   const { mode } = useThemeMode();
 
   const getFallbackImage = () => {
-    return mode === 'dark'
-      ? require('../../../assets/eventFallback/fallback_dark.png')
-      : require('../../../assets/eventFallback/fallback_light.png');
+    return mode === "dark"
+      ? require("../../../assets/eventFallback/fallback_dark.png")
+      : require("../../../assets/eventFallback/fallback_light.png");
   };
 
   const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
@@ -68,17 +81,17 @@ const EventDetails: React.FC = () => {
 
   const sortedAttendees = useMemo(
     () => sortAttendeesByPool(event, userPoolIndex),
-    [event, userPoolIndex]
+    [event, userPoolIndex],
   );
 
   const registrationStatus = useMemo(
     () => getRegistrationStatus(event?.attendance),
-    [event?.attendance]
+    [event?.attendance],
   );
 
   const registrationPeriod = useMemo(
     () => formatRegistrationPeriod(event?.attendance),
-    [event?.attendance]
+    [event?.attendance],
   );
 
   const [registering, setRegistering] = useState(false);
@@ -102,8 +115,13 @@ const EventDetails: React.FC = () => {
   };
 
   const handleDeregisterPress = async () => {
-    if (!event?.attendance?.id) return;    try {
-      const result = await deregisterForEvent(event.attendance.id, DEREGISTER_REASON_TYPES[6] , "test");
+    if (!event?.attendance?.id) return;
+    try {
+      const result = await deregisterForEvent(
+        event.attendance.id,
+        DEREGISTER_REASON_TYPES[6],
+        "test",
+      );
       if (result && (result as any).success) {
         // Refresh availability or re-fetch event to update UI
         await getRegistrationAvailability(event.attendance.id);
@@ -116,8 +134,6 @@ const EventDetails: React.FC = () => {
       setRegistering(false);
     }
   };
-
-
 
   // Use shared theme tokens for colors
   const colors = {
@@ -149,7 +165,7 @@ const EventDetails: React.FC = () => {
           Image.getSize(
             eventData.event.imageUrl,
             (width, height) => setImageAspectRatio(width / height),
-            (error) => console.log("Error getting image size:", error)
+            (error) => console.log("Error getting image size:", error),
           );
         }
 
@@ -159,17 +175,19 @@ const EventDetails: React.FC = () => {
           getRegistrationAvailability(eventData.attendance.id || "").then();
         } else {
           console.log(
-            eventData == null ? "event is null" : "attendance is null"
+            eventData == null ? "event is null" : "attendance is null",
           );
         }
 
         // Fetch server-computed punishment for the signed-in user (if any)
         if (user) {
-          void getExpiryDateForUser(user.id).then((p) => {
-            setPunishment((p as Punishment) ?? null);
-          }).catch(() => {
-            // ignore errors here; keep punishment null
-          });
+          void getExpiryDateForUser(user.id)
+            .then((p) => {
+              setPunishment((p as Punishment) ?? null);
+            })
+            .catch(() => {
+              // ignore errors here; keep punishment null
+            });
         }
       })
       .catch((error) => {
@@ -179,85 +197,118 @@ const EventDetails: React.FC = () => {
   }, [eventId]);
 
   if (loading) {
-    return <ActivityIndicator style={{ flex: 1, backgroundColor: colors.background }} color={colors.text} />;
+    return (
+      <ActivityIndicator
+        style={{ flex: 1, backgroundColor: colors.background }}
+        color={colors.text}
+      />
+    );
   }
 
   if (error || !event) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>{error ?? "Could not load event details"}</Text>
+      <View
+        style={[styles.centerContainer, { backgroundColor: colors.background }]}
+      >
+        <Text style={[styles.errorText, { color: colors.error }]}>
+          {error ?? "Could not load event details"}
+        </Text>
       </View>
     );
   }
 
-  const imageHeight = screenWidth / Math.max(5/3, Math.min(6/3, imageAspectRatio));
+  const imageHeight =
+    screenWidth / Math.max(5 / 3, Math.min(6 / 3, imageAspectRatio));
 
   return (
-    <TabScreenContainer>
-      <>
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-          <ScrollView
-            style={styles.scrollContainer}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView style={styles.scrollContainer}>
+        <View
+          style={{
+            width: screenWidth,
+            height: imageHeight,
+            overflow: "hidden",
+          }}
+        >
+          <ImageBackground
+            source={
+              event.event.imageUrl
+                ? { uri: event.event.imageUrl }
+                : getFallbackImage()
+            }
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="cover"
           >
-            <View style={{ width: screenWidth, height: imageHeight, overflow: "hidden" }}>
-              <ImageBackground
-                source={event.event.imageUrl ? { uri: event.event.imageUrl } : getFallbackImage()}
-                style={{ width: "100%", height: "100%" }}
-                resizeMode="cover"
-              >
-                <BlurView blurType="dark" blurAmount={10} style={StyleSheet.absoluteFill} />
-              </ImageBackground>
-              <Image
-                source={event.event.imageUrl ? { uri: event.event.imageUrl } : getFallbackImage()}
-                style={[
-                  styles.image,
-                  { width: screenWidth, height: imageHeight, position: "absolute" },
-                ]}
-                resizeMode="contain"
-              />
-            </View>
-
-            <TimeLocationCard
-              event={event}
-              formatNorwegianDate={formatNorwegianDate}
+            <BlurView
+              blurType="dark"
+              blurAmount={10}
+              style={StyleSheet.absoluteFill}
             />
-
-            <DescriptionCard
-              description={event.event.description ?? ""}
-              screenWidth={screenWidth}
-              descriptionExpanded={descriptionExpanded}
-              onToggleDescription={toggleDescription}
-            />
-
-            {isRegistration ? (
-              <AttendanceCard
-                user={user}
-                event={event.event}
-                initialAttendance={event.attendance!}
-                initialPunishment={punishment}
-                parentEvent={event.parentEvent ?? null}
-                parentAttendance={event.parentAttendance ?? null}
-              />
-            ) : (
-              <View style={styles.noRegistrationContainer}>
-                <Text style={[styles.noRegistrationText, { color: theme.onSurfaceVariant }]}>
-                  Dette er ikke et påmeldingsarrangement.
-                </Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {isRegistration && (
-            <AttendeesBottomSheet
-              bottomSheetRef={bottomSheetRef}
-              attendance={event.attendance!}
-              userPoolIndex={userPoolIndex}
-              sortedAttendees={sortedAttendees}
-            />
-          )}
+          </ImageBackground>
+          <Image
+            source={
+              event.event.imageUrl
+                ? { uri: event.event.imageUrl }
+                : getFallbackImage()
+            }
+            style={[
+              styles.image,
+              {
+                width: screenWidth,
+                height: imageHeight,
+                position: "absolute",
+              },
+            ]}
+            resizeMode="contain"
+          />
         </View>
-      </>
-    </TabScreenContainer>
+
+        <TimeLocationCard
+          event={event}
+          formatNorwegianDate={formatNorwegianDate}
+        />
+
+        <DescriptionCard
+          description={event.event.description ?? ""}
+          screenWidth={screenWidth}
+          descriptionExpanded={descriptionExpanded}
+          onToggleDescription={toggleDescription}
+        />
+
+        {isRegistration ? (
+          <AttendanceCard
+            user={user}
+            event={event.event}
+            initialAttendance={event.attendance!}
+            initialPunishment={punishment}
+            parentEvent={event.parentEvent ?? null}
+            parentAttendance={event.parentAttendance ?? null}
+          />
+        ) : (
+          <View style={styles.noRegistrationContainer}>
+            <Text
+              style={[
+                styles.noRegistrationText,
+                { color: theme.onSurfaceVariant },
+              ]}
+            >
+              Dette er ikke et påmeldingsarrangement.
+            </Text>
+          </View>
+        )}
+
+        <View style={{ height: 104 }} />
+      </ScrollView>
+
+      {isRegistration && (
+        <AttendeesBottomSheet
+          bottomSheetRef={bottomSheetRef}
+          attendance={event.attendance!}
+          userPoolIndex={userPoolIndex}
+          sortedAttendees={sortedAttendees}
+        />
+      )}
+    </View>
   );
 };
 

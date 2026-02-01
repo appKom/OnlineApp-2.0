@@ -304,31 +304,6 @@ const AllEvents: React.FC = () => {
     }
   };
 
-  // if (loading && !refreshing) {
-  //   return (
-  //     <View
-  //       style={{
-  //         flex: 1,
-  //         justifyContent: "center",
-  //         alignItems: "center",
-  //         backgroundColor: colorScheme === "dark" ? "#000" : "#fff", // Match your app's background
-  //       }}
-  //     >
-  //       <ActivityIndicator
-  //         color={colorScheme === "dark" ? "#ffffff" : "#000000"}
-  //       />
-  //     </View>
-  //   );
-  // }
-
-  // if (error && !refreshing) {
-  //   return (
-  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-  //       <Text style={{ color: "red" }}>{error}</Text>
-  //     </View>
-  //   );
-  // }
-
   const renderHeader = () => (
     <View
       style={{
