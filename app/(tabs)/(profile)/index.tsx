@@ -146,11 +146,11 @@ export default function ProfileScreen() {
             </Text>
 
             <TouchableOpacity
-              style={[styles.loginButton, { opacity: isLoading ? 0.6 : 1 }]}
+              style={[styles.loginButton, { opacity: isLoading ? 0.6 : 1, backgroundColor: theme.attending }]}
               onPress={handleLogin}
               disabled={isLoading}
             >
-              <Text style={styles.loginButtonText}>
+              <Text style={[styles.loginButtonText, { color: theme.onAttending }]}>
                 {isLoading ? "Logger Inn..." : "Logg Inn"}
               </Text>
             </TouchableOpacity>
