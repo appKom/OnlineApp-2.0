@@ -8,7 +8,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <View
-        style={[styles.container, { backgroundColor: theme.background }]}
+        style={[styles.container, { backgroundColor: "#f00" }]}
       ></View>
     </ThemeProvider>
   );
