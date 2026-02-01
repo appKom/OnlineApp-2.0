@@ -11,7 +11,6 @@ export function TabScreenContainer({
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       {children}
-      <View style={{ height: 104 }}></View>
     </View>
   );
 }

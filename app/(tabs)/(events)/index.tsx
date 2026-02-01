@@ -44,13 +44,13 @@ const AllEvents: React.FC = () => {
   const futureCursorRef = useRef<string | undefined>(undefined);
   const pastCursorRef = useRef<string | undefined>(undefined);
   const myEventsCursorRef = useRef<string | undefined>(undefined);
-  
+
   // Fetch locks to prevent parallel calls
   const allEventsFetchingRef = useRef(false);
   const myEventsFetchingRef = useRef(false);
-  
+
   const [loadingMore, setLoadingMore] = useState(false);
-  
+
   // Track if we've exhausted future events
   const [futureDone, setFutureDone] = useState(false);
 
@@ -73,18 +73,25 @@ const AllEvents: React.FC = () => {
     if (allEventsFetchingRef.current) return;
     allEventsFetchingRef.current = true;
 
-    console.log("🎣 fetchAllEvents called from:", new Error().stack?.split('\n')[2]);
+    console.log(
+      "🎣 fetchAllEvents called from:",
+      new Error().stack?.split("\n")[2],
+    );
     try {
       if (!futureDone) {
         // Fetch future events
         const data = await getAllFutureEvents(10, futureCursorRef.current);
         const events = data?.items ?? [];
 
-        console.log("📥 Fetched future events:", events.length, events.map(e => e.event.id));
-        
+        console.log(
+          "📥 Fetched future events:",
+          events.length,
+          events.map((e) => e.event.id),
+        );
+
         setFutureEvents((prev) => [...prev, ...events]);
         futureCursorRef.current = data?.nextCursor;
-        
+
         // If no cursor, we're done with future events
         if (!data?.nextCursor) {
           setFutureDone(true);
@@ -93,7 +100,7 @@ const AllEvents: React.FC = () => {
         // Fetch past events
         const data = await getAllPastEvents(10, pastCursorRef.current);
         const events = data?.items ?? [];
-        
+
         setPastEvents((prev) => [...prev, ...events]);
         pastCursorRef.current = data?.nextCursor;
       }
@@ -113,31 +120,50 @@ const AllEvents: React.FC = () => {
     if (myEventsFetchingRef.current) return;
     myEventsFetchingRef.current = true;
 
-    console.log("🎣 fetchMyEvents called from:", new Error().stack?.split('\n')[2]);
+    console.log(
+      "🎣 fetchMyEvents called from:",
+      new Error().stack?.split("\n")[2],
+    );
     try {
       if (!user) return;
 
       if (!myEventsFutureDone) {
         // Fetch future events for user
-        const data = await getAllFutureEventsByAttendingUserId(user.id, 10, myEventsCursorRef.current);
+        const data = await getAllFutureEventsByAttendingUserId(
+          user.id,
+          10,
+          myEventsCursorRef.current,
+        );
         const events = data?.items ?? [];
 
-        console.log("📥 Fetched future my events:", events.length, events.map(e => e.event.id));
-        
+        console.log(
+          "📥 Fetched future my events:",
+          events.length,
+          events.map((e) => e.event.id),
+        );
+
         setMyEvents((prev) => [...prev, ...events]);
         myEventsCursorRef.current = data?.nextCursor;
-        
+
         // If no cursor, we're done with future my events
         if (!data?.nextCursor) {
           setMyEventsFutureDone(true);
         }
       } else {
         // Fetch past events for user
-        const data = await getAllPastEventsByAttendingUserId(user.id, 10, myEventsCursorRef.current);
+        const data = await getAllPastEventsByAttendingUserId(
+          user.id,
+          10,
+          myEventsCursorRef.current,
+        );
         const events = data?.items ?? [];
-        
-        console.log("📥 Fetched past my events:", events.length, events.map(e => e.event.id));
-        
+
+        console.log(
+          "📥 Fetched past my events:",
+          events.length,
+          events.map((e) => e.event.id),
+        );
+
         setMyEvents((prev) => [...prev, ...events]);
         myEventsCursorRef.current = data?.nextCursor;
       }
@@ -170,7 +196,7 @@ const AllEvents: React.FC = () => {
   // Initial load
   useEffect(() => {
     console.log("🔄 useEffect running - initial load");
-    
+
     const loadInitialData = async () => {
       setLoading(true);
       setError(null);
@@ -245,11 +271,16 @@ const AllEvents: React.FC = () => {
 
   // Handle loading more when scrolling to end
   const handleEndReached = async () => {
-    console.log("📍 handleEndReached called, currentTab:", currentTab, "initialLoadComplete:", initialLoadComplete);
-    
+    console.log(
+      "📍 handleEndReached called, currentTab:",
+      currentTab,
+      "initialLoadComplete:",
+      initialLoadComplete,
+    );
+
     // Don't load more until initial load is done
     if (!initialLoadComplete) return;
-    
+
     console.log("📍 handleEndReached called, currentTab:", currentTab);
     if (currentTab === "alle") {
       if (loadingMore) return;
@@ -363,97 +394,97 @@ const AllEvents: React.FC = () => {
   };
 
   return (
-    <TabScreenContainer>
-      <View style={{ flex: 1 }}>
-        {renderHeader()}
-        <FlatList
-          data={loading && !refreshing ? [] : currentEvents}
-          keyExtractor={(bundle) => bundle.event.id}
-          contentInsetAdjustmentBehavior="automatic"
-          style={{ flex: 1, backgroundColor: theme.background }}
-          ListHeaderComponent={null}
-          ListEmptyComponent={renderContent}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={{ paddingVertical: 16, alignItems: "center" }}>
-                <ActivityIndicator color={theme.onBackground} />
-              </View>
-            ) : null
-          }
-          renderItem={
-            loading && !refreshing
-              ? null // Don't render items during loading
-              : ({ item, index }) => {
-                  const now = new Date();
-                  const isCurrentPast = new Date(item.event.start) <= now;
-                  const isPrevPast =
-                    index > 0
-                      ? new Date(currentEvents[index - 1].event.start) <= now
-                      : false;
+    <View style={{ flex: 1 }}>
+      {renderHeader()}
+      <FlatList
+        data={loading && !refreshing ? [] : currentEvents}
+        keyExtractor={(bundle) => bundle.event.id}
+        contentInsetAdjustmentBehavior="automatic"
+        style={{ flex: 1, backgroundColor: theme.background }}
+        ListHeaderComponent={null}
+        ListEmptyComponent={renderContent}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={{ height: 104, alignItems: "center" }}>
+              <ActivityIndicator color={theme.onBackground} />
+            </View>
+          ) : (
+            <View style={{ height: 104 }}></View>
+          )
+        }
+        renderItem={
+          loading && !refreshing
+            ? null // Don't render items during loading
+            : ({ item, index }) => {
+                const now = new Date();
+                const isCurrentPast = new Date(item.event.start) <= now;
+                const isPrevPast =
+                  index > 0
+                    ? new Date(currentEvents[index - 1].event.start) <= now
+                    : false;
 
-                  return (
-                    <>
-                      {index === 0 && (
-                        <View
+                return (
+                  <>
+                    {index === 0 && (
+                      <View
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 12,
+                          backgroundColor: theme.surfaceContainerHigh,
+                        }}
+                      >
+                        <Text
                           style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            backgroundColor: theme.surfaceContainerHigh,
+                            fontSize: 16,
+                            fontWeight: "600",
+                            color: theme.onBackground,
                           }}
                         >
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "600",
-                              color: theme.onBackground,
-                            }}
-                          >
-                            Kommende arrangementer
-                          </Text>
-                        </View>
-                      )}
-                      {isCurrentPast && !isPrevPast && (
-                        <View
+                          Kommende arrangementer
+                        </Text>
+                      </View>
+                    )}
+                    {isCurrentPast && !isPrevPast && (
+                      <View
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 12,
+                          backgroundColor: theme.surfaceContainerHigh,
+                        }}
+                      >
+                        <Text
                           style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            backgroundColor: theme.surfaceContainerHigh,
+                            fontSize: 16,
+                            fontWeight: "600",
+                            color: theme.onBackground,
                           }}
                         >
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              fontWeight: "600",
-                              color: theme.onBackground,
-                            }}
-                          >
-                            Tidligere arrangementer
-                          </Text>
-                        </View>
-                      )}
-                      <EventCard
-                        event={item}
-                        onPress={() =>
-                          router.push({
-                            pathname: "/event-details",
-                            params: {
-                              eventId: item.event.id,
-                              headerTitle: item.event.title,
-                            },
-                          })
-                        }
-                      />
-                    </>
-                  );
-                }
-          }
-        />
-      </View>
-    </TabScreenContainer>
+                          Tidligere arrangementer
+                        </Text>
+                      </View>
+                    )}
+                    <EventCard
+                      event={item}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/event-details",
+                          params: {
+                            eventId: item.event.id,
+                            headerTitle: item.event.title,
+                          },
+                        })
+                      }
+                    />
+                  </>
+                );
+              }
+        }
+      />
+    </View>
   );
 };
 
