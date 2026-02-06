@@ -240,7 +240,7 @@ const EventDetails: React.FC = () => {
             resizeMode="cover"
           >
             <BlurView
-              blurType="dark"
+              blurType={mode}
               blurAmount={10}
               style={StyleSheet.absoluteFill}
             />
