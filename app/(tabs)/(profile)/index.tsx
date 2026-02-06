@@ -146,7 +146,12 @@ export default function ProfileScreen() {
             </Text>
 
             <TouchableOpacity
-              style={[styles.loginButton, { opacity: isLoading ? 0.6 : 1, backgroundColor: theme.attending }]}
+              style={[styles.loginButton, { 
+                opacity: isLoading ? 0.6 : 1, 
+                backgroundColor: theme.attending,
+                elevation: 8,
+                shadowColor: theme.shadow,
+              }]}
               onPress={handleLogin}
               disabled={isLoading}
             >
@@ -197,7 +202,7 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.profileHeader,
-                  { backgroundColor: theme.surfaceContainer },
+                  { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
                 ]}
               >
                 {user.imageUrl ? (
@@ -248,7 +253,7 @@ export default function ProfileScreen() {
                 <View
                   style={[
                     styles.section,
-                    { backgroundColor: theme.surfaceContainer },
+                    { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
                   ]}
                 >
                   <Text
@@ -271,7 +276,7 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.section,
-                  { backgroundColor: theme.surfaceContainer },
+                  { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
                 ]}
               >
                 <Text
@@ -358,7 +363,7 @@ export default function ProfileScreen() {
                 <View
                   style={[
                     styles.section,
-                    { backgroundColor: theme.surfaceContainer },
+                    { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
                   ]}
                 >
                   <Text
@@ -372,7 +377,7 @@ export default function ProfileScreen() {
                       key={membership.id}
                       style={[
                         styles.membershipCard,
-                        { backgroundColor: theme.surfaceContainerHigh },
+                        { backgroundColor: theme.surfaceContainerHigh, elevation: 5, shadowColor: theme.shadow },
                       ]}
                     >
                       <Text
@@ -445,7 +450,7 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.section,
-                  { backgroundColor: theme.surfaceContainer },
+                  { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
                 ]}
               >
                 <Text
@@ -520,6 +525,8 @@ export default function ProfileScreen() {
               {
                 backgroundColor: theme.deregisterButton,
                 opacity: isLoading ? 0.6 : 1,
+                elevation: 8, 
+                shadowColor: theme.shadow
               },
             ]}
             onPress={handleLogout}

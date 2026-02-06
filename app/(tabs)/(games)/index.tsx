@@ -41,13 +41,9 @@ export default function GamesScreen() {
   const renderGameItem = ({ item }: { item: Game }) => (
     <Pressable
       onPress={() => router.push(item.route as any)}
-      style={({ pressed }) => [
-        {
-          opacity: pressed ? 0.7 : 1,
-        },
-      ]}
     >
-      <LiquidGlassView style={[styles.gameItem, { backgroundColor: theme.surfaceContainer, shadowColor: theme.shadow }]}>
+      {({ pressed }) => (
+        <LiquidGlassView style={[styles.gameItem, { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow, opacity: pressed ? 0.7 : 1 }]}>
         <Text style={[styles.gameTitle, { color: theme.onSurface }]}>
           {item.title}
         </Text>
@@ -57,6 +53,7 @@ export default function GamesScreen() {
           {item.description}
         </Text>
       </LiquidGlassView>
+      )}
     </Pressable>
   );
 
