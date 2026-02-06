@@ -51,7 +51,14 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
   )
 
   return (
-    <View style={{ backgroundColor: elevate(theme.primaryContainer, 10), padding: 15, borderRadius: 12, gap: 12 }}>
+    <View style={{ 
+        backgroundColor: elevate(theme.surfaceContainerHighest, 10), 
+        padding: 15, 
+        borderRadius: 12, 
+        gap: 12,
+        elevation: 8,
+        shadowColor: theme.shadow 
+      }}>
       {attendance.selections.map((selection, index) => (
         <View key={selection.id}>
           <TouchableOpacity
@@ -59,9 +66,9 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
             style={styles.selectionRow}
           >
             <View style={styles.selectionInfo}>
-              <Text style={[styles.selectionTitle, { color: elevate(theme.onPrimaryContainer, 10) }]}>{selection.name}</Text>
+              <Text style={[styles.selectionTitle, { color: elevate(theme.onSurface, 10) }]}>{selection.name}</Text>
               {selections[index]?.optionName ? (
-                <Text style={[styles.selectedOption, { color: elevate(theme.onPrimaryContainer, 10) }]}>
+                <Text style={[styles.selectedOption, { color: elevate(theme.onSurfaceVariant, 10) }]}>
                   Ditt valg: {selections[index].optionName}
                 </Text>
               ) : (
@@ -72,7 +79,11 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
             <View
               style={[
                 styles.selectButton,
-                { backgroundColor: theme.primary, opacity: disabled ? 0.5 : 1 }
+                { backgroundColor: theme.primary, 
+                  opacity: disabled ? 0.5 : 1,
+                  elevation: 8,
+                  shadowColor: theme.shadow 
+                }
               ]}
             >
               <Octicons name="arrow-up-left" size={20} color={theme.onPrimary} />
@@ -86,7 +97,7 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
             modalMaxWidth={350}
           >
             {(closeModal) => (
-              <View style={{ backgroundColor: theme.primaryContainer, padding: 10, borderRadius: 20, maxHeight: 250 }}>
+              <View style={{ backgroundColor: theme.surfaceContainer, padding: 10, borderRadius: 20, maxHeight: 250 }}>
                 <FlatList
                   data={selection.options}
                   keyExtractor={(item) => item.id}
@@ -101,8 +112,8 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
                       style={{
                         backgroundColor:
                           selections[index]?.optionId === item.id
-                            ? theme.tertiaryContainer
-                            : theme.secondaryContainer,
+                            ? theme.primaryContainer
+                            : theme.surfaceContainerHighest,
                         height: 50,
                         justifyContent: "center",
                         alignItems: "center",
@@ -115,8 +126,8 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
                           fontWeight: "600",
                           color:
                             selections[index]?.optionId === item.id
-                              ? theme.onTertiaryContainer
-                              : theme.onSecondaryContainer,
+                              ? theme.onPrimaryContainer
+                              : theme.onSurface,
                         }}
                       >
                         {item.name}

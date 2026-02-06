@@ -72,13 +72,13 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
   };
 
   return (
-    <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground, }]}> 
+    <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: theme.shadow }]}> 
       <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
         Oppmøte
       </Text>
 
       {/* Date and time with icon */}
-      <View style={[styles.detailRow, { marginBottom: 12, backgroundColor: theme.surfaceContainerHighest }]}>
+      <View style={[styles.detailRow, { marginBottom: 12, backgroundColor: theme.surfaceContainerHighest, shadowColor: theme.shadow,  }]}>
         <MaterialCommunityIcons name="clock-outline" size={24} color={colors.textPrimary} style={styles.icon} />
         <View style={styles.textContainer}>
           <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
@@ -95,7 +95,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
 
       {/* Location with icon */}
       {(event.event.locationTitle || event.event.locationAddress) && (
-        <View style={[styles.detailRow, { backgroundColor: theme.surfaceContainerHighest }]}>
+        <View style={[styles.detailRow, { backgroundColor: theme.surfaceContainerHighest, shadowColor: theme.shadow }]}>
           <MaterialCommunityIcons name="map-marker-outline" size={24} color={colors.textPrimary} style={styles.icon} />
           <View style={styles.textContainer}>
             {event.event.locationTitle && (
@@ -127,13 +127,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 8,
   },
   cardTitle: {
     fontSize: 20,
@@ -146,7 +140,8 @@ const styles = StyleSheet.create({
     gap: 16,
     borderRadius: 10,
     padding: 4,
-    paddingHorizontal: 10
+    paddingHorizontal: 10,
+    elevation: 5
   },
   icon: {
     marginTop: 0,

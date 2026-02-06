@@ -214,11 +214,10 @@ const styles = StyleSheet.create({
   highlightBase: {
     position: 'absolute',
     backgroundColor: '#eee', // overridden if you pass highlightStyle
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 20,
   },
 });
 

@@ -160,6 +160,8 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
           {
             backgroundColor: colors.backgroundColor,
             opacity: disabled ? 0.6 : 1,
+            elevation: 8,
+            shadowColor: theme.shadow
           },
         ]}
       >

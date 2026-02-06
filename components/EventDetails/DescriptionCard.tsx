@@ -37,7 +37,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
   return (
     <LiquidGlassView
-        style={[styles.card, { backgroundColor: colors.cardBackground }]}
+        style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: theme.shadow }]}
     >
       <TouchableOpacity
         key={`description-${descriptionExpanded}`}
@@ -63,7 +63,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         </View>
 
         {shouldShowToggle && (
-          <Text style={[styles.toggleText, { color: colors.toggleText, backgroundColor: colors.toggleTextBackground }]}>
+          <Text style={[styles.toggleText, { color: colors.toggleText, backgroundColor: colors.toggleTextBackground, shadowColor: theme.shadow }]}>
             {descriptionExpanded ? "Vis mindre" : "Les mer..."}
           </Text>
         )}
@@ -78,13 +78,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 8,
   },
   touchableContent: {
     // No additional padding needed since parent handles it
@@ -110,6 +104,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     overflow: "hidden",
     alignSelf: "flex-start",
+    elevation: 5,
   },
   htmlBase: {
     fontSize: 16,

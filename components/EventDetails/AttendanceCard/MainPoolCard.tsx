@@ -22,7 +22,7 @@ import {
 } from "date-fns"
 import { nb } from "date-fns/locale"
 import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme, withAlpha, elevate } from "utils/theme";
+import { useTheme, blendColors, elevate } from "utils/theme";
 
 interface MainPoolCardProps {
   attendance: Attendance
@@ -74,7 +74,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!user) {
     return (
-      <TouchableOpacity onPress={() => Authenticator.login()} style={[styles.card, {backgroundColor: theme.inversePrimary}]}>
+      <TouchableOpacity onPress={() => Authenticator.login()} style={[styles.card, {backgroundColor: theme.inversePrimary, shadowColor: theme.shadow}]}>
         <View style={{flex: 1, alignSelf: 'center', gap: 8}}>
           <Text style={{fontSize: 17, fontWeight: "bold", color: theme.onPrimary}}>
             Du er ikke innlogget
@@ -97,7 +97,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!membership && !attendee) {
     return (
-      <View style={[styles.card, {backgroundColor: theme.primary}]}> 
+      <View style={[styles.card, {backgroundColor: theme.primary, shadowColor: theme.shadow}]}> 
         <Text style={{ color: theme.onPrimary }}>Du har ikke registert medlemskap</Text>
 
         <View>
@@ -117,7 +117,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!pool) {
     return (
-      <View style={[styles.card, { backgroundColor: theme.primary, alignItems: 'center'}]}>
+      <View style={[styles.card, { backgroundColor: theme.primary, alignItems: 'center', shadowColor: theme.shadow}]}>
         <Text
           style={{
             fontSize: 15,
@@ -138,15 +138,17 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   const servingPunishment = attendee?.earliestReservationAt && isFuture(attendee.earliestReservationAt)
 
-  const backgroundColor = !attendee ? theme.primary : attendee?.reserved === true ? theme.attending : theme.waitlist;
+  const backgroundColor = !attendee ? theme.surfaceContainerHighest : attendee?.reserved === true ? theme.attending : theme.waitlist;
   const onBackgroundColor = !attendee
-    ? theme.onPrimary ?? theme.onPrimaryContainer ?? '#000'
+    ? theme.onSurface ?? theme.onPrimaryContainer ?? '#000'
     : attendee?.reserved === true
       ? theme.onAttending ?? '#000'
       : theme.onWaitlist ?? '#000'
 
+  const cardBackground = blendColors(backgroundColor, theme.background, 0.7)
+
   return (
-    <View style={{backgroundColor: withAlpha(backgroundColor, 0.7), borderRadius: 12}}>
+    <View style={{backgroundColor: cardBackground, borderRadius: 12, shadowColor: theme.shadow, elevation: 8}}>
       <View style={{ gap: 5, alignItems: "center", backgroundColor: backgroundColor, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
         <View style={{ flexDirection: "row", margin: 5 }}>
           <Text style={{ color: onBackgroundColor, padding: 5}}>
@@ -377,6 +379,7 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     borderRadius: 12,
+    elevation: 8,
   },
   textItem: {
     flexDirection: "row",

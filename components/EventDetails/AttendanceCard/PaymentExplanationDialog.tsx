@@ -63,6 +63,8 @@ export const PaymentExplanationDialog: React.FC = () => {
                 padding: 12,
                 borderRadius: 8,
                 alignItems: "center",
+                elevation: 8,
+                shadowColor: theme.shadow
               }}
             >
               <Text style={{ color: theme.onPrimary, fontWeight: "600" }}>Jeg forstår</Text>

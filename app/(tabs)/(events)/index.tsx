@@ -321,6 +321,8 @@ const AllEvents: React.FC = () => {
           backgroundColor: theme.primaryContainer,
           padding: 3,
           overflow: "hidden",
+          elevation: 8,
+          shadowColor: theme.shadow
         }}
         buttonStyle={{ backgroundColor: "transparent" }}
         selectedTextStyle={{ color: theme.onSecondaryFixed }}

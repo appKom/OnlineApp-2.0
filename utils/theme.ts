@@ -308,6 +308,37 @@ export function withAlpha(hex: string, alpha: number): string {
   return `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
 }
 
+// Blend two hex colors to an opaque result.
+// Equivalent to drawing `foreground` with opacity `foregroundAlpha` on top of `background`.
+// This avoids Android/iOS shadow compositing artifacts that can appear with semi-transparent
+// backgrounds combined with elevation/shadows.
+export function blendColors(foreground: string, background: string, foregroundAlpha: number): string {
+  const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+  const a = clamp01(foregroundAlpha);
+
+  const norm = (hex: string) => (hex.length >= 7 ? hex.slice(0, 7) : hex);
+  const fg = norm(foreground);
+  const bg = norm(background);
+
+  const toRgb = (hex: string) => {
+    const num = parseInt(hex.slice(1), 16);
+    return {
+      r: (num >> 16) & 0xff,
+      g: (num >> 8) & 0xff,
+      b: num & 0xff,
+    };
+  };
+
+  const f = toRgb(fg);
+  const b = toRgb(bg);
+
+  const r = Math.round(f.r * a + b.r * (1 - a));
+  const g = Math.round(f.g * a + b.g * (1 - a));
+  const bl = Math.round(f.b * a + b.b * (1 - a));
+
+  return `#${(0x1000000 + r * 0x10000 + g * 0x100 + bl).toString(16).slice(1)}`;
+}
+
 // Elevate a color: darken in light mode, lighten in dark mode
 export function elevate(hex: string, factor: number): string {
   const mode = getCurrentTheme();

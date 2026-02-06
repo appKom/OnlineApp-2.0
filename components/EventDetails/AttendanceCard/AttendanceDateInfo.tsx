@@ -91,7 +91,7 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
   const element = (
     <View style={[styles.dateBlocks, { justifyContent: 'space-between' }]}>
       {sortedElements.map(({ element, key }, index) => (
-        <View key={key} style={[styles.dateBlock, {backgroundColor: blockColor}]}> 
+        <View key={key} style={[styles.dateBlock, {backgroundColor: blockColor, elevation: 8, shadowColor: theme.shadow }]}> 
           <View>
             {element}
           </View>

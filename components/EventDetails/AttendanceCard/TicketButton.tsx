@@ -21,11 +21,11 @@ export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
         onPress={() => setModalVisible(true)}
         style={[
           styles.button,
-          { backgroundColor: theme.tertiaryContainer }
+          { backgroundColor: theme.primaryContainer, shadowColor: theme.shadow }
         ]}
       >
-        <MaterialCommunityIcons name="qrcode" size={20} color={theme.onTertiaryContainer} />
-        <Text style={[styles.buttonText, { color: theme.onTertiaryContainer }]}>Vis billett</Text>
+        <MaterialCommunityIcons name="qrcode" size={20} color={theme.onPrimaryContainer} />
+        <Text style={[styles.buttonText, { color: theme.onPrimaryContainer }]}>Vis billett</Text>
       </TouchableOpacity>
 
       <AnimatedModal
@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
+    elevation: 8,
   },
   buttonText: {
     fontSize: 16,

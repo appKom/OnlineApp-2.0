@@ -156,7 +156,11 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
         onPress={openModal}
         style={[
           styles.button,
-          { backgroundColor: theme.surfaceContainerHighest, opacity: !user ? 0.5 : 1 },
+          { backgroundColor: theme.surfaceContainerHigh, 
+            opacity: !user ? 0.5 : 1,
+            elevation: 8,
+            shadowColor: theme.shadow
+          },
         ]}
       >
         <MaterialIcons

@@ -47,7 +47,7 @@ export default function GamesScreen() {
         },
       ]}
     >
-      <LiquidGlassView style={[styles.gameItem, { backgroundColor: theme.surfaceContainer }]}>
+      <LiquidGlassView style={[styles.gameItem, { backgroundColor: theme.surfaceContainer, shadowColor: theme.shadow }]}>
         <Text style={[styles.gameTitle, { color: theme.onSurface }]}>
           {item.title}
         </Text>
@@ -85,11 +85,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 8,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 8
   },
   gameTitle: {
     fontSize: 18,
