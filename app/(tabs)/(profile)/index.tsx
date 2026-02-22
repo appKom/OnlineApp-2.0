@@ -523,10 +523,10 @@ export default function ProfileScreen() {
             </View>
 
             {/* Notification Settings Component */}
-            <NotificationSettings
+            {/* <NotificationSettings
               preferences={notificationPreferences}
               onPreferencesChange={setNotificationPreferences}
-            />
+            /> */}
           </>
         ) : (
           <View style={styles.loadingContainer}>
