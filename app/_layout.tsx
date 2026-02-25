@@ -1,4 +1,4 @@
-import { Stack, Redirect } from "expo-router";
+import { Stack, Redirect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -20,12 +20,32 @@ Notifications.setNotificationHandler({
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   const theme = useTheme();
 
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  useEffect(() => {
+    // Listen for notification responses (when user taps notification)
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const eventId = response.notification.request.content.data?.eventId as string;
+      const headerTitle = response.notification.request.content.data?.eventTitle as string;
+      if (eventId) {
+        router.push({
+          pathname: "/event-details",
+          params: {
+            eventId: eventId,
+            headerTitle: headerTitle,
+          },
+        });
+      }
+    });
+
+    return () => subscription.remove();
+  }, [router]);
 
   const initializeAuth = async () => {
     try {

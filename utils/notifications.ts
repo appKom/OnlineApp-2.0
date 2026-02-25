@@ -27,7 +27,7 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
     const eventId = event.id
     const registrationStartTime = attendance.registerStart
     const startTime = new Date(registrationStartTime).getTime()
-    const notificationTime = new Date(startTime - 8 * 60 * 1000)
+    const notificationTime = new Date(startTime - 9 * 60 * 1000)
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
@@ -35,6 +35,7 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
         title: "Påmelding starter snart!",
         body: `${event.title} - Påmelding starter om 8 minutter`,
         sound: true,
+        data: { eventId, eventTitle: event.title },
       },
       trigger: {
         type: SchedulableTriggerInputTypes.DATE,
