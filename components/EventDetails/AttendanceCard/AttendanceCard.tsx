@@ -25,6 +25,7 @@ import { useTheme } from "../../../utils/theme"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"
 import { getAttendee } from "../../../utils/attendance"
+import { scheduleRegistrationReminder } from "../../../utils/notifications"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 
 interface AttendanceCardProps {
@@ -180,7 +181,15 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
   return (
     <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.surfaceContainer, shadowColor: theme.shadow}]}>
-      <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
+        <TouchableOpacity onPress={() => scheduleRegistrationReminder(event, attendance)} style={{ padding: 8 }}>
+          <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+            <MaterialIcons name="notifications" size={20} color={theme.primary} />
+            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>Påminnelse</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <AttendanceDateInfo attendance={attendance} attendee={attendee} chargeScheduleDate={null} />
 

@@ -1,20 +1,51 @@
-import { Stack, Redirect } from "expo-router";
+import { Stack, Redirect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as Notifications from "expo-notifications";
 import Authenticator from "../utils/authenticator";
 import { useTheme } from "../utils/theme"
+
+// Set notification handler for when app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
 
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   const theme = useTheme();
 
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  useEffect(() => {
+    // Listen for notification responses (when user taps notification)
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const eventId = response.notification.request.content.data?.eventId as string;
+      const headerTitle = response.notification.request.content.data?.eventTitle as string;
+      if (eventId) {
+        router.push({
+          pathname: "/event-details",
+          params: {
+            eventId: eventId,
+            headerTitle: headerTitle,
+          },
+        });
+      }
+    });
+
+    return () => subscription.remove();
+  }, [router]);
 
   const initializeAuth = async () => {
     try {

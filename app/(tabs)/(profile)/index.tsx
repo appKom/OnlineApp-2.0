@@ -17,6 +17,7 @@ import { getUser } from "utils/trpc"; // You'll need to create this
 import { User } from "types/user";
 import { useTheme } from "../../../utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
+import NotificationSettings from "../../../components/NotificationSettings";
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -25,6 +26,16 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    enabled: true,
+    social: true,
+    academic: true,
+    company: true,
+    generalAssembly: true,
+    internal: true,
+    other: true,
+    welcome: true,
+  });
 
   useEffect(() => {
     // Initialize Auth0 when component mounts
@@ -491,32 +502,41 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
 
-                <View style={styles.infoRow}>
-                  <Text
-                    style={[
-                      styles.infoLabel,
-                      { color: theme.onSurfaceVariant },
-                    ]}
-                  >
-                    Sist oppdatert:
-                  </Text>
-                  <Text
-                    style={[styles.infoValue, { color: theme.onBackground }]}
-                  >
-                    {new Date(user.updatedAt).toLocaleDateString()}
-                  </Text>
-                </View>
+              <View style={styles.infoRow}>
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    { color: theme.onSurfaceVariant },
+                  ]}
+                >
+                  Sist oppdatert:
+                </Text>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    { color: theme.onBackground },
+                  ]}
+                >
+                  {new Date(user.updatedAt).toLocaleDateString()}
+                </Text>
               </View>
-            </>
-          ) : (
-            <View style={styles.loadingContainer}>
-              <Text
-                style={[styles.loadingText, { color: theme.onSurfaceVariant }]}
-              >
-                Laster profil...
-              </Text>
             </View>
-          )}
+
+            {/* Notification Settings Component */}
+            {/* <NotificationSettings
+              preferences={notificationPreferences}
+              onPreferencesChange={setNotificationPreferences}
+            /> */}
+          </>
+        ) : (
+          <View style={styles.loadingContainer}>
+            <Text
+              style={[styles.loadingText, { color: theme.onSurfaceVariant }]}
+            >
+              Laster profil...
+            </Text>
+          </View>
+        )}
 
           {/* Logout Button */}
           <TouchableOpacity
