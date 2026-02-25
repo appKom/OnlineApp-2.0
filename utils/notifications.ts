@@ -2,7 +2,7 @@ import { Alert } from "react-native"
 import * as Notifications from "expo-notifications"
 import { SchedulableTriggerInputTypes } from "expo-notifications"
 
-export const scheduleRegistrationReminder = async (eventId: string) => {
+export const scheduleRegistrationReminder = async (eventId: string, registrationStartTime: Date) => {
   try {
     const { status } = await Notifications.getPermissionsAsync()
     if (status !== "granted") {
@@ -22,14 +22,15 @@ export const scheduleRegistrationReminder = async (eventId: string) => {
       sound: "default",
     })
 
-    // Schedule notification for 1 minute from now
-    const notificationTime = new Date(Date.now() + 60 * 1000)
+    // Schedule notification for 15 minutes before registration starts
+    const startTime = new Date(registrationStartTime).getTime()
+    const notificationTime = new Date(startTime - 15 * 60 * 1000)
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
       content: {
-        title: "Test Notification",
-        body: "This is a test notification scheduled 1 minute ago",
+        title: "Påmelding starter snart",
+        body: "Påmelding starter om 15 minutter",
         sound: true,
       },
       trigger: {
@@ -39,7 +40,7 @@ export const scheduleRegistrationReminder = async (eventId: string) => {
       },
     })
 
-    Alert.alert("Suksess", "Notification scheduled for 1 minute from now")
+    Alert.alert("Suksess", `Notification scheduled for ${notificationTime.toString()}`)
   } catch (error) {
     console.error("Error scheduling notification:", error)
     Alert.alert("Feil", "Kunne ikke sette påminnelse")

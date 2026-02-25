@@ -183,7 +183,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.surfaceContainer, shadowColor: theme.shadow}]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
-        <TouchableOpacity onPress={() => scheduleRegistrationReminder(event.id)} style={{ padding: 8 }}>
+        <TouchableOpacity onPress={() => scheduleRegistrationReminder(event.id, new Date(attendance.registerStart ?? new Date()))} style={{ padding: 8 }}>
           <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
             <MaterialIcons name="notifications" size={20} color={theme.primary} />
             <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>Påminnelse</Text>
