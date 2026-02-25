@@ -27,7 +27,7 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
     const eventId = event.id
     const registrationStartTime = attendance.registerStart
     const startTime = new Date(registrationStartTime).getTime()
-    const notificationTime = new Date(startTime - 9 * 60 * 1000)
+    const notificationTime = new Date(startTime - 18 * 60 * 1000)
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
@@ -48,5 +48,25 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
   } catch (error) {
     console.error("Error scheduling notification:", error)
     Alert.alert("Feil", "Kunne ikke sette påminnelse")
+  }
+}
+
+export const cancelRegistrationReminder = async (eventId: string) => {
+  try {
+    await Notifications.cancelScheduledNotificationAsync(`registration-reminder-${eventId}`)
+    Alert.alert("Suksess", "Påminnelse avbrutt")
+  } catch (error) {
+    console.error("Error canceling notification:", error)
+    Alert.alert("Feil", "Kunne ikke avbryte påminnelse")
+  }
+}
+
+export const isRegistrationReminderScheduled = async (eventId: string): Promise<boolean> => {
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync()
+    return scheduled.some(notif => notif.identifier === `registration-reminder-${eventId}`)
+  } catch (error) {
+    console.error("Error checking scheduled notifications:", error)
+    return false
   }
 }

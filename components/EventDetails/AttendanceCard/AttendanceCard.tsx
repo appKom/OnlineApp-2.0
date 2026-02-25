@@ -25,7 +25,7 @@ import { useTheme } from "../../../utils/theme"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"
 import { getAttendee } from "../../../utils/attendance"
-import { scheduleRegistrationReminder } from "../../../utils/notifications"
+import { scheduleRegistrationReminder, cancelRegistrationReminder, isRegistrationReminderScheduled } from "../../../utils/notifications"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 
 interface AttendanceCardProps {
@@ -47,11 +47,27 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const [attendance, setAttendance] = useState<Attendance>(initialAttendance)
   const [punishment, setPunishment] = useState<Punishment | null>(initialPunishment)
   const [attendanceStatus, setAttendanceStatus] = useState(() => getAttendanceStatus(initialAttendance))
+  const [notificationScheduled, setNotificationScheduled] = useState(false)
   const theme = useTheme()
 
   useEffect(() => {
     setAttendanceStatus(getAttendanceStatus(attendance))
   }, [attendance])
+
+  // Check if a notification is already scheduled for this event
+  useEffect(() => {
+    let mounted = true
+    async function checkNotificationScheduled() {
+      const isScheduled = await isRegistrationReminderScheduled(event.id)
+      if (mounted) {
+        setNotificationScheduled(isScheduled)
+      }
+    }
+    void checkNotificationScheduled()
+    return () => {
+      mounted = false
+    }
+  }, [event.id])
 
   // Fetch server-computed punishment for the current user (mirrors RPC logic)
   useEffect(() => {
@@ -179,14 +195,24 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
   const hasPunishment = Boolean(punishment && (punishment.delay > 0 || punishment.suspended))
 
+  const handleToggleNotification = async () => {
+    if (notificationScheduled) {
+      await cancelRegistrationReminder(event.id)
+      setNotificationScheduled(false)
+    } else {
+      await scheduleRegistrationReminder(event, attendance)
+      setNotificationScheduled(true)
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.surfaceContainer, shadowColor: theme.shadow}]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
-        <TouchableOpacity onPress={() => scheduleRegistrationReminder(event, attendance)} style={{ padding: 8 }}>
+        <TouchableOpacity onPress={handleToggleNotification} style={{ padding: 8 }}>
           <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-            <MaterialIcons name="notifications" size={20} color={theme.primary} />
-            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>Påminnelse</Text>
+            <MaterialIcons name={notificationScheduled ? "notifications-active" : "notifications"} size={20} color={theme.primary} />
+            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>{notificationScheduled ? "Avbryt" : "Påminnelse"}</Text>
           </View>
         </TouchableOpacity>
       </View>
