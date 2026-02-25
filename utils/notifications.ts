@@ -1,8 +1,9 @@
 import { Alert } from "react-native"
 import * as Notifications from "expo-notifications"
 import { SchedulableTriggerInputTypes } from "expo-notifications"
+import type { Event as EventType, Attendance } from "../types/event"
 
-export const scheduleRegistrationReminder = async (eventId: string, registrationStartTime: Date) => {
+export const scheduleRegistrationReminder = async (event: EventType, attendance: Attendance) => {
   try {
     const { status } = await Notifications.getPermissionsAsync()
     if (status !== "granted") {
@@ -23,14 +24,16 @@ export const scheduleRegistrationReminder = async (eventId: string, registration
     })
 
     // Schedule notification for 15 minutes before registration starts
+    const eventId = event.id
+    const registrationStartTime = attendance.registerStart
     const startTime = new Date(registrationStartTime).getTime()
     const notificationTime = new Date(startTime - 8 * 60 * 1000)
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
       content: {
-        title: "Påmelding starter snart",
-        body: "Påmelding starter om 15 minutter",
+        title: "Påmelding starter snart!",
+        body: `${event.title} - Påmelding starter om 8 minutter`,
         sound: true,
       },
       trigger: {
