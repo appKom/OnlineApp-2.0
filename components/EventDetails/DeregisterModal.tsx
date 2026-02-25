@@ -82,27 +82,27 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
   return (
     <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={330} modalMaxWidth={350}>
       {() => (
-        <View style={{ backgroundColor: theme.primaryContainer, padding: 15, borderRadius: 12, gap: 5 }}>
-          <Text style={{ color: theme.onPrimaryContainer, fontSize: 17 }}>Er du sikker?</Text>
+        <View style={{ backgroundColor: theme.surfaceContainer, padding: 15, borderRadius: 12, gap: 5 }}>
+          <Text style={{ color: theme.onSurface, fontSize: 17 }}>Er du sikker?</Text>
 
           <TouchableOpacity
-            style={ { backgroundColor: theme.tertiaryContainer, padding: 7, borderRadius: 15 }}
+            style={ { backgroundColor: theme.surfaceContainerHigh, padding: 7, borderRadius: 15 }}
             onPress={() => setShowDropdown(!showDropdown)}
           >
-            <View style={{ backgroundColor: selectedReason ? elevate(theme.tertiaryContainer, 25) : elevate(theme.tertiaryContainer, 10), flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}>
-              <Text style={{ color: selectedReason ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10) }} >
+            <View style={{ backgroundColor: selectedReason ? theme.primaryContainer : theme.surfaceContainerHighest, flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}>
+              <Text style={{ color: selectedReason ? theme.onPrimaryContainer : theme.onSurface }} >
                 {selectedReason ? mapDeregisterReasonTypeToLabel(selectedReason) : "Velg avmeldingsgrunn"}
               </Text>
               <MaterialCommunityIcons
                 name={showDropdown ? "chevron-up" : "chevron-down"}
                 size={20}
-                color={selectedReason ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10)}
+                color={selectedReason ? theme.onPrimaryContainer : theme.onSurface}
               />
             </View>
           </TouchableOpacity>
 
           {showDropdown && (
-            <View style={{ position: "absolute", top: 90, left: 15, right: 15, backgroundColor: theme.tertiaryContainer, padding: 7, borderRadius: 15, zIndex: 1000 }} >
+            <View style={{ position: "absolute", top: 90, left: 15, right: 15, backgroundColor: theme.surfaceContainerHigh, padding: 7, borderRadius: 15, zIndex: 1000 }} >
               <FlatList
                 data={DEREGISTER_REASON_TYPE_OPTIONS}
                 scrollEnabled={false}
@@ -110,11 +110,11 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
                 contentContainerStyle={{ gap: 4 }}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={{ backgroundColor: selectedReason === item.value ? elevate(theme.tertiaryContainer, 25) : elevate(theme.tertiaryContainer, 10), flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}
+                    style={{ backgroundColor: selectedReason === item.value ? theme.primaryContainer : theme.surfaceContainerHighest, flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}
                     onPress={() => handleSelectReason(item.value)}
                   >
                     <Text
-                      style={{ color: selectedReason === item.value ? elevate(theme.onTertiaryContainer, 25) : elevate(theme.onTertiaryContainer, 10),  height: 20, }}
+                      style={{ color: selectedReason === item.value ? theme.onPrimaryContainer : theme.onSurface,  height: 20, }}
                     >
                       {item.label}
                     </Text>
@@ -126,17 +126,17 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
           )}
 
           <View style={{ marginTop: 10 }}>
-            <Text style={{ color: theme.onPrimaryContainer, fontSize: 14, marginBottom: 8 }}>Begrunnelse</Text>
+            <Text style={{ color: theme.onSurface, fontSize: 14, marginBottom: 8 }}>Begrunnelse</Text>
             <TextInput
               placeholder="Skriv inn begrunnelse..."
-              placeholderTextColor={elevate(theme.onPrimaryContainer, 30)}
+              placeholderTextColor={theme.onSurface}
               multiline
               numberOfLines={4}
               value={begrunnelse}
               onChangeText={setBegrunnelse}
               style={{
-                backgroundColor: elevate(theme.primaryContainer, 10),
-                color: theme.onPrimaryContainer,
+                backgroundColor: theme.surfaceContainerHigh,
+                color: theme.onSurface,
                 padding: 10,
                 borderRadius: 8,
                 fontFamily: 'System',
@@ -147,10 +147,10 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
 
           <View style={{ flexDirection: "row", gap: 8, marginTop: 5 }}>
             <TouchableOpacity
-              style={{ backgroundColor: theme.tertiaryContainer, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
+              style={{ backgroundColor: theme.surfaceContainerHighest, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
               onPress={() => setOpen(false)}
             >
-              <Text style={[styles.buttonText, { color: theme.onTertiaryContainer }]}>Avbryt</Text>
+              <Text style={[styles.buttonText, { color: theme.onSurface }]}>Avbryt</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
