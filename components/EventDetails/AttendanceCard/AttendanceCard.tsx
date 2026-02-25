@@ -210,9 +210,9 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
         <TouchableOpacity onPress={handleToggleNotification} style={{ padding: 8 }}>
-          <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-            <MaterialIcons name={notificationScheduled ? "notifications-active" : "notifications"} size={20} color={theme.primary} />
-            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>{notificationScheduled ? "Avbryt" : "Påminnelse"}</Text>
+          <View style={{ alignItems: "center" }}>
+            <MaterialIcons name={notificationScheduled ? "notifications-active" : "notifications"} size={24} color={theme.primary} />
+            {/* <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>{notificationScheduled ? "Avbryt" : "Påminnelse"}</Text> */}
           </View>
         </TouchableOpacity>
       </View>

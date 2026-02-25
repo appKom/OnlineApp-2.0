@@ -1,7 +1,15 @@
-import { Alert } from "react-native"
+import { Platform, ToastAndroid, Alert } from "react-native"
 import * as Notifications from "expo-notifications"
 import { SchedulableTriggerInputTypes } from "expo-notifications"
 import type { Event as EventType, Attendance } from "../types/event"
+
+const showMessage = (title: string, message: string) => {
+  if (Platform.OS === "android") {
+    ToastAndroid.show(`${message}`, ToastAndroid.SHORT)
+  } else {
+    Alert.alert(title, message)
+  }
+}
 
 export const scheduleRegistrationReminder = async (event: EventType, attendance: Attendance) => {
   try {
@@ -9,7 +17,7 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
     if (status !== "granted") {
       const request = await Notifications.requestPermissionsAsync()
       if (request.status !== "granted") {
-        Alert.alert("Feil", "Varsler er ikke tillatt")
+        showMessage("Feil", "Varsler er ikke tillatt")
         return
       }
     }
@@ -27,13 +35,13 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
     const eventId = event.id
     const registrationStartTime = attendance.registerStart
     const startTime = new Date(registrationStartTime).getTime()
-    const notificationTime = new Date(startTime - 18 * 60 * 1000)
+    const notificationTime = new Date(startTime - 10 * 60 * 1000)
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
       content: {
         title: "Påmelding starter snart!",
-        body: `${event.title} - Påmelding starter om 8 minutter`,
+        body: `${event.title} - Påmelding starter om 10 minutter`,
         sound: true,
         data: { eventId, eventTitle: event.title },
       },
@@ -44,20 +52,20 @@ export const scheduleRegistrationReminder = async (event: EventType, attendance:
       },
     })
 
-    Alert.alert("Suksess", `Notification scheduled for ${notificationTime.toString()}`)
+    showMessage("Suksess", `Påminnelse satt 10 minutter før påmeldingsstart`)
   } catch (error) {
     console.error("Error scheduling notification:", error)
-    Alert.alert("Feil", "Kunne ikke sette påminnelse")
+    showMessage("Feil", "Kunne ikke sette påminnelse")
   }
 }
 
 export const cancelRegistrationReminder = async (eventId: string) => {
   try {
     await Notifications.cancelScheduledNotificationAsync(`registration-reminder-${eventId}`)
-    Alert.alert("Suksess", "Påminnelse avbrutt")
+    showMessage("Suksess", "Påminnelse avbrutt")
   } catch (error) {
     console.error("Error canceling notification:", error)
-    Alert.alert("Feil", "Kunne ikke avbryte påminnelse")
+    showMessage("Feil", "Kunne ikke avbryte påminnelse")
   }
 }
 
