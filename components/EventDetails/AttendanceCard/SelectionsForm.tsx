@@ -52,9 +52,9 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
 
   return (
     <View style={{ 
-        backgroundColor: elevate(theme.surfaceContainerHighest, 10), 
+        backgroundColor: theme.surfaceContainerHigh, 
         padding: 15, 
-        borderRadius: 12, 
+        borderRadius: 8, 
         gap: 12,
         elevation: 8,
         shadowColor: theme.shadow 
@@ -79,14 +79,14 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
             <View
               style={[
                 styles.selectButton,
-                { backgroundColor: theme.primary, 
+                { backgroundColor: theme.primaryContainer, 
                   opacity: disabled ? 0.5 : 1,
                   elevation: 8,
                   shadowColor: theme.shadow 
                 }
               ]}
             >
-              <Octicons name="arrow-up-left" size={20} color={theme.onPrimary} />
+              <Octicons name="arrow-up-left" size={20} color={theme.onPrimaryContainer} />
             </View>
           </TouchableOpacity>
 
