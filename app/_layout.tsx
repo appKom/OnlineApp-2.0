@@ -3,8 +3,19 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as Notifications from "expo-notifications";
 import Authenticator from "../utils/authenticator";
 import { useTheme } from "../utils/theme"
+
+// Set notification handler for when app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
 
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);

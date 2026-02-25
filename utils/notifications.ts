@@ -24,7 +24,7 @@ export const scheduleRegistrationReminder = async (eventId: string, registration
 
     // Schedule notification for 15 minutes before registration starts
     const startTime = new Date(registrationStartTime).getTime()
-    const notificationTime = new Date(startTime - 15 * 60 * 1000)
+    const notificationTime = new Date(startTime - 8 * 60 * 1000)
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
