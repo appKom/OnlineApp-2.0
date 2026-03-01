@@ -1,4 +1,4 @@
-import { NativeTabs, Icon, Label } from "expo-router/unstable-native-tabs";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useTheme } from "../../utils/theme";
 import { Platform, DynamicColorIOS } from "react-native";
 
@@ -20,28 +20,28 @@ export default function TabLayout() {
             : (theme.outline ?? "#999999"),
       }}
     >
-      <NativeTabs.Trigger name="(events)">
-        <Label>Hjem</Label>
-        <Icon
-          sf="calendar"
-          drawable="ic_calendar" // Use built-in Android drawable or add custom
-        />
+      <NativeTabs.Trigger
+        name="(events)"
+        contentStyle={{ backgroundColor: theme.background }}
+      >
+        <NativeTabs.Trigger.Label>Hjem</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" drawable="ic_calendar" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="(games)">
-        <Label>Spill</Label>
-        <Icon
-          sf="dice.fill"
-          drawable="ic_dice" // Replace with custom drawable if needed
-        />
+      <NativeTabs.Trigger
+        name="(games)"
+        contentStyle={{ backgroundColor: theme.background }}
+      >
+        <NativeTabs.Trigger.Label>Spill</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="dice.fill" drawable="ic_dice" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="(profile)">
-        <Label>Profil</Label>
-        <Icon 
-          sf="person.fill" 
-          drawable="ic_person" 
-        />
+      <NativeTabs.Trigger
+        name="(profile)"
+        contentStyle={{ backgroundColor: theme.background }}
+      >
+        <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="person.fill" drawable="ic_person" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

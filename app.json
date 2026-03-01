@@ -7,7 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "scheme": "ntnu.online.app",
     "splash": {
       "image": "./assets/splash-icon-light.png",
@@ -22,7 +25,9 @@
         "UIStatusBarStyle": "UIStatusBarStyleDefault",
         "UIViewControllerBasedStatusBarAppearance": false,
         "CFBundleURLName": "auth0",
-        "CFBundleURLSchemes": ["ntnu.online.app"],
+        "CFBundleURLSchemes": [
+          "ntnu.online.app"
+        ],
         "NSCalendarsUsageDescription": "Allow $(PRODUCT_NAME) to access your calendar",
         "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders",
         "NSCalendarsFullAccessUsageDescription": "Allow $(PRODUCT_NAME) to access your calendar",
@@ -51,7 +56,10 @@
               "host": "auth.online.ntnu.no"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -73,7 +81,8 @@
           }
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true
