@@ -200,9 +200,11 @@ export async function getRegistrationAvailability(
 
 export async function registerForEvent(
   attendanceId: string,
+  turnstileToken: string,
 ): Promise<RegistrationAvailabilityResult | null> {
   const result = await client.mutation("event.attendance.registerForEvent", {
     attendanceId: attendanceId,
+    turnstileToken: turnstileToken,
   });
 
   console.log("Register result:", result);
