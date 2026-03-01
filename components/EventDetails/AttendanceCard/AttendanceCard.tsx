@@ -19,6 +19,7 @@ import { RegistrationButton } from "./RegistrationButton"
 import { SelectionsForm } from "./SelectionsForm"
 import { TicketButton } from "./TicketButton"
 import { ViewAttendeesButton } from "./ViewAttendeesButton"
+import { TurnstileBox } from "../../TurnstileModal"
 
 import { getAttendanceStatus } from "../../../types/attendanceStatus"
 import { useTheme } from "../../../utils/theme"
@@ -27,6 +28,7 @@ import type { DeregisterReasonType } from "../../../utils/trpc"
 import { getAttendee } from "../../../utils/attendance"
 import { scheduleRegistrationReminder, cancelRegistrationReminder, isRegistrationReminderScheduled } from "../../../utils/notifications"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
+import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
 
 interface AttendanceCardProps {
   user: User | null
@@ -35,7 +37,6 @@ interface AttendanceCardProps {
   initialPunishment: Punishment | null
   parentEvent: EventType | null
   parentAttendance: Attendance | null
-  onOpenTurnstile: () => void
 }
 
 export const AttendanceCard: React.FC<AttendanceCardProps> = ({
@@ -44,17 +45,28 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   initialAttendance,
   initialPunishment,
   parentAttendance,
-  onOpenTurnstile,
 }) => {
   const [attendance, setAttendance] = useState<Attendance>(initialAttendance)
   const [punishment, setPunishment] = useState<Punishment | null>(initialPunishment)
   const [attendanceStatus, setAttendanceStatus] = useState(() => getAttendanceStatus(initialAttendance))
   const [notificationScheduled, setNotificationScheduled] = useState(false)
+  const [showTurnstile, setShowTurnstile] = useState(true)
+  const [isVerified, setIsVerified] = useState(false)
+  const [pendingTurnstileToken, setPendingTurnstileToken] = useState<string | null>(null)
   const theme = useTheme()
 
   useEffect(() => {
     setAttendanceStatus(getAttendanceStatus(attendance))
   }, [attendance])
+
+  // Hide Turnstile if user is already registered
+  useEffect(() => {
+    const attendee = getAttendee(attendance, user)
+    if (attendee) {
+      setShowTurnstile(false)
+      setIsVerified(true)
+    }
+  }, [attendance, user])
 
   // Check if a notification is already scheduled for this event
   useEffect(() => {
@@ -165,14 +177,40 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }, [attendee?.id, attendance.attendancePrice])
 
   const registerForAttendance = async () => {
-    // Registration is handled through the Turnstile modal flow
-    // This function is kept as a stub for compatibility
+    if (!isVerified || !pendingTurnstileToken) {
+      // Button should be disabled, but just in case
+      return
+    }
+    
+    // Register with the stored Turnstile token
+    try {
+      await trpc.registerForEvent(attendance.id ?? "", pendingTurnstileToken)
+      await fetchAttendance()
+    } catch (e) {
+      console.error("Registration error:", e)
+      // Reset verification on error
+      setIsVerified(false)
+      setPendingTurnstileToken(null)
+      setShowTurnstile(true)
+    }
+  }
+
+  const handleTurnstileToken = async (token: string) => {
+    // Token received from Turnstile - just store it, don't register yet
+    setIsVerified(true)
+    setPendingTurnstileToken(token)
+    setShowTurnstile(false)
   }
 
   const deregisterForAttendance = async (deregisterReason: { type: DeregisterReasonType; details?: string | null }) => {
     try {
       await trpc.deregisterForEvent(attendance.id ?? "", deregisterReason.type, deregisterReason.details ?? undefined)
       await fetchAttendance()
+      
+      // Reset Turnstile verification immediately so user can register again
+      setShowTurnstile(true)
+      setIsVerified(false)
+      setPendingTurnstileToken(null)
     } catch (e) {
       // ignore errors for stub
     }
@@ -244,7 +282,13 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
         event={event}
         isLoading={false}
         chargeScheduleDate={null}
-        onOpenTurnstile={onOpenTurnstile}
+        isVerified={isVerified}
+      />
+
+      <TurnstileBox
+        visible={showTurnstile}
+        onToken={handleTurnstileToken}
+        siteKey={TURNSTILE_SITE_KEY}
       />
 
       <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
@@ -269,7 +313,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     elevation: 8,
-    gap: 20,
+    gap: 12,
   },
 })
 

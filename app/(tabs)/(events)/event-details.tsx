@@ -2,7 +2,6 @@ import TimeLocationCard from "components/EventDetails/TimeLocationCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
 import AttendanceCard from "components/EventDetails/AttendanceCard/AttendanceCard";
 import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
-import TurnstileModal from "components/TurnstileModal";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
@@ -22,7 +21,6 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import {
   getEvent,
   getRegistrationAvailability,
-  registerForEvent,
   deregisterForEvent,
   getExpiryDateForUser,
 } from "utils/trpc";
@@ -38,7 +36,6 @@ import {
   sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme, useThemeMode } from "utils/theme";
-import { TURNSTILE_SITE_KEY } from "utils/turnstile";
 
 const DEREGISTER_REASON_TYPES = [
   "SCHOOL",
@@ -97,36 +94,6 @@ const EventDetails: React.FC = () => {
   );
 
   const [registering, setRegistering] = useState(false);
-  const [turnstileModalVisible, setTurnstileModalVisible] = useState(false);
-  const [pendingTurnstileToken, setPendingTurnstileToken] = useState<string | null>(null);
-
-  const handleRegisterPress = async () => {
-    if (!event?.attendance?.id) return;
-    
-    // Show Turnstile modal to get token
-    setTurnstileModalVisible(true);
-  };
-
-  const handleTurnstileToken = async (token: string) => {
-    if (!event?.attendance?.id) return;
-    
-    setTurnstileModalVisible(false);
-    setRegistering(true);
-    
-    try {
-      const result = await registerForEvent(event.attendance.id, token);
-      if (result && (result as any).success) {
-        // Refresh availability or re-fetch event to update UI
-        await getRegistrationAvailability(event.attendance.id);
-      } else {
-        console.warn("Registration failed:", result);
-      }
-    } catch (err) {
-      console.error("Registration error:", err);
-    } finally {
-      setRegistering(false);
-    }
-  };
 
   const handleDeregisterPress = async () => {
     if (!event?.attendance?.id) return;
@@ -297,7 +264,6 @@ const EventDetails: React.FC = () => {
             initialPunishment={punishment}
             parentEvent={event.parentEvent ?? null}
             parentAttendance={event.parentAttendance ?? null}
-            onOpenTurnstile={() => setTurnstileModalVisible(true)}
           />
         ) : (
           <View style={styles.noRegistrationContainer}>
@@ -323,13 +289,6 @@ const EventDetails: React.FC = () => {
           sortedAttendees={sortedAttendees}
         />
       )}
-
-      <TurnstileModal
-        visible={turnstileModalVisible}
-        onToken={handleTurnstileToken}
-        onClose={() => setTurnstileModalVisible(false)}
-        siteKey={TURNSTILE_SITE_KEY}
-      />
     </View>
   );
 };

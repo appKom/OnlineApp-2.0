@@ -89,7 +89,7 @@ interface RegistrationButtonProps {
   event: Event
   isLoading?: boolean
   chargeScheduleDate?: Date | null
-  onOpenTurnstile: () => void
+  isVerified?: boolean
 }
 
 export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
@@ -99,10 +99,10 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   parentAttendance,
   punishment,
   user,
-  onOpenTurnstile,
   event,
   isLoading,
   chargeScheduleDate,
+  isVerified,
 }) => {
   const theme = useTheme()
   const [deregisterModalOpen, setDeregisterModalOpen] = useState(false)
@@ -142,7 +142,12 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
     registeredToParentEvent,
     reservedToParentEvent
   )
-  const disabled = Boolean(disabledText)
+  
+  // Disable if there's an existing reason OR if trying to register and not verified
+  const needsVerification = !attendee && !isVerified
+  const disabled = Boolean(disabledText) || needsVerification
+  
+  const finalDisabledText = needsVerification ? "Fullfør sikkerhetskontroll" : disabledText
 
   const colors = getButtonColor(theme, disabled, Boolean(attendee), isPoolFull, hasPunishment, hasMergeDelay)
 
@@ -155,7 +160,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   return (
     <View style={{ gap: 8 }}>
       <TouchableOpacity
-        onPress={attendee ? () => setDeregisterModalOpen(true) : onOpenTurnstile}
+        onPress={attendee ? () => setDeregisterModalOpen(true) : registerForAttendance}
         disabled={disabled || isLoading}
         style={[
           styles.button,
@@ -177,10 +182,10 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
         )}
       </TouchableOpacity>
 
-      {disabled && disabledText && (
+      {disabled && finalDisabledText && (
         <View style={[styles.disabledTextContainer, { backgroundColor: theme.surfaceVariant }]}>
           <MaterialCommunityIcons name="alert-circle" size={16} color={theme.onSurfaceVariant} />
-          <Text style={[styles.disabledText, { color: theme.onSurfaceVariant }]}>{disabledText}</Text>
+          <Text style={[styles.disabledText, { color: theme.onSurfaceVariant }]}>{finalDisabledText}</Text>
         </View>
       )}
 
