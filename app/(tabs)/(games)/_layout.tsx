@@ -1,9 +1,12 @@
 import { Stack, useSegments } from "expo-router";
 import Header from "../../../components/Header";
+import { useTheme } from "../../../utils/theme";
 
 export default function GamesLayout() {
   const segments = useSegments();
   const current = segments[segments.length - 1] ?? "index";
+  const theme = useTheme();
+
   const titleMap: Record<string, string> = {
     index: "Spill",
     spinline: "SpinLine",
@@ -14,12 +17,12 @@ export default function GamesLayout() {
   return (
     <>
       <Header title={title} />
-      {/* Stack provides native navigation with swipe gestures */}
       <Stack
         screenOptions={{
           headerShown: false,
-          gestureEnabled: true, // Native swipe-back on iOS
-          animation: "default", // Native transitions
+          gestureEnabled: true,
+          animation: "default",
+          contentStyle: { backgroundColor: theme.background },
         }}
       >
         <Stack.Screen name="index" />
