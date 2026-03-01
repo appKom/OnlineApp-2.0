@@ -25,10 +25,11 @@ export const TurnstileBox: React.FC<TurnstileBoxProps> = ({
     console.error("Turnstile error:", error)
   }
 
-  if (!visible) return null
+  // Temporarily always visible for styling - comment out when done
+  // if (!visible) return null
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.surfaceVariant, borderColor: theme.outline }]}>
+    <View style={styles.container}>
       <ReactNativeTurnstile
         sitekey={siteKey}
         onVerify={handleVerify}
@@ -36,7 +37,6 @@ export const TurnstileBox: React.FC<TurnstileBoxProps> = ({
         resetRef={turnstileResetRef}
         theme="auto"
         size="normal"
-        style={styles.turnstile}
       />
     </View>
   )
@@ -44,16 +44,8 @@ export const TurnstileBox: React.FC<TurnstileBoxProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  turnstile: {
     width: "100%",
-    height: 100,
+    alignItems: "center",
   },
 })
 
