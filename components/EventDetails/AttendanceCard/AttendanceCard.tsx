@@ -35,6 +35,7 @@ interface AttendanceCardProps {
   initialPunishment: Punishment | null
   parentEvent: EventType | null
   parentAttendance: Attendance | null
+  onOpenTurnstile: () => void
 }
 
 export const AttendanceCard: React.FC<AttendanceCardProps> = ({
@@ -43,6 +44,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   initialAttendance,
   initialPunishment,
   parentAttendance,
+  onOpenTurnstile,
 }) => {
   const [attendance, setAttendance] = useState<Attendance>(initialAttendance)
   const [punishment, setPunishment] = useState<Punishment | null>(initialPunishment)
@@ -163,12 +165,8 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }, [attendee?.id, attendance.attendancePrice])
 
   const registerForAttendance = async () => {
-    try {
-      await trpc.registerForEvent(attendance.id ?? "")
-      await fetchAttendance()
-    } catch (e) {
-      // ignore errors for stub
-    }
+    // Registration is handled through the Turnstile modal flow
+    // This function is kept as a stub for compatibility
   }
 
   const deregisterForAttendance = async (deregisterReason: { type: DeregisterReasonType; details?: string | null }) => {
@@ -246,6 +244,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
         event={event}
         isLoading={false}
         chargeScheduleDate={null}
+        onOpenTurnstile={onOpenTurnstile}
       />
 
       <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
