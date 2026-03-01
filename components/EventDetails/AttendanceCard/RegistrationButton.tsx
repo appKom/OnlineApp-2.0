@@ -89,6 +89,7 @@ interface RegistrationButtonProps {
   event: Event
   isLoading?: boolean
   chargeScheduleDate?: Date | null
+  onOpenTurnstile: () => void
 }
 
 export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
@@ -98,6 +99,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   parentAttendance,
   punishment,
   user,
+  onOpenTurnstile,
   event,
   isLoading,
   chargeScheduleDate,
@@ -153,7 +155,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   return (
     <View style={{ gap: 8 }}>
       <TouchableOpacity
-        onPress={attendee ? () => setDeregisterModalOpen(true) : registerForAttendance}
+        onPress={attendee ? () => setDeregisterModalOpen(true) : onOpenTurnstile}
         disabled={disabled || isLoading}
         style={[
           styles.button,
