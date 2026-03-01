@@ -1,11 +1,11 @@
-import { Stack, Redirect, useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
 import Authenticator from "../utils/authenticator";
-import { useTheme } from "../utils/theme"
+import { ThemeProvider, useTheme } from "../utils/theme";
 
 // Set notification handler for when app is in foreground
 Notifications.setNotificationHandler({
@@ -15,34 +15,54 @@ Notifications.setNotificationHandler({
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
-})
+});
+
+function RootNavigator() {
+  const theme = useTheme();
+
+  return (
+    <>
+      <Stack
+        screenOptions={{
+          contentStyle: { backgroundColor: theme.background },
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <StatusBar style="auto" />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
-  const theme = useTheme();
-
   useEffect(() => {
     initializeAuth();
   }, []);
 
   useEffect(() => {
-    // Listen for notification responses (when user taps notification)
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const eventId = response.notification.request.content.data?.eventId as string;
-      const headerTitle = response.notification.request.content.data?.eventTitle as string;
-      if (eventId) {
-        router.push({
-          pathname: "/event-details",
-          params: {
-            eventId: eventId,
-            headerTitle: headerTitle,
-          },
-        });
-      }
-    });
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const eventId = response.notification.request.content.data
+          ?.eventId as string;
+        const headerTitle = response.notification.request.content.data
+          ?.eventTitle as string;
+
+        if (eventId) {
+          router.push({
+            pathname: "/event-details",
+            params: {
+              eventId,
+              headerTitle,
+            },
+          });
+        }
+      },
+    );
 
     return () => subscription.remove();
   }, [router]);
@@ -72,15 +92,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <Stack
-          screenOptions={{
-            contentStyle: { backgroundColor: theme.background},
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <StatusBar style="auto" />
+        <ThemeProvider initialMode="system">
+          <RootNavigator />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

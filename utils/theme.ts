@@ -1,7 +1,14 @@
 // Auto-generated theme derived from material-theme.json (2025-11-11)
 // Exports a complete set of tokens for the "light" and "dark" schemes
-import React, { createContext, useContext, useMemo, useState } from 'react';
-import { Appearance, useColorScheme } from 'react-native';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Appearance, useColorScheme } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type ThemeScheme = {
   // core tokens
@@ -226,6 +233,7 @@ export const dark: ThemeScheme = {
 };
 
 const themes = { light, dark } as const;
+const THEME_MODE_KEY = "themeMode";
 
 export type ThemeMode = keyof typeof themes;
 
@@ -242,7 +250,7 @@ type ThemeContextValue = {
   mode: ThemeMode;
   theme: ThemeScheme;
   // set to 'light'|'dark' to force a theme or 'system' to follow Appearance
-  setMode: (m: ThemeMode | 'system') => void;
+  setMode: (m: ThemeMode | "system") => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -250,24 +258,81 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 export type ThemeProviderProps = {
   children?: React.ReactNode;
   // initialMode: 'light' | 'dark' | 'system' (defaults to 'system')
-  initialMode?: ThemeMode | 'system';
+  initialMode?: ThemeMode | "system";
 };
 
-export function ThemeProvider({ children, initialMode = 'system' }: ThemeProviderProps) {
+export function ThemeProvider({
+  children,
+  initialMode = "system",
+}: ThemeProviderProps) {
   const system = useColorScheme();
-  const [overrideMode, setOverrideMode] = useState<ThemeMode | 'system'>(initialMode);
+  const [overrideMode, setOverrideMode] = useState<ThemeMode | "system">(
+    initialMode,
+  );
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
-  const resolvedMode: ThemeMode = overrideMode === 'system'
-    ? (system === 'dark' ? 'dark' : 'light')
-    : overrideMode;
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStoredTheme = async () => {
+      try {
+        const storedMode = await AsyncStorage.getItem(THEME_MODE_KEY);
+
+        if (
+          isMounted &&
+          (storedMode === "light" ||
+            storedMode === "dark" ||
+            storedMode === "system")
+        ) {
+          setOverrideMode(storedMode);
+        }
+      } catch (error) {
+        console.warn("Failed to load saved theme mode:", error);
+      } finally {
+        if (isMounted) {
+          setIsThemeLoaded(true);
+        }
+      }
+    };
+
+    loadStoredTheme();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const resolvedMode: ThemeMode =
+    overrideMode === "system"
+      ? system === "dark"
+        ? "dark"
+        : "light"
+      : overrideMode;
 
   const theme = useMemo(() => getTheme(resolvedMode), [resolvedMode]);
 
-  const value = useMemo<ThemeContextValue>(() => ({
-    mode: resolvedMode,
-    theme,
-    setMode: (m: ThemeMode | 'system') => setOverrideMode(m),
-  }), [resolvedMode, theme]);
+  const handleSetMode = async (m: ThemeMode | "system") => {
+    setOverrideMode(m);
+
+    try {
+      await AsyncStorage.setItem(THEME_MODE_KEY, m);
+    } catch (error) {
+      console.warn("Failed to save theme mode:", error);
+    }
+  };
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({
+      mode: resolvedMode,
+      theme,
+      setMode: handleSetMode,
+    }),
+    [resolvedMode, theme],
+  );
+
+  if (!isThemeLoaded) {
+    return null;
+  }
 
   return React.createElement(ThemeContext.Provider, { value }, children);
 }
@@ -281,17 +346,20 @@ export function useTheme(): ThemeScheme {
   if (ctx) return ctx.theme;
   // fallback for callers outside the provider: resolve from system color scheme
   const cs = useColorScheme() as ThemeMode | null;
-  const mode: ThemeMode = cs === 'dark' ? 'dark' : 'light';
+  const mode: ThemeMode = cs === "dark" ? "dark" : "light";
   return getTheme(mode);
 }
 
 // Helper: returns the resolved mode and a setter to override it. When called
 // outside a provider this returns the current system mode and a no-op setter.
-export function useThemeMode(): { mode: ThemeMode; setMode: (m: ThemeMode | 'system') => void } {
+export function useThemeMode(): {
+  mode: ThemeMode;
+  setMode: (m: ThemeMode | "system") => void;
+} {
   const ctx = useContext(ThemeContext);
   if (ctx) return { mode: ctx.mode, setMode: ctx.setMode };
   const cs = useColorScheme() as ThemeMode | null;
-  const mode: ThemeMode = cs === 'dark' ? 'dark' : 'light';
+  const mode: ThemeMode = cs === "dark" ? "dark" : "light";
   return { mode, setMode: () => {} };
 }
 
@@ -299,20 +367,26 @@ export function useThemeMode(): { mode: ThemeMode; setMode: (m: ThemeMode | 'sys
 // This is a synchronous helper you can call from non-component code.
 export function getCurrentTheme(): ThemeMode {
   const cs = Appearance.getColorScheme();
-  return cs === 'dark' ? 'dark' : 'light';
+  return cs === "dark" ? "dark" : "light";
 }
 
 // Color utility helpers
 // Apply alpha transparency to a hex color
 export function withAlpha(hex: string, alpha: number): string {
-  return `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+  return `${hex}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, "0")}`;
 }
 
 // Blend two hex colors to an opaque result.
 // Equivalent to drawing `foreground` with opacity `foregroundAlpha` on top of `background`.
 // This avoids Android/iOS shadow compositing artifacts that can appear with semi-transparent
 // backgrounds combined with elevation/shadows.
-export function blendColors(foreground: string, background: string, foregroundAlpha: number): string {
+export function blendColors(
+  foreground: string,
+  background: string,
+  foregroundAlpha: number,
+): string {
   const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
   const a = clamp01(foregroundAlpha);
 
@@ -343,12 +417,12 @@ export function blendColors(foreground: string, background: string, foregroundAl
 export function elevate(hex: string, factor: number): string {
   const mode = getCurrentTheme();
   const num = parseInt(hex.slice(1), 16);
-  
+
   let r = (num >> 16) & 0xff;
   let g = (num >> 8) & 0xff;
   let b = num & 0xff;
 
-  if (mode === 'light') {
+  if (mode === "light") {
     // Darken: reduce RGB values
     r = Math.max(0, r - factor);
     g = Math.max(0, g - factor);

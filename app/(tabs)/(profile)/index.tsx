@@ -10,17 +10,20 @@ import {
   Image,
   TouchableOpacity,
   RefreshControl,
+  Switch,
 } from "react-native";
 import { useEffect, useState } from "react";
 import Authenticator from "../../../utils/authenticator";
 import { getUser } from "utils/trpc"; // You'll need to create this
 import { User } from "types/user";
-import { useTheme } from "../../../utils/theme";
+import { useTheme, useThemeMode } from "../../../utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import NotificationSettings from "../../../components/NotificationSettings";
 
 export default function ProfileScreen() {
   const theme = useTheme();
+  const { mode, setMode } = useThemeMode();
+  const isDarkMode = mode === "dark";
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -157,16 +160,21 @@ export default function ProfileScreen() {
             </Text>
 
             <TouchableOpacity
-              style={[styles.loginButton, { 
-                opacity: isLoading ? 0.6 : 1, 
-                backgroundColor: theme.attending,
-                elevation: 8,
-                shadowColor: theme.shadow,
-              }]}
+              style={[
+                styles.loginButton,
+                {
+                  opacity: isLoading ? 0.6 : 1,
+                  backgroundColor: theme.attending,
+                  elevation: 8,
+                  shadowColor: theme.shadow,
+                },
+              ]}
               onPress={handleLogin}
               disabled={isLoading}
             >
-              <Text style={[styles.loginButtonText, { color: theme.onAttending }]}>
+              <Text
+                style={[styles.loginButtonText, { color: theme.onAttending }]}
+              >
                 {isLoading ? "Logger Inn..." : "Logg Inn"}
               </Text>
             </TouchableOpacity>
@@ -213,7 +221,11 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.profileHeader,
-                  { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
+                  {
+                    backgroundColor: theme.surfaceContainer,
+                    elevation: 8,
+                    shadowColor: theme.shadow,
+                  },
                 ]}
               >
                 {user.imageUrl ? (
@@ -264,7 +276,11 @@ export default function ProfileScreen() {
                 <View
                   style={[
                     styles.section,
-                    { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
+                    {
+                      backgroundColor: theme.surfaceContainer,
+                      elevation: 8,
+                      shadowColor: theme.shadow,
+                    },
                   ]}
                 >
                   <Text
@@ -287,7 +303,11 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.section,
-                  { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
+                  {
+                    backgroundColor: theme.surfaceContainer,
+                    elevation: 8,
+                    shadowColor: theme.shadow,
+                  },
                 ]}
               >
                 <Text
@@ -369,12 +389,67 @@ export default function ProfileScreen() {
                 )}
               </View>
 
+              {/* Settings */}
+              <View
+                style={[
+                  styles.section,
+                  {
+                    backgroundColor: theme.surfaceContainer,
+                    elevation: 8,
+                    shadowColor: theme.shadow,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.sectionTitle, { color: theme.onBackground }]}
+                >
+                  Innstillinger
+                </Text>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingTextContainer}>
+                    <Text
+                      style={[
+                        styles.settingLabel,
+                        { color: theme.onBackground },
+                      ]}
+                    >
+                      Dark mode
+                    </Text>
+                    <Text
+                      style={[
+                        styles.settingDescription,
+                        { color: theme.onSurfaceVariant },
+                      ]}
+                    >
+                      Bytt mellom light og dark mode
+                    </Text>
+                  </View>
+
+                  <Switch
+                    value={isDarkMode}
+                    onValueChange={(value) => setMode(value ? "dark" : "light")}
+                    trackColor={{
+                      false: theme.outlineVariant,
+                      true: theme.primary,
+                    }}
+                    thumbColor={
+                      isDarkMode ? theme.onPrimary : theme.surfaceBright
+                    }
+                  />
+                </View>
+              </View>
+
               {/* Memberships */}
               {user.memberships && user.memberships.length > 0 && (
                 <View
                   style={[
                     styles.section,
-                    { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
+                    {
+                      backgroundColor: theme.surfaceContainer,
+                      elevation: 8,
+                      shadowColor: theme.shadow,
+                    },
                   ]}
                 >
                   <Text
@@ -388,7 +463,11 @@ export default function ProfileScreen() {
                       key={membership.id}
                       style={[
                         styles.membershipCard,
-                        { backgroundColor: theme.surfaceContainerHigh, elevation: 5, shadowColor: theme.shadow },
+                        {
+                          backgroundColor: theme.surfaceContainerHigh,
+                          elevation: 5,
+                          shadowColor: theme.shadow,
+                        },
                       ]}
                     >
                       <Text
@@ -461,7 +540,11 @@ export default function ProfileScreen() {
               <View
                 style={[
                   styles.section,
-                  { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow },
+                  {
+                    backgroundColor: theme.surfaceContainer,
+                    elevation: 8,
+                    shadowColor: theme.shadow,
+                  },
                 ]}
               >
                 <Text
@@ -502,41 +585,38 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
 
-              <View style={styles.infoRow}>
-                <Text
-                  style={[
-                    styles.infoLabel,
-                    { color: theme.onSurfaceVariant },
-                  ]}
-                >
-                  Sist oppdatert:
-                </Text>
-                <Text
-                  style={[
-                    styles.infoValue,
-                    { color: theme.onBackground },
-                  ]}
-                >
-                  {new Date(user.updatedAt).toLocaleDateString()}
-                </Text>
+                <View style={styles.infoRow}>
+                  <Text
+                    style={[
+                      styles.infoLabel,
+                      { color: theme.onSurfaceVariant },
+                    ]}
+                  >
+                    Sist oppdatert:
+                  </Text>
+                  <Text
+                    style={[styles.infoValue, { color: theme.onBackground }]}
+                  >
+                    {new Date(user.updatedAt).toLocaleDateString()}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Notification Settings Component */}
-            {/* <NotificationSettings
+              {/* Notification Settings Component */}
+              {/* <NotificationSettings
               preferences={notificationPreferences}
               onPreferencesChange={setNotificationPreferences}
             /> */}
-          </>
-        ) : (
-          <View style={styles.loadingContainer}>
-            <Text
-              style={[styles.loadingText, { color: theme.onSurfaceVariant }]}
-            >
-              Laster profil...
-            </Text>
-          </View>
-        )}
+            </>
+          ) : (
+            <View style={styles.loadingContainer}>
+              <Text
+                style={[styles.loadingText, { color: theme.onSurfaceVariant }]}
+              >
+                Laster profil...
+              </Text>
+            </View>
+          )}
 
           {/* Logout Button */}
           <TouchableOpacity
@@ -545,8 +625,8 @@ export default function ProfileScreen() {
               {
                 backgroundColor: theme.deregisterButton,
                 opacity: isLoading ? 0.6 : 1,
-                elevation: 8, 
-                shadowColor: theme.shadow
+                elevation: 8,
+                shadowColor: theme.shadow,
               },
             ]}
             onPress={handleLogout}
@@ -652,6 +732,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     textAlign: "right",
+  },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  settingTextContainer: {
+    flex: 1,
+    paddingRight: 12,
+  },
+
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+
+  settingDescription: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   membershipCard: {
     padding: 12,
