@@ -82,39 +82,6 @@ const EventDetails: React.FC = () => {
     [event, userPoolIndex],
   );
 
-  const registrationStatus = useMemo(
-    () => getRegistrationStatus(event?.attendance),
-    [event?.attendance],
-  );
-
-  const registrationPeriod = useMemo(
-    () => formatRegistrationPeriod(event?.attendance),
-    [event?.attendance],
-  );
-
-  const [registering, setRegistering] = useState(false);
-
-  const handleDeregisterPress = async () => {
-    if (!event?.attendance?.id) return;
-    try {
-      const result = await deregisterForEvent(
-        event.attendance.id,
-        DEREGISTER_REASON_TYPES[6],
-        "test",
-      );
-      if (result && (result as any).success) {
-        // Refresh availability or re-fetch event to update UI
-        await getRegistrationAvailability(event.attendance.id);
-      } else {
-        console.warn("Registration failed:", result);
-      }
-    } catch (err) {
-      console.error("Registration error:", err);
-    } finally {
-      setRegistering(false);
-    }
-  };
-
   // Use shared theme tokens for colors
   const colors = {
     background: theme.background,
@@ -125,11 +92,6 @@ const EventDetails: React.FC = () => {
   const toggleDescription = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setDescriptionExpanded(!descriptionExpanded);
-  };
-
-  const handleOpenAttendeesBottomSheet = () => {
-    console.log("🚀 Opening attendees bottom sheet");
-    bottomSheetRef.current?.expand();
   };
 
   useEffect(() => {});
