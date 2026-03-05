@@ -20,7 +20,6 @@ import { BlurView } from "@react-native-community/blur";
 import BottomSheet from "@gorhom/bottom-sheet";
 import {
   getEvent,
-  getRegistrationAvailability,
   deregisterForEvent,
   getExpiryDateForUser,
 } from "utils/trpc";
@@ -153,7 +152,7 @@ const EventDetails: React.FC = () => {
         setLoading(false);
 
         if (eventData != null && eventData.attendance != null) {
-          getRegistrationAvailability(eventData.attendance.id || "").then();
+          // getRegistrationAvailability now requires a turnstile token, skip it on page load
         } else {
           console.log(
             eventData == null ? "event is null" : "attendance is null",
