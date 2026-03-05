@@ -81,8 +81,7 @@
           }
         }
       ],
-      "expo-router",
-      "expo-image"
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
