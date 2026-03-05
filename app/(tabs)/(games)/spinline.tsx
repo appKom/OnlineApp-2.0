@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
-import { useTheme } from "../../../utils/theme";
+import { useTheme, useThemeMode } from "../../../utils/theme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,6 +15,9 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
+
+const logoLight = require("../../../assets/Online_Logokit/svg/Online_bla_o.svg");
+const logoDark = require("../../../assets/Online_Logokit/svg/Online_hvit_o.svg");
 
 // Number of chevrons and max drag for charging
 const CHEVRON_COUNT = 3;
@@ -114,6 +117,7 @@ const InstructionText: React.FC<{ isSpinning: SharedValue<boolean>; textColor: s
 
 const SpinLine: React.FC = () => {
   const theme = useTheme();
+  const { mode } = useThemeMode();
   const insets = useSafeAreaInsets();
 
   // Animation values
@@ -232,7 +236,7 @@ const SpinLine: React.FC = () => {
             <View style={styles.spinButton}>
               <Animated.View style={animatedStyle}>
                 <Image
-                  source={require("assets/svg/online_hvit_o.svg")}
+                  source={mode === "light" ? logoLight : logoDark}
                   style={{ width: 300, height: 300 }}
                   contentFit="contain"
                 />
