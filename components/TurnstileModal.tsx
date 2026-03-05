@@ -25,8 +25,7 @@ export const TurnstileBox: React.FC<TurnstileBoxProps> = ({
     console.error("Turnstile error:", error)
   }
 
-  // Temporarily always visible for styling - comment out when done
-  // if (!visible) return null
+  if (!visible) return null
 
   return (
     <View style={styles.container}>
