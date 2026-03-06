@@ -36,4 +36,5 @@ export type Membership = {
   userId: string;
   start: Date;
   end: Date;
+  semester: number;
 };

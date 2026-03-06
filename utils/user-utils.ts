@@ -40,6 +40,11 @@ export const getMembershipGrade = (membership: Membership): 1 | 2 | 3 | 4 | 5 | 
   }
 }
 
+export const getGrade = (membership: Membership): number => {
+
+  return (Math.ceil(membership.semester / 2));
+}
+
 export const getUserPool = (user: User, pools: AttendancePool[]): AttendancePool | undefined => {
   const activeMembership = findActiveMembership(user)
   if (!activeMembership) return undefined

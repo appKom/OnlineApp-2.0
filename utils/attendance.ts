@@ -1,5 +1,5 @@
 import { compareAsc } from "date-fns"
-import { findActiveMembership, getMembershipGrade } from "./user-utils"
+import { findActiveMembership, getGrade } from "./user-utils"
 import type {
   Attendance,
   AttendancePool,
@@ -42,7 +42,7 @@ export const isAttendable = (user: any, pool: AttendancePool) => {
   const membership = findActiveMembership(user)
   if (membership === null) return false
 
-  const grade = getMembershipGrade(membership)
+  const grade = getGrade(membership)
   if (grade === null) return false
 
   if (!pool.yearCriteria || pool.yearCriteria.length === 0) return true
