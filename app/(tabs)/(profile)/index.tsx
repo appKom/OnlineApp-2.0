@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import Authenticator from "../../../utils/authenticator";
 import { getUser } from "utils/trpc"; // You'll need to create this
 import { User } from "types/user";
+import { findActiveMembership, getGrade } from "utils/user-utils";
 import { useTheme, useThemeMode } from "../../../utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import NotificationSettings from "../../../components/NotificationSettings";
@@ -646,7 +647,7 @@ export default function ProfileScreen() {
                   <Text
                     style={[styles.infoValue, { color: theme.onBackground }]}
                   >
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {findActiveMembership(user) ? getGrade(findActiveMembership(user)!) : "Not available"}. klasse
                   </Text>
                 </View>
 
@@ -817,7 +818,6 @@ const styles = StyleSheet.create({
   membershipCard: {
     padding: 12,
     borderRadius: 8,
-    marginBottom: 8,
   },
   membershipType: {
     fontSize: 16,
