@@ -236,8 +236,8 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
       await cancelRegistrationReminder(event.id)
       setNotificationScheduled(false)
     } else {
-      await scheduleRegistrationReminder(event, attendance)
-      setNotificationScheduled(true)
+      const scheduled = await scheduleRegistrationReminder(event, attendance)
+      setNotificationScheduled(scheduled)
     }
   }
 

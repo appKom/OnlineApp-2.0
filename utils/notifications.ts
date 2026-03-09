@@ -15,14 +15,14 @@ const showMessage = (title: string, message: string) => {
 export const scheduleRegistrationReminder = async (
   event: EventType,
   attendance: Attendance,
-) => {
+): Promise<boolean> => {
   try {
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== "granted") {
       const request = await Notifications.requestPermissionsAsync();
       if (request.status !== "granted") {
         showMessage("Feil", "Varsler er ikke tillatt");
-        return;
+        return false;
       }
     }
 
@@ -32,14 +32,18 @@ export const scheduleRegistrationReminder = async (
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#FF231F7C",
-      sound: "default",
     });
 
-    // Schedule notification for 15 minutes before registration starts
+    // Schedule notification for 10 minutes before registration starts
     const eventId = event.id;
     const registrationStartTime = attendance.registerStart;
     const startTime = new Date(registrationStartTime).getTime();
     const notificationTime = new Date(startTime - 10 * 60 * 1000);
+
+    if (notificationTime <= new Date()) {
+      showMessage("Feil", "Påmeldingen starter om mindre enn 10 minutter");
+      return false;
+    }
 
     await Notifications.scheduleNotificationAsync({
       identifier: `registration-reminder-${eventId}`,
@@ -57,9 +61,11 @@ export const scheduleRegistrationReminder = async (
     });
 
     showMessage("Suksess", `Påminnelse satt 10 minutter før påmeldingsstart`);
+    return true;
   } catch (error) {
     console.error("Error scheduling notification:", error);
     showMessage("Feil", "Kunne ikke sette påminnelse");
+    return false;
   }
 };
 
