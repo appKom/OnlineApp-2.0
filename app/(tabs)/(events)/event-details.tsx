@@ -239,7 +239,7 @@ const EventDetails: React.FC = () => {
           </View>
         )}
 
-        <View style={{ height: 104 }} />
+        {/* <View style={{ height: 104 }} /> */}
       </ScrollView>
 
       {isRegistration && (

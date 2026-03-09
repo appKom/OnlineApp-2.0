@@ -9,7 +9,16 @@ export default function TabLayout() {
     <NativeTabs
       minimizeBehavior="onScrollDown"
       tintColor={theme.secondary}
-      backgroundColor={theme.surfaceContainerLowest}
+      iconColor={{
+        default: theme.onSurfaceVariant,
+        selected: theme.onSecondaryContainer,
+      }}
+      indicatorColor={theme.secondaryContainer}
+      backgroundColor={
+        Platform.OS === "android"
+          ? theme.surfaceContainerLowest
+          : theme.surfaceContainerLowest
+      }
       labelStyle={{
         color:
           Platform.OS === "ios"
@@ -17,7 +26,7 @@ export default function TabLayout() {
                 light: theme.outline ?? "#999999",
                 dark: theme.outline ?? "#999999",
               })
-            : (theme.outline ?? "#999999"),
+            : (theme.onSurfaceVariant ?? "#999999"),
       }}
     >
       <NativeTabs.Trigger

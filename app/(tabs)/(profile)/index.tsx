@@ -724,7 +724,7 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        <View style={{ height: 104 }} />
+        {/* <View style={{ height: 104 }} /> */}
       </ScrollView>
     </TabScreenContainer>
   );

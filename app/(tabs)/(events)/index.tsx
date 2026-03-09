@@ -390,7 +390,7 @@ const AllEvents: React.FC = () => {
               <ActivityIndicator color={theme.onBackground} />
             </View>
           ) : (
-            <View style={{ height: 104 }}></View>
+            <View style={{}}></View>
           )
         }
         renderItem={
