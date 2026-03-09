@@ -239,9 +239,11 @@ export function getTheme(mode: ThemeMode = "light"): ThemeScheme {
 // when the provider's resolved mode changes (system change or explicit override).
 
 type ThemeContextValue = {
+  // what the app is currently rendering with
   mode: ThemeMode;
+  // what the user selected: light, dark, or system
+  selectedMode: ThemeMode | "system";
   theme: ThemeScheme;
-  // set to 'light'|'dark' to force a theme or 'system' to follow Appearance
   setMode: (m: ThemeMode | "system") => void;
 };
 
@@ -274,10 +276,11 @@ export function ThemeProvider({
   const value = useMemo<ThemeContextValue>(
     () => ({
       mode: resolvedMode,
+      selectedMode: overrideMode,
       theme,
       setMode: (m: ThemeMode | "system") => setOverrideMode(m),
     }),
-    [resolvedMode, theme],
+    [resolvedMode, overrideMode, theme],
   );
 
   return React.createElement(ThemeContext.Provider, { value }, children);
@@ -300,13 +303,26 @@ export function useTheme(): ThemeScheme {
 // outside a provider this returns the current system mode and a no-op setter.
 export function useThemeMode(): {
   mode: ThemeMode;
+  selectedMode: ThemeMode | "system";
   setMode: (m: ThemeMode | "system") => void;
 } {
   const ctx = useContext(ThemeContext);
-  if (ctx) return { mode: ctx.mode, setMode: ctx.setMode };
+  if (ctx) {
+    return {
+      mode: ctx.mode,
+      selectedMode: ctx.selectedMode,
+      setMode: ctx.setMode,
+    };
+  }
+
   const cs = useColorScheme() as ThemeMode | null;
   const mode: ThemeMode = cs === "dark" ? "dark" : "light";
-  return { mode, setMode: () => {} };
+
+  return {
+    mode,
+    selectedMode: "system",
+    setMode: () => {},
+  };
 }
 
 // Return the current mode ('light' | 'dark') based on the system appearance.
