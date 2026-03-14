@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "platforms": [
       "ios",
       "android"
@@ -39,7 +38,6 @@
         "foregroundImage": "./assets/adaptive-icon-dark.png",
         "backgroundColor": "#000000"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "ntnu.online.app",
       "intentFilters": [
@@ -69,22 +67,33 @@
     "plugins": [
       "react-native-bottom-tabs",
       [
+        "react-native-auth0",
+        {
+          "domain": "auth.online.ntnu.no",
+          "customScheme": "ntnu.online.app"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {
-            "newArchEnabled": true,
             "deploymentTarget": "18.0",
             "useFrameworks": "static"
           },
-          "android": {
-            "newArchEnabled": true
-          }
+          "android": {}
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5285fdbf-e844-4cad-a849-0bd4d8b7a9da"
+      }
     }
   }
 }
