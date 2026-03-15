@@ -1,7 +1,6 @@
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
@@ -12,7 +11,7 @@ import {
   ThemeProvider as NavThemeProvider,
 } from "@react-navigation/native";
 import Authenticator from "../utils/authenticator";
-import { ThemeProvider, useTheme } from "../utils/theme";
+import { ThemeProvider, useTheme, useThemeMode } from "../utils/theme";
 
 SystemUI.setBackgroundColorAsync("#0F1417");
 
@@ -30,7 +29,7 @@ function RootLayoutInner() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
   const theme = useTheme();
-  const colorScheme = useColorScheme();
+  const { mode } = useThemeMode();
 
   useEffect(() => {
     initializeAuth();
@@ -81,7 +80,7 @@ function RootLayoutInner() {
   };
 
   return (
-    <NavThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <NavThemeProvider value={mode === "dark" ? DarkTheme : DefaultTheme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <Stack
@@ -92,7 +91,7 @@ function RootLayoutInner() {
           >
             <Stack.Screen name="(tabs)" />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style={mode === "dark" ? "light" : "dark"} />
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </NavThemeProvider>
