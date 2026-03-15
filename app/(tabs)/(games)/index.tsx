@@ -32,6 +32,12 @@ const games: Game[] = [
     description: "Kast en terning. Helt uten reklamer!",
     route: "/dice",
   },
+  {
+    id: "roulette",
+    title: "Roulette",
+    description: "Prøv lykken!",
+    route: "/roulette",
+  },
 ];
 
 export default function GamesScreen() {
@@ -39,20 +45,28 @@ export default function GamesScreen() {
   const router = useRouter();
 
   const renderGameItem = ({ item }: { item: Game }) => (
-    <Pressable
-      onPress={() => router.push(item.route as any)}
-    >
+    <Pressable onPress={() => router.push(item.route as any)}>
       {({ pressed }) => (
-        <LiquidGlassView style={[styles.gameItem, { backgroundColor: theme.surfaceContainer, elevation: 8, shadowColor: theme.shadow, opacity: pressed ? 0.7 : 1 }]}>
-        <Text style={[styles.gameTitle, { color: theme.onSurface }]}>
-          {item.title}
-        </Text>
-        <Text
-          style={[styles.gameDescription, { color: theme.onSurfaceVariant }]}
+        <LiquidGlassView
+          style={[
+            styles.gameItem,
+            {
+              backgroundColor: theme.surfaceContainer,
+              elevation: 8,
+              shadowColor: theme.shadow,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
         >
-          {item.description}
-        </Text>
-      </LiquidGlassView>
+          <Text style={[styles.gameTitle, { color: theme.onSurface }]}>
+            {item.title}
+          </Text>
+          <Text
+            style={[styles.gameDescription, { color: theme.onSurfaceVariant }]}
+          >
+            {item.description}
+          </Text>
+        </LiquidGlassView>
       )}
     </Pressable>
   );
@@ -85,7 +99,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 8
+    elevation: 8,
   },
   gameTitle: {
     fontSize: 18,

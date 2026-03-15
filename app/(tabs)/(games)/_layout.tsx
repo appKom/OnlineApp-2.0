@@ -11,6 +11,7 @@ export default function GamesLayout() {
     index: "Spill",
     spinline: "SpinLine",
     dice: "Terning",
+    roulette: "Roulette",
   };
   const title = titleMap[current] ?? "Spill";
 
@@ -28,6 +29,7 @@ export default function GamesLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="spinline" />
         <Stack.Screen name="dice" />
+        <Stack.Screen name="roulette" />
       </Stack>
     </>
   );
