@@ -40,26 +40,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "ntnu.online.app",
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "https",
-              "host": "dev.auth.online.ntnu.no"
-            },
-            {
-              "scheme": "https",
-              "host": "auth.online.ntnu.no"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ]
+      "versionCode": 15
     },
     "web": {
       "favicon": "./assets/favicon.png"
