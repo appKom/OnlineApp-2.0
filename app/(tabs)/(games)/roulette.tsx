@@ -26,6 +26,7 @@ const centerLogo = require("assets/svg/online_hvit_o.svg");
 
 const GOLD = "#D9BF6A";
 const GOLD_LIGHT = "#F3DE9B";
+const CREAM_DARK = "#F1E7D0";
 const CREAM = "#F7F1DE";
 
 const TABLE_GREEN_LIGHT = "#0F6B47";
@@ -56,18 +57,18 @@ const SEGMENT_ANGLE = TWO_PI / SEGMENT_COUNT;
 
 // Sjeldne grønne utfall for 0
 const GREEN_ACTIONS = [
-  "Del ut 3 shots",
-  "Velg 3 personer som tar 2 slurker hver",
-  "Alle andre tar 1 slurk, du slipper",
-  "Lag en ny regel som varer til neste spin",
-  "Velg én person som må fullføre utfordringen du peker ut",
+  "Velg en person som må chugge",
+  "Du må DRA HJEM (eller ta en shot)",
+  "Alle andre tar 6 slurker",
+  "Lag en ny regel som varer ut spillet",
+  "Drikk en slurk for hver person som er tilstede",
 ];
 
 // Rød = du får utfordringen selv
 const RED_SELF_ACTIONS = [
   "Ta 2 slurker",
-  "Fortell en klein historie, eller ta 2 slurker",
-  "Nevn et rødt flagg på date på 3 sekunder, ellers ta 2 slurker",
+  "Fortell en klein historie, eller ta 4 slurker",
+  "Nevn et rødt flagg på date, ellers ta 2 slurker",
   "Ta 1 slurk for hvert søsken du har, maks 3",
   "Si tre norske byer på 3 sekunder, ellers ta 2 slurker",
   "Snakk med dialekt til neste runde, ellers ta 2 slurker",
@@ -474,6 +475,13 @@ export default function RouletteScreen() {
         <CasinoFeltBackground darkMode={darkMode} />
 
         <View style={styles.centerContainer}>
+          <View style={styles.deckHeader}>
+            <Text style={styles.deckTitle}>ROULETTE</Text>
+            <Text style={styles.deckSubtitle}>
+              {isSpinning ? "Spinner..." : "Trykk på hjulet for å spinne"}
+            </Text>
+          </View>
+
           <View style={styles.wheelArea}>
             <Pointer />
 
@@ -494,10 +502,6 @@ export default function RouletteScreen() {
               </View>
             </Pressable>
           </View>
-
-          <Text style={[styles.instruction, { color: CREAM }]}>
-            {isSpinning ? "Spinner..." : "Trykk på hjulet for å spinne"}
-          </Text>
 
           <WoodPanel>
             <Text style={styles.resultLabel}>RESULTAT</Text>
@@ -613,18 +617,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  instruction: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-    letterSpacing: 0.2,
-  },
 
   resultBox: {
-    marginTop: 18,
+    marginTop: 28,
     minHeight: 128,
-    width: "100%",
+    width: "90%",
     borderRadius: 20,
     overflow: "hidden",
     borderWidth: 2,
@@ -737,5 +734,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     lineHeight: 25,
+  },
+  deckHeader: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+
+  deckTitle: {
+    color: GOLD_LIGHT,
+    fontSize: 30,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+
+  deckSubtitle: {
+    color: CREAM_DARK,
+    fontSize: 14,
+    marginTop: 6,
+    textAlign: "center",
   },
 });
