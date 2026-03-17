@@ -38,6 +38,12 @@ const games: Game[] = [
     description: "Prøv lykken!",
     route: "/roulette",
   },
+  {
+    id: "questions_100",
+    title: "100 Spørsmål",
+    description: "Spill 100 spørsmål!",
+    route: "/questions_100",
+  },
 ];
 
 export default function GamesScreen() {

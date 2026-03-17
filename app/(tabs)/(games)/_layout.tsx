@@ -10,8 +10,9 @@ export default function GamesLayout() {
   const titleMap: Record<string, string> = {
     index: "Spill",
     spinline: "SpinLine",
-    dice: "Terning",
-    roulette: "Roulette",
+    dice: "",
+    roulette: "",
+    questions_100: "",
   };
   const title = titleMap[current] ?? "Spill";
 
@@ -30,6 +31,7 @@ export default function GamesLayout() {
         <Stack.Screen name="spinline" />
         <Stack.Screen name="dice" />
         <Stack.Screen name="roulette" />
+        <Stack.Screen name="questions_100" />
       </Stack>
     </>
   );
