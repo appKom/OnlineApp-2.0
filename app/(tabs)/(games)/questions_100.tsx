@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - 40, 360);
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - 40, 300);
 const CARD_HEIGHT = CARD_WIDTH * 1.42;
 const SWIPE_THRESHOLD = 90;
 const SWIPE_OUT_DISTANCE = SCREEN_WIDTH * 1.15;
@@ -446,6 +446,7 @@ export default function CasinoQuestionsDeckScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 120,
   },
 
   feltPatch: {
@@ -479,7 +480,7 @@ const styles = StyleSheet.create({
   tableRail: {
     position: "absolute",
     top: 18,
-    bottom: 18,
+    bottom: 18 + 80,
     left: 12,
     right: 12,
     borderRadius: 32,
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
   tableRailInner: {
     position: "absolute",
     top: 28,
-    bottom: 28,
+    bottom: 28 + 80,
     left: 22,
     right: 22,
     borderRadius: 26,
@@ -615,7 +616,7 @@ const styles = StyleSheet.create({
   cornerLabel: {
     fontSize: 24,
     fontWeight: "800",
-    lineHeight: 22,
+    lineHeight: 24,
     marginBottom: 5,
   },
   cardHeader: {

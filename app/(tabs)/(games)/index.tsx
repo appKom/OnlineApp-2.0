@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   useColorScheme,
+  View,
 } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { useTheme } from "../../../utils/theme";
@@ -53,7 +54,7 @@ export default function GamesScreen() {
   const renderGameItem = ({ item }: { item: Game }) => (
     <Pressable onPress={() => router.push(item.route as any)}>
       {({ pressed }) => (
-        <LiquidGlassView
+        <View
           style={[
             styles.gameItem,
             {
@@ -72,7 +73,7 @@ export default function GamesScreen() {
           >
             {item.description}
           </Text>
-        </LiquidGlassView>
+        </View>
       )}
     </Pressable>
   );
@@ -86,7 +87,7 @@ export default function GamesScreen() {
         contentInsetAdjustmentBehavior="automatic"
         style={{
           flex: 1,
-          backgroundColor: theme.background,
+          // backgroundColor: theme.background,
         }}
         contentContainerStyle={{
           padding: 20,

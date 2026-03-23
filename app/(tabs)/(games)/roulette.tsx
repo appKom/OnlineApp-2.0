@@ -527,6 +527,7 @@ export default function RouletteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 120,
   },
 
   feltPatch: {
@@ -560,7 +561,7 @@ const styles = StyleSheet.create({
   tableRail: {
     position: "absolute",
     top: 18,
-    bottom: 18,
+    bottom: 18 + 80,
     left: 12,
     right: 12,
     borderRadius: 32,
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
   tableRailInner: {
     position: "absolute",
     top: 28,
-    bottom: 28,
+    bottom: 28 + 80,
     left: 22,
     right: 22,
     borderRadius: 26,
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
   },
 
   resultBox: {
-    marginTop: 28,
+    marginTop: 0,
     minHeight: 128,
     width: "90%",
     borderRadius: 20,

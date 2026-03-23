@@ -322,6 +322,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: "relative",
+    paddingBottom: 120,
   },
   centerContainer: {
     flex: 1,
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
   tableRail: {
     position: "absolute",
     top: 18,
-    bottom: 18,
+    bottom: 18 + 80,
     left: 12,
     right: 12,
     borderRadius: 32,
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
   tableRailInner: {
     position: "absolute",
     top: 28,
-    bottom: 28,
+    bottom: 28 + 80,
     left: 22,
     right: 22,
     borderRadius: 26,
