@@ -1,8 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, StyleSheet, Text, Platform, Dimensions } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { useThemeMode } from "../../../utils/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -36,7 +37,44 @@ const TABLE_SHADOW_LIGHT = "#0A4B32";
 const TABLE_SHADOW_DARK = "#062D1E";
 const TABLE_RAIL = "rgba(217,191,106,0.26)";
 
-const QUESTIONS = [
+// Tilfeldig rekkefølge på alle kort bortsett fra nr.67
+const FIXED_CARD_NUMBER = 67;
+const FIXED_CARD_QUESTION =
+  "Hvem syns fortsatt at dette tallet er morsomt? Voks opp... Ta 3 straffeslurker";
+
+function shuffleArray<T>(items: T[]): T[] {
+  const shuffled = items.slice();
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+function buildQuestionsDeck(baseQuestions: string[]): string[] {
+  const fixedCardIndex = FIXED_CARD_NUMBER - 1;
+  const fixedQuestionIndex = baseQuestions.indexOf(FIXED_CARD_QUESTION);
+
+  if (fixedQuestionIndex === -1) {
+    const fallback = shuffleArray(baseQuestions);
+    fallback[Math.min(fixedCardIndex, fallback.length - 1)] =
+      FIXED_CARD_QUESTION;
+    return fallback;
+  }
+
+  const questionsWithoutFixed = baseQuestions.slice();
+  questionsWithoutFixed.splice(fixedQuestionIndex, 1);
+
+  const shuffled = shuffleArray(questionsWithoutFixed);
+  const insertAt = Math.max(0, Math.min(fixedCardIndex, shuffled.length));
+  shuffled.splice(insertAt, 0, FIXED_CARD_QUESTION);
+
+  return shuffled;
+}
+// 99 spørsmål her
+const BASE_QUESTIONS = [
   "Hvem er den største kokken?",
   "Hvem sin kode fungerer alltid uansett hvor dårlig den ser ut?",
   "Hvem er best venn med GPT?",
@@ -70,6 +108,7 @@ const QUESTIONS = [
   "Hvem er medlem av kontorsofaklubben?",
   "Hvem er best i Smash?",
   "Hvem er best i Mario Kart?",
+  "Hvem syns fortsatt at dette tallet er morsomt? Voks opp... Ta 3 straffeslurker",
   "Hvem ignorerer smashpausen?",
   "Hvem tar de lengste 'pausene'?",
   "Hvem ender alltid opp på Heidi's?",
@@ -105,7 +144,6 @@ const QUESTIONS = [
   "Hvem ser Wolf of Wallstreet hver dag som 'Pensum' i sigma grindset?",
   "Hvem er et academic weapon?",
   "Hvem er et academic victim?",
-  "Hvem syns fortsatt at dette tallet er morsomt? Voks opp... Ta 3 straffeslurker",
   "Hvem er flinkest til å diskutere? Diskuter deg til en shot!!",
   "Hvem kunne kysset noen for en drink på byen? Hva med noen i rommet? 😉",
   "Hvem starter den neste store interessegruppen?",
@@ -137,9 +175,7 @@ const QUESTIONS = [
   "Hvem sover aldri i sin egen seng etter en kveld på byen?",
   "Hvem er ditt A4 gang-crush?",
   "Hvem løper vekk fra purken? (Hvis de blir tatt)",
-]
-  .slice()
-  .reverse();
+];
 
 async function triggerHaptic() {
   if (Platform.OS === "web") return;
@@ -305,6 +341,9 @@ export default function CasinoQuestionsDeckScreen() {
   const backgroundColor = darkMode ? TABLE_GREEN_DARK : TABLE_GREEN_LIGHT;
   const insets = useSafeAreaInsets();
 
+  const [questions, setQuestions] = useState(() =>
+    buildQuestionsDeck(BASE_QUESTIONS),
+  );
   const [cardIndex, setCardIndex] = useState(0);
 
   const translateX = useSharedValue(0);
@@ -313,7 +352,19 @@ export default function CasinoQuestionsDeckScreen() {
   const isAnimating = useSharedValue(false);
 
   const canGoBack = cardIndex > 0;
-  const canGoNext = cardIndex < QUESTIONS.length - 1;
+  const canGoNext = cardIndex < questions.length - 1;
+
+  useFocusEffect(
+    useCallback(() => {
+      setQuestions(buildQuestionsDeck(BASE_QUESTIONS));
+      setCardIndex(0);
+
+      translateX.value = 0;
+      rotateZ.value = 0;
+      scale.value = 1;
+      isAnimating.value = false;
+    }, [isAnimating, rotateZ, scale, translateX]),
+  );
 
   const resetCardPosition = () => {
     translateX.value = withSpring(0, { damping: 18, stiffness: 180 });
@@ -325,7 +376,7 @@ export default function CasinoQuestionsDeckScreen() {
     if (isAnimating.value) return;
 
     const nextIndex = direction === -1 ? cardIndex + 1 : cardIndex - 1;
-    if (nextIndex < 0 || nextIndex >= QUESTIONS.length) {
+    if (nextIndex < 0 || nextIndex >= questions.length) {
       resetCardPosition();
       return;
     }
@@ -416,7 +467,7 @@ export default function CasinoQuestionsDeckScreen() {
             <GestureDetector gesture={panGesture}>
               <Animated.View style={[styles.frontCardWrap, cardAnimatedStyle]}>
                 <CasinoQuestionCard
-                  question={QUESTIONS[cardIndex]}
+                  question={questions[cardIndex]}
                   index={cardIndex}
                 />
               </Animated.View>
@@ -425,7 +476,7 @@ export default function CasinoQuestionsDeckScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.progressText}>
-              {cardIndex + 1} / {QUESTIONS.length}
+              {cardIndex + 1} / {questions.length}
             </Text>
             <Text style={styles.edgeHint}>
               {!canGoBack && !canGoNext
