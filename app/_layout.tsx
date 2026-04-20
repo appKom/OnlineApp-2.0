@@ -12,6 +12,8 @@ import {
 } from "@react-navigation/native";
 import Authenticator from "../utils/authenticator";
 import { ThemeProvider, useTheme, useThemeMode } from "../utils/theme";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
+import { Platform } from "react-native";
 
 SystemUI.setBackgroundColorAsync("#0F1417");
 
@@ -56,6 +58,22 @@ function RootLayoutInner() {
 
     return () => subscription.remove();
   }, [router]);
+
+  useEffect(() => {
+    const requestATT = async () => {
+      if (Platform.OS !== "ios") return;
+
+      // Small delay prevents conflicts with other system dialogs (e.g. push notifications)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // iOS remembers the answer — calling this again never re-shows the popup
+      const { status } = await requestTrackingPermissionsAsync();
+      console.log("Tracking permission status:", status);
+      // status: 'granted' | 'denied' | 'restricted' | 'undetermined'
+    };
+
+    requestATT();
+  }, []);
 
   const initializeAuth = async () => {
     try {

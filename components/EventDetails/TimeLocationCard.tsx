@@ -1,7 +1,12 @@
 import React from "react";
-import { StyleSheet, Text, View, Linking, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Linking,
+  TouchableOpacity,
+} from "react-native";
 import * as Calendar from "expo-calendar";
-import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -24,7 +29,6 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
 
   // Smart date formatting function
   const formatDateRange = (startDate: Date, endDate: Date) => {
-
     // Check if both dates are on the same day
     const isSameDay =
       startDate.getFullYear() === endDate.getFullYear() &&
@@ -34,7 +38,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
     if (isSameDay) {
       // Same day: return date and time separately
       const dateOnly = startDate.getDate();
-      const monthOnly = startDate.toLocaleString('nb-NO', { month: 'long' });
+      const monthOnly = startDate.toLocaleString("nb-NO", { month: "long" });
       const startTime = startDate.toLocaleTimeString("nb-NO", {
         hour: "2-digit",
         minute: "2-digit",
@@ -63,23 +67,43 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
         title: event.event.title,
         startDate: event.event.start,
         endDate: event.event.end,
-        location: event.event.locationAddress || event.event.locationTitle || '',
-        notes: event.event.description || '',
+        location:
+          event.event.locationAddress || event.event.locationTitle || "",
+        notes: event.event.description || "",
       });
     } catch (error) {
-      console.error('Error adding to calendar:', error);
+      console.error("Error adding to calendar:", error);
     }
   };
 
   return (
-    <LiquidGlassView style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: theme.shadow }]}> 
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.cardBackground, shadowColor: theme.shadow },
+      ]}
+    >
       <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
         Oppmøte
       </Text>
 
       {/* Date and time with icon */}
-      <View style={[styles.detailRow, { marginBottom: 12, backgroundColor: theme.surfaceContainerHighest, shadowColor: theme.shadow,  }]}>
-        <MaterialCommunityIcons name="clock-outline" size={24} color={colors.textPrimary} style={styles.icon} />
+      <View
+        style={[
+          styles.detailRow,
+          {
+            marginBottom: 12,
+            backgroundColor: theme.surfaceContainerHighest,
+            shadowColor: theme.shadow,
+          },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name="clock-outline"
+          size={24}
+          color={colors.textPrimary}
+          style={styles.icon}
+        />
         <View style={styles.textContainer}>
           <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
             {formatDateRange(event.event.start, event.event.end).date}
@@ -89,34 +113,62 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
           </Text>
         </View>
         <TouchableOpacity onPress={handleAddToCalendar}>
-          <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} style={styles.externalIcon} />
+          <MaterialCommunityIcons
+            name="open-in-new"
+            size={28}
+            color={colors.textPrimary}
+            style={styles.externalIcon}
+          />
         </TouchableOpacity>
       </View>
 
       {/* Location with icon */}
       {(event.event.locationTitle || event.event.locationAddress) && (
-        <View style={[styles.detailRow, { backgroundColor: theme.surfaceContainerHighest, shadowColor: theme.shadow }]}>
-          <MaterialCommunityIcons name="map-marker-outline" size={24} color={colors.textPrimary} style={styles.icon} />
+        <View
+          style={[
+            styles.detailRow,
+            {
+              backgroundColor: theme.surfaceContainerHighest,
+              shadowColor: theme.shadow,
+            },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="map-marker-outline"
+            size={24}
+            color={colors.textPrimary}
+            style={styles.icon}
+          />
           <View style={styles.textContainer}>
             {event.event.locationTitle && (
-              <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.detailValue, { color: colors.textSecondary }]}
+              >
                 {event.event.locationTitle}
               </Text>
             )}
             {event.event.locationAddress && (
-              <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.detailValue, { color: colors.textSecondary }]}
+              >
                 {event.event.locationAddress}
               </Text>
             )}
           </View>
           {event.event.locationLink && (
-            <TouchableOpacity onPress={() => Linking.openURL(event.event.locationLink!)}>
-              <MaterialCommunityIcons name="open-in-new" size={28} color={colors.textPrimary} />
+            <TouchableOpacity
+              onPress={() => Linking.openURL(event.event.locationLink!)}
+            >
+              <MaterialCommunityIcons
+                name="open-in-new"
+                size={28}
+                color={colors.textPrimary}
+              />
             </TouchableOpacity>
           )}
         </View>
       )}
-    </LiquidGlassView>
+    </View>
   );
 };
 
@@ -141,7 +193,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 4,
     paddingHorizontal: 10,
-    elevation: 5
+    elevation: 5,
   },
   icon: {
     marginTop: 0,

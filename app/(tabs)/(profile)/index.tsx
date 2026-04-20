@@ -1,4 +1,3 @@
-import { LiquidGlassView } from "@callstack/liquid-glass";
 import {
   Button,
   ScrollView,
@@ -647,7 +646,10 @@ export default function ProfileScreen() {
                   <Text
                     style={[styles.infoValue, { color: theme.onBackground }]}
                   >
-                    {findActiveMembership(user) ? getGrade(findActiveMembership(user)!) : "Not available"}. klasse
+                    {findActiveMembership(user)
+                      ? getGrade(findActiveMembership(user)!)
+                      : "Not available"}
+                    . klasse
                   </Text>
                 </View>
 

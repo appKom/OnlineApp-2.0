@@ -2,7 +2,6 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "utils/theme";
 import HTML from "react-native-render-html";
-import { LiquidGlassView } from "@callstack/liquid-glass";
 
 interface DescriptionCardProps {
   description: string;
@@ -36,8 +35,11 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   const shouldShowToggle = descriptionText.length > 256;
 
   return (
-    <LiquidGlassView
-        style={[styles.card, { backgroundColor: colors.cardBackground, shadowColor: theme.shadow }]}
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.cardBackground, shadowColor: theme.shadow },
+      ]}
     >
       <TouchableOpacity
         key={`description-${descriptionExpanded}`}
@@ -45,7 +47,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         activeOpacity={shouldShowToggle ? 0.7 : 1}
         style={styles.touchableContent}
       >
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}> 
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
           Beskrivelse
         </Text>
 
@@ -63,12 +65,21 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         </View>
 
         {shouldShowToggle && (
-          <Text style={[styles.toggleText, { color: colors.toggleText, backgroundColor: colors.toggleTextBackground, shadowColor: theme.shadow }]}>
+          <Text
+            style={[
+              styles.toggleText,
+              {
+                color: colors.toggleText,
+                backgroundColor: colors.toggleTextBackground,
+                shadowColor: theme.shadow,
+              },
+            ]}
+          >
             {descriptionExpanded ? "Vis mindre" : "Les mer..."}
           </Text>
         )}
       </TouchableOpacity>
-    </LiquidGlassView>
+    </View>
   );
 };
 

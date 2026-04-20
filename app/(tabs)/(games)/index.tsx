@@ -1,4 +1,3 @@
-import { LiquidGlassView } from "@callstack/liquid-glass";
 import { useRouter } from "expo-router";
 import {
   FlatList,
