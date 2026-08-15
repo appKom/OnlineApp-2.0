@@ -1,7 +1,6 @@
 name: Type check
 
 on:
-  push:
   pull_request:
 
 permissions:
