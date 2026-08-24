@@ -16,39 +16,20 @@ export const findActiveMembership = (user: User): Membership | null => {
   return user.memberships.findLast((membership) => isAfter(membership.end, now)) ?? null
 }
 
-export const getMembershipGrade = (membership: Membership): 1 | 2 | 3 | 4 | 5 | null => {
-  // Take the difference, and add one because if `startYear == currentYear` they are in their first year
-  const delta = differenceInYears(getAcademicStart(getCurrentUTC()), getAcademicStart(membership.start)) + 1
 
-  switch (membership.type) {
-    case "KNIGHT":
-    case "PHD_STUDENT":
-      return 5
-    case "SOCIAL_MEMBER":
-      return 1
-    case "BACHELOR_STUDENT": {
-      // Bachelor students are clamped at 1-3, regardless of how many years they used to take the degree.
-      return Math.max(1, Math.min(3, delta)) as 1 | 2 | 3
-    }
-    case "MASTER_STUDENT": {
-      // Master students must be clamped at 4-5 because they can only be in their first or second year, but are always
-      // considered to have a bachelor's degree from beforehand.
-      return Math.max(4, Math.min(5, delta)) as 4 | 5
-    }
-    case "OTHER":
-      return null
-  }
-}
-
+/*
+Logic copied from 
+https://github.com/dotkom/monoweb/blob/8dbcac7519f14aa882d9f84c24e8ce9cac217fa0/packages/utils/src/semester-helpers.ts#L170
+*/
 export const getGrade = (membership: Membership): number => {
-  return (Math.ceil(membership.semester / 2));
+  return Math.floor(membership.semester / 2) + 1
 }
 
 export const getUserPool = (user: User, pools: AttendancePool[]): AttendancePool | undefined => {
   const activeMembership = findActiveMembership(user)
   if (!activeMembership) return undefined
 
-  const userYear = getMembershipGrade(activeMembership)
+  const userYear = getGrade(activeMembership)
   if (!userYear) return undefined
 
   return pools.find((pool) => pool.yearCriteria.includes(userYear))
@@ -58,7 +39,7 @@ export const getUserPoolIndex = (user: User, pools: AttendancePool[]): number | 
   const activeMembership = findActiveMembership(user)
   if (!activeMembership) return undefined
 
-  const userYear = getMembershipGrade(activeMembership)
+  const userYear = getGrade(activeMembership)
   if (!userYear) return undefined
 
   return pools.findIndex((pool) => pool.yearCriteria.includes(userYear))
