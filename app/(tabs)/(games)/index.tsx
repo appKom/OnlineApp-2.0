@@ -10,7 +10,16 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, G, Path } from "react-native-svg";
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  Line,
+  LinearGradient,
+  Path,
+  Rect,
+  Stop,
+} from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { SongCardModal } from "../../../components/GamesHub/SongCardModal";
 import {
@@ -21,13 +30,8 @@ import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { songs, type Song } from "../../../utils/songs";
 import { useThemeMode } from "../../../utils/theme";
 
-const TABLE_GREEN_LIGHT = "#0F6B47";
-const TABLE_GREEN_DARK = "#0A4E34";
-const TABLE_PATCH_LIGHT = "#167A52";
-const TABLE_PATCH_DARK = "#0D5A3C";
-const TABLE_SHADOW_LIGHT = "#0A4B32";
-const TABLE_SHADOW_DARK = "#062D1E";
-const TABLE_RAIL = "rgba(217,191,106,0.24)";
+const TABLE_GREEN_LIGHT = "#07523A";
+const TABLE_GREEN_DARK = "#043728";
 
 type GamePieceType = "chip" | "dice" | "roulette" | "questions" | "deck";
 
@@ -85,18 +89,47 @@ async function triggerHaptic() {
 }
 
 function CasinoFeltBackground({ darkMode }: { darkMode: boolean }) {
-  const patch = darkMode ? TABLE_PATCH_DARK : TABLE_PATCH_LIGHT;
-  const shadow = darkMode ? TABLE_SHADOW_DARK : TABLE_SHADOW_LIGHT;
+  const top = darkMode ? "#064732" : "#0A6245";
+  const bottom = darkMode ? "#02271D" : "#043A2A";
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <View style={[styles.feltPatch, styles.feltPatchTop, { backgroundColor: patch, opacity: 0.42 }]} />
-      <View style={[styles.feltPatch, styles.feltPatchBottom, { backgroundColor: shadow, opacity: 0.36 }]} />
-      <View style={[styles.feltPatch, styles.feltPatchLeft, { backgroundColor: shadow, opacity: 0.22 }]} />
-      <View style={[styles.feltPatch, styles.feltPatchRight, { backgroundColor: patch, opacity: 0.18 }]} />
-      <View style={styles.tableRail} />
-      <View style={styles.tableRailInner} />
-    </View>
+    <Svg
+      pointerEvents="none"
+      width="100%"
+      height="100%"
+      style={StyleSheet.absoluteFill}
+    >
+      <Defs>
+        <LinearGradient id="feltGradient" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor={top} />
+          <Stop offset="0.52" stopColor={darkMode ? "#053C2B" : "#075039"} />
+          <Stop offset="1" stopColor={bottom} />
+        </LinearGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill="url(#feltGradient)" />
+      <G opacity={darkMode ? 0.045 : 0.06}>
+        {Array.from({ length: 24 }, (_, index) => (
+          <Line
+            key={`felt-line-${index}`}
+            x1={index * 26 - 150}
+            y1="0"
+            x2={index * 26 + 150}
+            y2="100%"
+            stroke="#F5E9C7"
+            strokeWidth="1"
+          />
+        ))}
+      </G>
+      <Rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        fill="none"
+        stroke="rgba(0,0,0,0.16)"
+        strokeWidth="18"
+      />
+    </Svg>
   );
 }
 
@@ -116,15 +149,36 @@ function PokerChip() {
   );
 }
 
+function DicePip({ style }: { style: object }) {
+  return <View style={[styles.dicePip, style]} />;
+}
+
 function DicePiece() {
   return (
     <View style={[styles.pieceShadow, styles.dicePiece]}>
-      <MaterialCommunityIcons
-        name="dice-5"
-        size={50}
-        color={CASINO_COLORS.black}
-      />
-      <View style={styles.diceHighlight} />
+      <View style={styles.diceBottomEdge} />
+      <View style={styles.diceRightEdge} />
+      <View style={styles.diceFace}>
+        <View style={styles.diceInset} />
+        <View style={styles.diceGlint} />
+        <DicePip style={styles.dicePipTopLeft} />
+        <DicePip style={styles.dicePipTopRight} />
+        <DicePip style={styles.dicePipCenter} />
+        <DicePip style={styles.dicePipBottomLeft} />
+        <DicePip style={styles.dicePipBottomRight} />
+      </View>
+    </View>
+  );
+}
+
+function TableDivider() {
+  return (
+    <View pointerEvents="none" style={styles.tableDivider}>
+      <View style={styles.tableDividerLine} />
+      <View style={styles.tableDividerDiamond}>
+        <View style={styles.tableDividerDiamondInner} />
+      </View>
+      <View style={styles.tableDividerLine} />
     </View>
   );
 }
@@ -258,34 +312,39 @@ export default function GamesAndSongsScreen() {
             </Text>
           </View>
 
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionEyebrow}>PÅ BORDET</Text>
-              <Text style={styles.sectionTitle}>Velg et spill</Text>
+          <View style={styles.gameZone}>
+            <View style={styles.gameZoneEdge} />
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionEyebrow}>PÅ BORDET</Text>
+                <Text style={styles.sectionTitle}>Velg et spill</Text>
+              </View>
+              <Text style={styles.sectionCount}>{games.length} spill</Text>
             </View>
-            <Text style={styles.sectionCount}>{games.length} spill</Text>
+
+            <View style={styles.gameGrid}>
+              {games.map((game) => (
+                <Pressable
+                  key={game.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Åpne ${game.title}`}
+                  onPress={() => openGame(game)}
+                  style={({ pressed }) => [
+                    styles.gameButton,
+                    { opacity: pressed ? 0.65 : 1 },
+                  ]}
+                >
+                  <View style={styles.gamePieceArea}>
+                    <GamePiece type={game.piece} />
+                  </View>
+                  <Text style={styles.gameTitle}>{game.title}</Text>
+                  <Text style={styles.gameDescription}>{game.description}</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
 
-          <View style={styles.gameGrid}>
-            {games.map((game) => (
-              <Pressable
-                key={game.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Åpne ${game.title}`}
-                onPress={() => openGame(game)}
-                style={({ pressed }) => [
-                  styles.gameButton,
-                  { opacity: pressed ? 0.65 : 1 },
-                ]}
-              >
-                <View style={styles.gamePieceArea}>
-                  <GamePiece type={game.piece} />
-                </View>
-                <Text style={styles.gameTitle}>{game.title}</Text>
-                <Text style={styles.gameDescription}>{game.description}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <TableDivider />
 
           <View style={[styles.sectionHeader, styles.songSectionHeader]}>
             <View>
@@ -328,74 +387,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  feltPatch: {
-    position: "absolute",
-    borderRadius: 999,
-  },
-  feltPatchTop: {
-    width: 420,
-    height: 420,
-    top: -130,
-    left: -70,
-  },
-  feltPatchBottom: {
-    width: 560,
-    height: 560,
-    bottom: -220,
-    right: -150,
-  },
-  feltPatchLeft: {
-    width: 260,
-    height: 260,
-    top: "42%",
-    left: -110,
-  },
-  feltPatchRight: {
-    width: 220,
-    height: 220,
-    top: 90,
-    right: -70,
-  },
-  tableRail: {
-    position: "absolute",
-    top: 18,
-    bottom: 18,
-    left: 12,
-    right: 12,
-    borderRadius: 32,
-    borderWidth: 3,
-    borderColor: TABLE_RAIL,
-  },
-  tableRailInner: {
-    position: "absolute",
-    top: 28,
-    bottom: 28,
-    left: 22,
-    right: 22,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: "rgba(247,241,222,0.08)",
-  },
   scrollContent: {
-    paddingHorizontal: 28,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 140,
   },
   hero: {
     alignItems: "center",
     paddingTop: 4,
-    paddingBottom: 22,
+    paddingBottom: 25,
   },
   heroMark: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 9,
-    borderWidth: 1.5,
-    borderColor: "rgba(243,222,155,0.48)",
-    backgroundColor: "rgba(8,25,45,0.62)",
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(243,222,155,0.4)",
+    backgroundColor: "rgba(5,28,21,0.72)",
   },
   heroTitle: {
     color: CASINO_COLORS.goldLight,
@@ -436,11 +447,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     paddingBottom: 3,
   },
+  gameZone: {
+    position: "relative",
+    paddingHorizontal: 15,
+    paddingTop: 18,
+    paddingBottom: 22,
+    borderWidth: 1,
+    borderColor: "rgba(217,191,106,0.42)",
+    borderRadius: 24,
+    backgroundColor: "rgba(1,31,22,0.2)",
+  },
+  gameZoneEdge: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    bottom: 5,
+    left: 5,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(247,241,222,0.11)",
+    borderRadius: 19,
+  },
   gameGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-around",
-    rowGap: 18,
+    rowGap: 20,
   },
   gameButton: {
     width: "31%",
@@ -501,24 +532,97 @@ const styles = StyleSheet.create({
     borderColor: "rgba(243,222,155,0.54)",
   },
   dicePiece: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    backgroundColor: CASINO_COLORS.cream,
-    borderWidth: 2,
-    borderColor: CASINO_COLORS.gold,
+    width: 78,
+    height: 78,
+    position: "relative",
   },
-  diceHighlight: {
+  diceBottomEdge: {
     position: "absolute",
-    top: -8,
-    left: -6,
-    right: -6,
-    height: 28,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.5)",
+    left: 7,
+    right: 1,
+    bottom: 1,
+    height: 15,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 14,
+    backgroundColor: "#681018",
+    transform: [{ skewX: "-18deg" }],
+  },
+  diceRightEdge: {
+    position: "absolute",
+    top: 7,
+    right: 1,
+    bottom: 8,
+    width: 14,
+    borderTopRightRadius: 13,
+    borderBottomRightRadius: 12,
+    backgroundColor: "#7F141D",
+    transform: [{ skewY: "-18deg" }],
+  },
+  diceFace: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 69,
+    height: 69,
+    overflow: "hidden",
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: "#E7A69E",
+    backgroundColor: "#B91F2A",
+  },
+  diceInset: {
+    position: "absolute",
+    top: 3,
+    right: 3,
+    bottom: 3,
+    left: 3,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.28)",
+  },
+  diceGlint: {
+    position: "absolute",
+    top: -18,
+    left: -14,
+    width: 66,
+    height: 42,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    transform: [{ rotate: "-12deg" }],
+  },
+  dicePip: {
+    position: "absolute",
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: CASINO_COLORS.cream,
+    borderWidth: 1,
+    borderColor: "rgba(93,11,18,0.4)",
+    shadowColor: "#4D0910",
+    shadowOpacity: 0.55,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  dicePipTopLeft: {
+    top: 13,
+    left: 13,
+  },
+  dicePipTopRight: {
+    top: 13,
+    right: 13,
+  },
+  dicePipCenter: {
+    top: 29,
+    left: 29,
+  },
+  dicePipBottomLeft: {
+    bottom: 13,
+    left: 13,
+  },
+  dicePipBottomRight: {
+    right: 13,
+    bottom: 13,
   },
   wheelWrap: {
     width: 82,
@@ -630,22 +734,53 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: CASINO_COLORS.navyDeep,
   },
+  tableDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 7,
+    marginTop: 27,
+    marginBottom: 22,
+  },
+  tableDividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(217,191,106,0.48)",
+  },
+  tableDividerDiamond: {
+    width: 19,
+    height: 19,
+    marginHorizontal: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(217,191,106,0.72)",
+    transform: [{ rotate: "45deg" }],
+  },
+  tableDividerDiamondInner: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: CASINO_COLORS.gold,
+  },
   songSectionHeader: {
-    marginTop: 34,
+    marginTop: 0,
     marginBottom: 6,
+    paddingHorizontal: 8,
   },
   songHint: {
     color: CASINO_COLORS.creamDark,
     fontSize: 13,
     lineHeight: 18,
-    marginBottom: 15,
+    marginBottom: 17,
+    paddingHorizontal: 8,
     opacity: 0.86,
   },
   songGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 15,
+    rowGap: 17,
+    paddingHorizontal: 6,
   },
   songCardButton: {
     width: "47.7%",
