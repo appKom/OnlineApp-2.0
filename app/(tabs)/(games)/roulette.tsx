@@ -1,9 +1,10 @@
 import { Image } from "expo-image";
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { View, StyleSheet, Pressable, Text, Platform } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { useTheme, useThemeMode } from "../../../utils/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -59,52 +60,54 @@ const SEGMENT_ANGLE = TWO_PI / SEGMENT_COUNT;
 const GREEN_ACTIONS = [
   "Velg en person som må chugge",
   "Du må DRA HJEM (eller ta en shot)",
-  "Alle andre tar 6 slurker",
+  "Alle tar 6 slurker hver",
   "Lag en ny regel som varer ut spillet",
   "Drikk en slurk for hver person som er tilstede",
 ];
 
 // Rød = du får utfordringen selv
+//Flere av disse burde endres på, typ legge inn
+// flere kreative greier istedenfor bare slurker
 const RED_SELF_ACTIONS = [
   "Ta 2 slurker",
-  "Fortell en klein historie, eller ta 4 slurker",
-  "Nevn et rødt flagg på date, ellers ta 2 slurker",
-  "Ta 1 slurk for hvert søsken du har, maks 3",
-  "Si tre norske byer på 3 sekunder, ellers ta 2 slurker",
-  "Snakk med dialekt til neste runde, ellers ta 2 slurker",
-  "Ta 2 slurker hvis du har vært våken etter kl. 03 denne uka",
-  "Nevn 3 fag du hatet på skolen, ellers ta 2 slurker",
-  "Du slipper unna denne runden",
-  "Ta 2 slurker hvis du har ghostet noen",
-  "Fortell hva førsteinntrykket ditt av noen i rommet var",
-  "Hold øyekontakt med en valgfri person mens du tar 2 slurker",
-  "Ta 1 slurk for hver alarm du satte i dag, maks 3",
+  "Fortell en klein historie, eller ta 5 slurker",
+  "Nevn et rødt flagg på date, eller ta 5 slurker",
+  "Ta 2 slurker for hvert søsken du har",
+  "Drikk opp lil bro",
+  "Snakk med dialekt til neste runde, ellers ta 5 slurker",
+  "Drikk 3 slurker for hver gang du har spist pizza siste uka",
+  "Ta 3 slurker",
+  "Ta 3 slurker",
+  "Ta 4 slurker",
+  "Gjør en lapdance på personen til venstre for deg eller drikk 6 slurker",
+  "Ta 4 slurker",
+  "Ta 1 slurk for hver alarm du satte i dag",
   "Ta 2 slurker og velg neste som skal spinne",
-  "Nevn 3 ting du alltid har i sekken eller veska, ellers ta 2 slurker",
+  "Nevn 3 ting du har i nattbordskuffa, ellers ta 5 slurker",
 ];
 
 // Svart = du gir utfordringen til noen andre
 const BLACK_GIVE_ACTIONS = [
-  "Gi 2 slurker til valgfri person",
+  "Del ut 2 slurker",
   "Alle tar 1 slurk",
   "Bytt drikke med personen til venstre i én runde",
-  "Du velger noen som må ta 2 slurker",
-  "Alle som har vært på Samfundet denne måneden tar 1 slurk",
-  "Personen til høyre bestemmer hvem som tar 2 slurker",
-  "Lag en skål. De som ikke skåler tar 1 slurk",
-  "Gi ut 3 slurker fordelt som du vil",
+  "Velg en person som må drikke 3 slurker",
+  "Alle som har vært på Samf siste måneden tar 4 slurker",
+  "Velg en person som skal shotte",
+  "Den første som fullfører drikka si kan dele ut 8 slurker",
+  "Del ut 3 slurker ",
   "Alle med hvite sko tar 1 slurk",
-  "Velg en drikkepartner. Hver gang du drikker neste 10 min, må den personen også drikke",
+  "Velg en drikkepartner. For den neste halvtimen skal de drikke hver gang du drikker",
   "Alle gutter tar 1 slurk",
   "Alle jenter tar 1 slurk",
-  "Ta 1 slurk og gi 1 slurk videre",
+  "Drikk valgfritt antall slurker og del ut dobbelt av det du drakk",
   "Pek på noen. De må ta 2 slurker",
   "Alle som bruker iPhone tar 1 slurk",
-  "Finn på en regel som varer i 5 minutter",
-  "Alle som sitter i sofaen tar 1 slurk",
-  "De som har vært på byen denne uka tar 1 slurk",
-  "Velg noen som må mime et dyr. Feiler de, tar de 2 slurker",
-  "Alle som har vært forelsket i noen i dette rommet tar 1 slurk",
+  "Finn på en regel som varer i 10 minutter",
+  "Alle som sitter i sofaen tar 2 slurker",
+  "De som har vært på byen denne uka tar 3 slurker",
+  "Velg noen som må mime et dyr. Feiler de, tar de 5 slurker",
+  "Alle skal peke på hvem de tror er fullest, alle skal drikke antall pek de har fått ",
   "Alle tar en fellesslurk",
 ];
 
@@ -409,11 +412,18 @@ export default function RouletteScreen() {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const spinningRef = useRef(false);
 
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
+
+  useFocusEffect(
+    useCallback(() => {
+      setShowHint(true);
+    }, []),
+  );
 
   const wheelAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}rad` }, { scale: scale.value }],
@@ -519,6 +529,46 @@ export default function RouletteScreen() {
             )}
           </WoodPanel>
         </View>
+
+        {showHint && (
+          <View style={styles.hintOverlay}>
+            <Pressable
+              style={styles.hintBackdrop}
+              onPress={() => setShowHint(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Lukk forklaring"
+            />
+
+            <Pressable
+              style={styles.hintPopup}
+              onPress={() => {}}
+              accessibilityRole="summary"
+              accessibilityLabel="Forklaring av roulette-farger"
+            >
+              <Text style={styles.hintTitle}>Slik funker roulette</Text>
+              <Text style={styles.hintText}>
+                Rød: du gjør utfordringen selv.
+                {"\n"}
+                Svart: utfordringen gis videre, enten til én person eller til
+                alle
+              </Text>
+
+              <Text style={styles.hintHintText}>
+                Trykk utenfor boksen for å lukke.
+              </Text>
+
+              <Pressable
+                style={styles.hintCloseButton}
+                onPress={() => setShowHint(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Skjul forklaring"
+                hitSlop={8}
+              >
+                <Text style={styles.hintCloseText}>Skjønner</Text>
+              </Pressable>
+            </Pressable>
+          </View>
+        )}
       </View>
     </TabScreenContainer>
   );
@@ -753,5 +803,64 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 6,
     textAlign: "center",
+  },
+  hintOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 60,
+  },
+  hintBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(6, 22, 15, 0.58)",
+  },
+  hintPopup: {
+    width: "86%",
+    maxWidth: 360,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    backgroundColor: "rgba(14, 50, 35, 0.96)",
+    borderWidth: 1,
+    borderColor: "rgba(243, 222, 155, 0.64)",
+    shadowColor: "#000",
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 14,
+  },
+  hintTitle: {
+    color: GOLD_LIGHT,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
+  hintText: {
+    color: CREAM,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  hintHintText: {
+    marginTop: 8,
+    color: CREAM_DARK,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  hintCloseButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "rgba(217, 191, 106, 0.22)",
+  },
+  hintCloseText: {
+    color: GOLD_LIGHT,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
 });

@@ -18,11 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "@react-native-community/blur";
 import BottomSheet from "@gorhom/bottom-sheet";
-import {
-  getEvent,
-  deregisterForEvent,
-  getExpiryDateForUser,
-} from "utils/trpc";
+import { getEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
 import type { Punishment } from "types/punishment";
 import Authenticator from "utils/authenticator";
 import { getUserPoolIndex } from "utils/user-utils";
@@ -238,8 +234,8 @@ const EventDetails: React.FC = () => {
             </Text>
           </View>
         )}
-
-        {/* <View style={{ height: 104 }} /> */}
+        {/*ikke fjern, navbar på ios blokker bunnen av siden uten denne :p  */}
+        <View style={{ height: 104 }} />
       </ScrollView>
 
       {isRegistration && (

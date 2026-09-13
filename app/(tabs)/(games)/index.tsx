@@ -44,6 +44,12 @@ const games: Game[] = [
     description: "Spill 100 spørsmål!",
     route: "/questions_100",
   },
+  {
+    id: "bunken",
+    title: "BUNKEN",
+    description: "Ring of fire uten ringen",
+    route: "/bunken",
+  },
 ];
 
 export default function GamesScreen() {
