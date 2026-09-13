@@ -13,6 +13,7 @@ export default function GamesLayout() {
     dice: "",
     roulette: "",
     questions_100: "",
+    bunken: "",
   };
   const title = titleMap[current] ?? "Spill";
 
@@ -32,6 +33,7 @@ export default function GamesLayout() {
         <Stack.Screen name="dice" />
         <Stack.Screen name="roulette" />
         <Stack.Screen name="questions_100" />
+        <Stack.Screen name="bunken" />
       </Stack>
     </>
   );
