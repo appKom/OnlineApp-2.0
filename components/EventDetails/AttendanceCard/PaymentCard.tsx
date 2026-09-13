@@ -1,5 +1,6 @@
 import React from "react"
-import type { Attendance, Attendee, User } from "../../types/event"
+import type { Attendance, Attendee } from "types/event"
+import { User } from "types/user"
 
 interface Props {
   attendance: Attendance
