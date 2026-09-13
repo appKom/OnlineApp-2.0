@@ -201,20 +201,20 @@ function getRuleForDraw(rank: Rank, kingsDrawn: number) {
       };
     case "4":
       return {
-        title: "4 · Floor",
-        description: "Siste person som tar på gulvet må drikke.",
+        title: "4 · Whore",
+        description: "ALLE jenter drikker.",
         nextKingsDrawn: kingsDrawn,
       };
     case "5":
       return {
-        title: "5 · Guys",
-        description: "Alle gutter tar en slurk.",
+        title: "5 · Gris",
+        description: "Alle tar tommelen på bordet, sistemann drikker.",
         nextKingsDrawn: kingsDrawn,
       };
     case "6":
       return {
-        title: "6 · Girls",
-        description: "Alle jenter tar en slurk.",
+        title: "6 · Dicks",
+        description: "Alle gutter drikker.",
         nextKingsDrawn: kingsDrawn,
       };
     case "7":
@@ -239,16 +239,15 @@ function getRuleForDraw(rank: Rank, kingsDrawn: number) {
       };
     case "10":
       return {
-        title: "10 · Category",
+        title: "10 · Kategori",
         description:
-          "Velg en kategori, for eksempel land, ølmerker eller ting på hybelen. Gå rundt. Første som ikke kommer på noe, drikker.",
+          "Velg en kategori, for eksempel land, ølmerker eller ting på hybelen. Gå rundt,  første som ikke kommer på noe drikker.",
         nextKingsDrawn: kingsDrawn,
       };
     case "J":
       return {
-        title: "J · Never Have I Ever",
-        description:
-          "Si en 'Never have I ever'. Alle som har gjort det, tar en slurk.",
+        title: "J · Jeg har aldri",
+        description: "Si en 'jeg har aldri'. Alle som har gjort det drikker.",
         nextKingsDrawn: kingsDrawn,
       };
     case "Q":
@@ -265,7 +264,7 @@ function getRuleForDraw(rank: Rank, kingsDrawn: number) {
         return {
           title: `K · Konge ${nextKing}/4`,
           description:
-            "Lag en ny regel som varer resten av spillet. Den som bryter regelen, drikker.",
+            "Lag en ny regel som varer resten av spillet. Alle som bryter regelen drikker.",
           nextKingsDrawn: nextKing,
         };
       }
@@ -273,7 +272,7 @@ function getRuleForDraw(rank: Rank, kingsDrawn: number) {
       return {
         title: "K · Siste konge",
         description:
-          "Du trakk den fjerde kongen. Bunken! Velg: bunn drikken din eller ta 8 slurker.",
+          "Du trakk den siste kongen i bunken! Chug drikka di eller ta 8 slurker.",
         nextKingsDrawn: nextKing,
       };
     }
@@ -710,14 +709,12 @@ export default function BunkenScatterScreen() {
               <Text style={styles.hintTitle}>Slik funker bunken</Text>
 
               <Text style={styles.hintText}>
-                Kortene ligger tilfeldig spredt utover bordet.
+                Kortene ligger i en bunke på bordet.
                 {"\n\n"}
                 Trykk på et kort for å trekke det.
                 {"\n\n"}
-                Kortet forsvinner fra bordet og regelen vises som et stort kort
-                med panel under.
-                {"\n\n"}
-                Den fjerde kongen er siste konge.
+                Kortet forsvinner fra bunken og du blir fortalt hva du skal
+                gjøre.
               </Text>
 
               <Text style={styles.hintHintText}>
