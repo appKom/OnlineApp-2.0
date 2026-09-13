@@ -8,7 +8,7 @@ export default function GamesLayout() {
   const theme = useTheme();
 
   const titleMap: Record<string, string> = {
-    index: "Spill",
+    index: "",
     spinline: "SpinLine",
     dice: "",
     roulette: "",
@@ -19,7 +19,7 @@ export default function GamesLayout() {
 
   return (
     <>
-      <Header title={title} />
+      {title ? <Header title={title} /> : null}
       <Stack
         screenOptions={{
           headerShown: false,
