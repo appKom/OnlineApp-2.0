@@ -239,7 +239,7 @@ const DiceRoll: React.FC = () => {
       setRolling(true);
 
       const direction = Math.random() > 0.5 ? 1 : -1;
-      const duration = 700 + Math.random() * 1400;
+      const duration = 700 + Math.random() * 800;
       const rotations = 2.5 + Math.random() * 2.5;
       const spinAmount = direction * rotations * Math.PI * 2;
 
