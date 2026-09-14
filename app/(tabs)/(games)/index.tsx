@@ -47,7 +47,7 @@ const games: Game[] = [
   {
     id: "spinline",
     title: "SpinLine",
-    description: "Send flasken rundt",
+    description: "Flasketuten peker på",
     route: "/spinline",
     piece: "chip",
   },
@@ -68,14 +68,14 @@ const games: Game[] = [
   {
     id: "questions_100",
     title: "100 spørsmål",
-    description: "For hele gjengen",
+    description: "KUN 100 spørsmål",
     route: "/questions_100",
     piece: "questions",
   },
   {
     id: "bunken",
     title: "Bunken",
-    description: "Ring of fire",
+    description: "Ring of fire, uten ringen",
     route: "/bunken",
     piece: "deck",
   },
@@ -291,7 +291,9 @@ export default function GamesAndSongsScreen() {
 
   return (
     <TabScreenContainer>
-      <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
+      <View
+        style={[styles.container, { backgroundColor, paddingTop: insets.top }]}
+      >
         <CasinoFeltBackground darkMode={darkMode} />
 
         <ScrollView
@@ -378,7 +380,10 @@ export default function GamesAndSongsScreen() {
         </ScrollView>
       </View>
 
-      <SongCardModal song={selectedSong} onClose={() => setSelectedSong(null)} />
+      <SongCardModal
+        song={selectedSong}
+        onClose={() => setSelectedSong(null)}
+      />
     </TabScreenContainer>
   );
 }

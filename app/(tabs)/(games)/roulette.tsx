@@ -70,9 +70,9 @@ const GREEN_ACTIONS = [
 // flere kreative greier istedenfor bare slurker
 const RED_SELF_ACTIONS = [
   "Ta 2 slurker",
-  "Fortell en klein historie, eller ta 5 slurker",
-  "Nevn et rødt flagg på date, eller ta 5 slurker",
-  "Ta 2 slurker for hvert søsken du har",
+  "Fortell en klein historie, eller ta 5 slurker", // endre?
+  "Nevn et rødt flagg på date, eller ta 5 slurker", // endre?
+  "Ta 2 slurker for hvert søsken du har", //endre denne
   "Drikk opp lil bro",
   "Snakk med dialekt til neste runde, ellers ta 5 slurker",
   "Drikk 3 slurker for hver gang du har spist pizza siste uka",
@@ -90,10 +90,10 @@ const RED_SELF_ACTIONS = [
 const BLACK_GIVE_ACTIONS = [
   "Del ut 2 slurker",
   "Alle tar 1 slurk",
-  "Bytt drikke med personen til venstre i én runde",
+  "Bytt drikke med personen til venstre i én runde", // nasty?
   "Velg en person som må drikke 3 slurker",
-  "Alle som har vært på Samf siste måneden tar 4 slurker",
-  "Velg en person som skal shotte",
+  "Alle som har vært på Samf siste måneden tar 4 slurker", // kanskje?
+  "Velg en person som skal shotte", // ?
   "Den første som fullfører drikka si kan dele ut 8 slurker",
   "Del ut 3 slurker ",
   "Alle med hvite sko tar 1 slurk",
@@ -101,14 +101,14 @@ const BLACK_GIVE_ACTIONS = [
   "Alle gutter tar 1 slurk",
   "Alle jenter tar 1 slurk",
   "Drikk valgfritt antall slurker og del ut dobbelt av det du drakk",
-  "Pek på noen. De må ta 2 slurker",
-  "Alle som bruker iPhone tar 1 slurk",
+  "Pek på noen. De må ta 3 slurker",
+  "Alle som bruker iPhone tar 2 slurker",
   "Finn på en regel som varer i 10 minutter",
-  "Alle som sitter i sofaen tar 2 slurker",
-  "De som har vært på byen denne uka tar 3 slurker",
-  "Velg noen som må mime et dyr. Feiler de, tar de 5 slurker",
-  "Alle skal peke på hvem de tror er fullest, alle skal drikke antall pek de har fått ",
-  "Alle tar en fellesslurk",
+  "Alle som sitter i sofaen tar 2 slurker", // hvis ingen sofa?
+  "De som har vært på byen denne uka tar 3 slurker", // endre?
+  "Velg noen som må mime et dyr. Feiler de, tar de 5 slurker", // endre?
+  "Alle skal peke på hvem de mener er fullest, alle skal drikke antall pek de har fått ",
+  "Alle tar en fellesslurk", // Endre
 ];
 
 function normalizeAngle(angle: number) {
