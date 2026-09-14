@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "scheme": "ntnu.online.app",
     "splash": {
       "image": "./assets/splash-icon-light.png",
@@ -21,7 +24,9 @@
         "UIStatusBarStyle": "UIStatusBarStyleDefault",
         "UIViewControllerBasedStatusBarAppearance": false,
         "CFBundleURLName": "auth0",
-        "CFBundleURLSchemes": ["ntnu.online.app"],
+        "CFBundleURLSchemes": [
+          "ntnu.online.app"
+        ],
         "NSCalendarsUsageDescription": "Allow $(PRODUCT_NAME) to access your calendar",
         "NSRemindersUsageDescription": "Allow $(PRODUCT_NAME) to access your reminders",
         "NSCalendarsFullAccessUsageDescription": "Allow $(PRODUCT_NAME) to access your calendar",
@@ -78,7 +83,8 @@
       "expo-font",
       "./withCustomDrawables",
       "expo-image",
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

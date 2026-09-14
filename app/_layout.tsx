@@ -9,7 +9,7 @@ import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider as NavThemeProvider,
-} from "@react-navigation/native";
+} from "expo-router/react-navigation";
 import Authenticator from "../utils/authenticator";
 import { ThemeProvider, useTheme, useThemeMode } from "../utils/theme";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
