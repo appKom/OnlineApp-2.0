@@ -188,16 +188,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
       </TouchableOpacity>
 
       {disabled && finalDisabledText && (
-        <View
-          style={[
-            styles.disabledTextContainer,
-            {
-              backgroundColor: chrome.recessed,
-              borderColor: chrome.edge,
-              borderBottomColor: chrome.highlight,
-            },
-          ]}
-        >
+        <View style={styles.disabledTextContainer}>
           <MaterialCommunityIcons name="alert-circle" size={16} color={theme.onSurfaceVariant} />
           <Text style={[styles.disabledText, { color: theme.onSurfaceVariant }]}>{finalDisabledText}</Text>
         </View>
@@ -245,8 +236,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderRadius: 6,
   },
   disabledText: {
     fontSize: 13,

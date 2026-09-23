@@ -1,11 +1,12 @@
 import React, { useState } from "react"
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import QRCode from "react-native-qrcode-svg"
 import type { Attendee } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
 import { AnimatedModal } from "../../AnimatedModal"
 import { useEventChromeColors } from "../EventSurface"
+import { EventSurface } from "../EventSurface"
 
 interface TicketButtonProps {
   attendee: Attendee,
@@ -14,6 +15,8 @@ interface TicketButtonProps {
 export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
   const theme = useTheme()
   const chrome = useEventChromeColors()
+  const { width } = useWindowDimensions()
+  const qrSize = Math.min(250, width * 0.9 - 72)
   const [modalVisible, setModalVisible] = useState(false)
 
   return (
@@ -39,22 +42,15 @@ export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
       <AnimatedModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        modalWidth={340}
+        modalWidth="90%"
         modalMaxWidth={380}
       >
         {() => (
-          <View
-            style={{
-              backgroundColor: theme.primaryContainer,
-              padding: 20,
-              borderRadius: 32,
-              alignItems: "center"
-            }}
-          >
-            <View style={{ width: 300, height: 300, backgroundColor: "white", borderRadius: 12, justifyContent: "center", alignItems: "center" }}>
-              <QRCode value={attendee.id} size={250} />
+          <EventSurface style={{ padding: 20, alignItems: "center" }}>
+            <View style={{ width: qrSize + 32, height: qrSize + 32, backgroundColor: "white", borderRadius: 12, justifyContent: "center", alignItems: "center" }}>
+              <QRCode value={attendee.id} size={qrSize} />
             </View>
-          </View>
+          </EventSurface>
         )}
       </AnimatedModal>
     </>

@@ -84,13 +84,13 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const badgeColor = getBadgeColor(event.event.type);
 
   return (
-    <View style={{ backgroundColor: chrome.surface }}>
+    <View style={{ backgroundColor: theme.background }}>
       <Pressable
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [
           styles.row,
-          { backgroundColor: pressed ? chrome.raised : chrome.surface },
+          { backgroundColor: pressed ? theme.surfaceContainerLow : theme.background },
         ]}
       >
         <Image
@@ -187,7 +187,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
           color={chrome.icon}
         />
       </Pressable>
-      <EventInsetDivider />
+      <EventInsetDivider onBackground />
     </View>
   );
 };

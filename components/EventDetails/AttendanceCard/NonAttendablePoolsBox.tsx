@@ -16,6 +16,7 @@ import {
 } from "../../Collapsible"
 import { useTheme, withAlpha, elevate } from "../../../utils/theme"
 import { useEventChromeColors } from "../EventSurface"
+import { EventInsetDivider } from "../EventSurface"
 
 interface NonAttendablePoolsBoxProps {
   attendance: Attendance
@@ -41,20 +42,7 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
   }
 
   return (
-    <View
-      style={{
-        backgroundColor: chrome.raised,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: chrome.edge,
-        borderTopColor: chrome.highlight,
-        borderRadius: 8,
-        elevation: 3,
-        shadowColor: theme.shadow,
-        shadowOpacity: chrome.shadowOpacity * 0.65,
-      }}
-    >
+    <View style={{ paddingVertical: 8 }}>
       <Collapsible defaultOpen={!hasAttendablePool}>
         <CollapsibleTrigger>
           {(isOpen, rotation) => (
@@ -84,12 +72,11 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
 
         <CollapsibleContent>
           <View>
-            {nonAttendablePools.map(pool => (
-              <AttendanceBoxPoolSmall
-                key={pool.id}
-                pool={pool}
-                attendance={attendance}
-              />
+            {nonAttendablePools.map((pool, index) => (
+              <React.Fragment key={pool.id}>
+                {index > 0 && <EventInsetDivider />}
+                <AttendanceBoxPoolSmall pool={pool} attendance={attendance} />
+              </React.Fragment>
             ))}
           </View>
         </CollapsibleContent>
@@ -108,7 +95,6 @@ const AttendanceBoxPoolSmall = ({
   attendance,
 }: AttendanceBoxPoolSmallProps) => {
   const theme = useTheme()
-  const chrome = useEventChromeColors()
 
   const reservedAttendeeCount = getReservedAttendeeCount(attendance, pool.id)
   const unreservedAttendeeCount = getUnreservedAttendeeCount(attendance, pool.id)
@@ -119,14 +105,8 @@ const AttendanceBoxPoolSmall = ({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: chrome.recessed,
         paddingHorizontal: 10,
-        borderWidth: 1,
-        borderColor: chrome.edge,
-        borderBottomColor: chrome.highlight,
-        borderRadius: 10,
-        height: 35,
-        marginTop: 5,
+        minHeight: 44,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>

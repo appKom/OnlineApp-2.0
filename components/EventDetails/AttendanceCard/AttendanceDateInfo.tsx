@@ -42,20 +42,20 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
       isThisYear(date) ? "dd. MMM" : "dd.MM.yy",
       { locale: nb },
     )
-    const textColor = showNotice ? theme.onError : theme.onSurface
+    const textColor = showNotice ? theme.error : theme.onSurface
 
     return (
-      <View style={{  }}>
+      <View style={styles.dateContent}>
         <Text
           numberOfLines={1}
-          style={{ color: textColor, fontWeight: "800", marginBottom: 4 }}
+          style={{ color: textColor, fontWeight: "800", fontSize: 11, marginBottom: 4 }}
         >
           {label}
         </Text>
-        <Text numberOfLines={1} style={{ color: textColor }}>
+        <Text numberOfLines={1} style={{ color: textColor, fontSize: 12 }}>
           {shortDateStr}
         </Text>
-        <Text numberOfLines={1} style={{ color: textColor }}>
+        <Text numberOfLines={1} style={{ color: textColor, fontSize: 12 }}>
           {`kl. ${time}`}
         </Text>
       </View>
@@ -100,26 +100,25 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
   const content = (
     <View style={styles.dateBlocks}>
       {sortedElements.map(({ element, key }, index) => (
-        <View
-          key={key}
-          style={[
-            styles.dateBlock,
-            {
-              backgroundColor:
-                key === "deregisterDeadline" && showDeregisterDeadlineNotice
-                  ? theme.error
-                  : chrome.raised,
-              borderColor: chrome.edge,
-              borderTopColor: chrome.highlight,
-              shadowOpacity: chrome.shadowOpacity * 0.65,
-              shadowColor: theme.shadow,
-              marginRight:
-                index !== sortedElements.length - 1 ? 8 : 0,
-            },
-          ]}
-        >
-          {element}
-        </View>
+        <React.Fragment key={key}>
+          {index > 0 && (
+            <View style={styles.verticalDivider}>
+              <View style={{ flex: 1, backgroundColor: chrome.edge }} />
+              <View style={{ flex: 1, backgroundColor: chrome.highlight }} />
+            </View>
+          )}
+          <View
+            style={[
+              styles.dateBlock,
+              key === "deregisterDeadline" && showDeregisterDeadlineNotice && {
+                borderLeftWidth: 2,
+                borderLeftColor: theme.error,
+              },
+            ]}
+          >
+            {element}
+          </View>
+        </React.Fragment>
       ))}
     </View>
   )
@@ -129,7 +128,9 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
   return (
     <View>
       {content}
-      <Text>Avmeldingsfrist er endret grunnet betaling.</Text>
+      <Text style={{ color: theme.error, marginTop: 8 }}>
+        Avmeldingsfrist er endret grunnet betaling.
+      </Text>
     </View>
   )
 }
@@ -139,19 +140,16 @@ export default AttendanceDateInfo
 const styles = StyleSheet.create({
   dateBlocks: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "stretch",
     width: "100%",
   },
   dateBlock: {
-    flexGrow: 1,     // expand to fill remaining space
-    flexBasis: "auto",
-    flexShrink: 0,   // prevent shrinking → prevents wrapping
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderRadius: 8,
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 9,
     alignItems: "center",
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 3,
   },
+  dateContent: { alignItems: "center" },
+  verticalDivider: { width: 2, flexDirection: "row", alignSelf: "stretch", marginVertical: 7 },
 })

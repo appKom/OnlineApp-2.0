@@ -1,22 +1,10 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
-import { useTheme, useThemeMode } from "../../utils/theme";
+import { useTheme } from "../../utils/theme";
+import { usePanelChromeColors } from "../PanelChrome";
 
-export function useEventChromeColors() {
-  const theme = useTheme();
-  const { mode } = useThemeMode();
-
-  return {
-    surface: mode === "dark" ? "#202328" : theme.surfaceContainerLow,
-    raised: mode === "dark" ? "#2B323B" : theme.surfaceContainerHigh,
-    recessed: mode === "dark" ? "#12161A" : theme.surfaceContainerLowest,
-    edge: mode === "dark" ? "#14161B" : theme.surfaceDim,
-    highlight: mode === "dark" ? "#272A2F" : theme.surfaceContainerLowest,
-    icon: mode === "dark" ? "#F2F4F6" : theme.onSurface,
-    shadowOpacity: mode === "dark" ? 0.36 : 0.12,
-  };
-}
+export const useEventChromeColors = usePanelChromeColors;
 
 export function EventSurface({
   children,
@@ -47,14 +35,20 @@ export function EventSurface({
   );
 }
 
-export function EventInsetDivider({ style }: { style?: StyleProp<ViewStyle> }) {
+export function EventInsetDivider({
+  style,
+  onBackground = false,
+}: {
+  style?: StyleProp<ViewStyle>;
+  onBackground?: boolean;
+}) {
   const chrome = useEventChromeColors();
 
   return (
     <View style={[styles.divider, style]}>
-      <View style={[styles.dividerLine, { backgroundColor: chrome.edge }]} />
+      <View style={[styles.dividerLine, { backgroundColor: onBackground ? chrome.listEdge : chrome.edge }]} />
       <View
-        style={[styles.dividerLine, { backgroundColor: chrome.highlight }]}
+        style={[styles.dividerLine, { backgroundColor: onBackground ? chrome.listHighlight : chrome.highlight }]}
       />
     </View>
   );

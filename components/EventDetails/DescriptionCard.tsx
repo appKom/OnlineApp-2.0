@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "utils/theme";
 import HTML from "react-native-render-html";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { EventSurface, useEventChromeColors } from "./EventSurface";
 
 interface DescriptionCardProps {
@@ -20,12 +21,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   // Use centralized theme tokens
   const theme = useTheme();
   const chrome = useEventChromeColors();
-  const colors = {
-    textPrimary: theme.onSurface,
-    textSecondary: theme.onSurface,
-    toggleText: theme.onSurface,
-    toggleTextBackground: chrome.raised,
-  };
 
   // Strip HTML tags for length check
   const stripHtml = (html: string) => {
@@ -37,45 +32,40 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
   return (
     <EventSurface style={styles.card}>
-      <TouchableOpacity
-        key={`description-${descriptionExpanded}`}
-        onPress={shouldShowToggle ? onToggleDescription : () => {}}
-        activeOpacity={shouldShowToggle ? 0.7 : 1}
-        style={styles.touchableContent}
+      <Text style={[styles.cardTitle, { color: theme.onSurface }]}>
+        Beskrivelse
+      </Text>
+
+      <View
+        style={[
+          styles.contentContainer,
+          !descriptionExpanded && shouldShowToggle && styles.collapsedContent,
+        ]}
       >
-        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-          Beskrivelse
-        </Text>
+        <HTML
+          source={{ html: description }}
+          contentWidth={screenWidth - 88}
+          baseStyle={{ ...styles.htmlBase, color: theme.onSurface }}
+        />
+      </View>
 
-        <View
-          style={[
-            styles.contentContainer,
-            !descriptionExpanded && shouldShowToggle && styles.collapsedContent,
-          ]}
+      {shouldShowToggle && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityState={{ expanded: descriptionExpanded }}
+          onPress={onToggleDescription}
+          style={styles.toggleButton}
         >
-          <HTML
-            source={{ html: description }}
-            contentWidth={screenWidth - 88}
-            baseStyle={{ ...styles.htmlBase, color: colors.textSecondary }}
-          />
-        </View>
-
-        {shouldShowToggle && (
-          <Text
-            style={[
-              styles.toggleText,
-              {
-                color: colors.toggleText,
-                backgroundColor: colors.toggleTextBackground,
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-              },
-            ]}
-          >
-            {descriptionExpanded ? "Vis mindre" : "Les mer..."}
+          <Text style={[styles.toggleText, { color: chrome.icon }]}>
+            {descriptionExpanded ? "Vis mindre" : "Les mer"}
           </Text>
-        )}
-      </TouchableOpacity>
+          <MaterialCommunityIcons
+            name={descriptionExpanded ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={chrome.icon}
+          />
+        </TouchableOpacity>
+      )}
     </EventSurface>
   );
 };
@@ -86,9 +76,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-  },
-  touchableContent: {
-    // No additional padding needed since parent handles it
   },
   cardTitle: {
     fontSize: 20,
@@ -102,17 +89,15 @@ const styles = StyleSheet.create({
     maxHeight: 120, // Adjust this value as needed
     overflow: "hidden",
   },
-  toggleText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    overflow: "hidden",
+  toggleButton: {
+    marginTop: 10,
+    minHeight: 38,
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
+  toggleText: { fontSize: 14, fontWeight: "700" },
   htmlBase: {
     fontSize: 16,
     lineHeight: 24,

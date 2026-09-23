@@ -10,7 +10,7 @@ import * as Calendar from "expo-calendar";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { EventSurface, useEventChromeColors } from "./EventSurface";
+import { EventInsetDivider, EventSurface, useEventChromeColors } from "./EventSurface";
 
 interface TimeLocationCardProps {
   event: EventAttendanceBundle;
@@ -23,10 +23,6 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
 }) => {
   const theme = useTheme();
   const chrome = useEventChromeColors();
-  const colors = {
-    textPrimary: theme.onSurface,
-    textSecondary: theme.onSurface,
-  };
 
   // Smart date formatting function
   const formatDateRange = (startDate: Date, endDate: Date) => {
@@ -79,22 +75,12 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
 
   return (
     <EventSurface style={styles.card}>
-      <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+      <Text style={[styles.cardTitle, { color: theme.onSurface }]}>
         Oppmøte
       </Text>
 
       {/* Date and time with icon */}
-      <View
-        style={[
-          styles.detailRow,
-          {
-            marginBottom: 12,
-            backgroundColor: chrome.recessed,
-            borderColor: chrome.edge,
-            borderBottomColor: chrome.highlight,
-          },
-        ]}
-      >
+      <View style={styles.detailRow}>
         <MaterialCommunityIcons
           name="clock-outline"
           size={24}
@@ -102,17 +88,22 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
           style={styles.icon}
         />
         <View style={styles.textContainer}>
-          <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+          <Text style={[styles.detailValue, { color: theme.onSurface }]}>
             {formatDateRange(event.event.start, event.event.end).date}
           </Text>
-          <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+          <Text style={[styles.detailValue, { color: theme.onSurfaceVariant }]}>
             {formatDateRange(event.event.start, event.event.end).time}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleAddToCalendar}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Legg til i kalender"
+          onPress={handleAddToCalendar}
+          style={styles.actionButton}
+        >
           <MaterialCommunityIcons
-            name="open-in-new"
-            size={28}
+            name="calendar-plus"
+            size={21}
             color={chrome.icon}
             style={styles.externalIcon}
           />
@@ -121,50 +112,39 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
 
       {/* Location with icon */}
       {(event.event.locationTitle || event.event.locationAddress) && (
-        <View
-          style={[
-            styles.detailRow,
-            {
-              backgroundColor: chrome.recessed,
-              borderColor: chrome.edge,
-              borderBottomColor: chrome.highlight,
-            },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name="map-marker-outline"
-            size={24}
-            color={chrome.icon}
-            style={styles.icon}
-          />
-          <View style={styles.textContainer}>
-            {event.event.locationTitle && (
-              <Text
-                style={[styles.detailValue, { color: colors.textSecondary }]}
+        <>
+          <EventInsetDivider />
+          <View style={styles.detailRow}>
+            <MaterialCommunityIcons
+              name="map-marker-outline"
+              size={24}
+              color={chrome.icon}
+              style={styles.icon}
+            />
+            <View style={styles.textContainer}>
+              {event.event.locationTitle && (
+                <Text style={[styles.detailValue, { color: theme.onSurface }]}>
+                  {event.event.locationTitle}
+                </Text>
+              )}
+              {event.event.locationAddress && (
+                <Text style={[styles.detailValue, { color: theme.onSurfaceVariant }]}>
+                  {event.event.locationAddress}
+                </Text>
+              )}
+            </View>
+            {event.event.locationLink && (
+              <TouchableOpacity
+                accessibilityRole="link"
+                accessibilityLabel="Åpne sted i kart"
+                onPress={() => Linking.openURL(event.event.locationLink!)}
+                style={styles.actionButton}
               >
-                {event.event.locationTitle}
-              </Text>
-            )}
-            {event.event.locationAddress && (
-              <Text
-                style={[styles.detailValue, { color: colors.textSecondary }]}
-              >
-                {event.event.locationAddress}
-              </Text>
+                <MaterialCommunityIcons name="open-in-new" size={21} color={chrome.icon} />
+              </TouchableOpacity>
             )}
           </View>
-          {event.event.locationLink && (
-            <TouchableOpacity
-              onPress={() => Linking.openURL(event.event.locationLink!)}
-            >
-              <MaterialCommunityIcons
-                name="open-in-new"
-                size={28}
-                color={chrome.icon}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        </>
       )}
     </EventSurface>
   );
@@ -174,24 +154,23 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: 24,
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: 16,
     borderRadius: 12,
-    padding: 20,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 4,
   },
   cardTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 4,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 4,
-    paddingHorizontal: 10,
-    minHeight: 58,
+    gap: 13,
+    paddingVertical: 13,
+    minHeight: 67,
   },
   icon: {
     marginTop: 0,
@@ -200,8 +179,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 21,
   },
+  actionButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   externalIcon: {
     marginTop: 0,
   },

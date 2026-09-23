@@ -3,28 +3,16 @@ import type { ComponentProps, ReactNode } from "react";
 import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
-import { useTheme, useThemeMode } from "../../utils/theme";
+import { useTheme } from "../../utils/theme";
+import { usePanelChromeColors } from "../PanelChrome";
+import { InsetSegmentedControl } from "../InsetSegmentedControl";
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
-export function useProfileChromeColors() {
-  const theme = useTheme();
-  const { mode } = useThemeMode();
-
-  return {
-    surface: mode === "dark" ? "#202328" : theme.surfaceContainerLow,
-    raised: mode === "dark" ? "#2B323B" : theme.surfaceContainerHigh,
-    recessed: mode === "dark" ? "#12161A" : theme.surfaceContainerLowest,
-    edge: mode === "dark" ? "#14161B" : theme.surfaceDim,
-    highlight: mode === "dark" ? "#272A2F" : theme.surfaceContainerLowest,
-    icon: mode === "dark" ? "#F2F4F6" : theme.onSurface,
-    shadowOpacity: mode === "dark" ? 0.36 : 0.12,
-  };
-}
+export const useProfileChromeColors = usePanelChromeColors;
 
 export function ProfileSurface({
   children,
@@ -172,7 +160,7 @@ export function ThemeSelector({
       label: "Lys",
       icon: "white-balance-sunny" as const,
     },
-  ];
+  ] as const;
 
   return (
     <ProfileSurface style={styles.themeCard}>
@@ -194,56 +182,12 @@ export function ThemeSelector({
         </View>
       </View>
 
-      <View
-        style={[
-          styles.themeTrack,
-          {
-            backgroundColor: chrome.recessed,
-            borderColor: chrome.edge,
-            borderBottomColor: chrome.highlight,
-          },
-        ]}
-      >
-        {options.map((option) => {
-          const selected = selectedMode === option.value;
-          return (
-            <TouchableOpacity
-              key={option.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`${option.label} tema`}
-              activeOpacity={0.82}
-              onPress={() => onChange(option.value)}
-              style={[
-                styles.themeOption,
-                selected && {
-                  backgroundColor: chrome.raised,
-                  borderColor: chrome.edge,
-                  borderTopColor: chrome.highlight,
-                  shadowColor: theme.shadow,
-                },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name={option.icon}
-                size={16}
-                color={selected ? chrome.icon : theme.onSurfaceVariant}
-              />
-              <Text
-                style={[
-                  styles.themeOptionText,
-                  {
-                    color: selected ? theme.onSurface : theme.onSurfaceVariant,
-                    fontWeight: selected ? "700" : "500",
-                  },
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <InsetSegmentedControl
+        options={options}
+        value={selectedMode}
+        onChange={onChange}
+        accessibilitySuffix="tema"
+      />
     </ProfileSurface>
   );
 }
@@ -336,27 +280,6 @@ const styles = StyleSheet.create({
   },
   themeDescription: {
     marginTop: 2,
-    fontSize: 12,
-  },
-  themeTrack: {
-    flexDirection: "row",
-    padding: 4,
-    borderWidth: 1,
-    borderRadius: 12,
-    gap: 4,
-  },
-  themeOption: {
-    minHeight: 42,
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    borderWidth: 1,
-    borderColor: "transparent",
-    borderRadius: 9,
-  },
-  themeOptionText: {
     fontSize: 12,
   },
 });

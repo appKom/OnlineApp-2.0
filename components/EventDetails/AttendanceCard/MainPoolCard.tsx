@@ -22,7 +22,7 @@ import {
 } from "date-fns"
 import { nb } from "date-fns/locale"
 import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme, blendColors, elevate } from "utils/theme";
+import { useTheme } from "utils/theme";
 import { useEventChromeColors } from "../EventSurface";
 
 interface MainPoolCardProps {
@@ -76,31 +76,19 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!user) {
     return (
-      <TouchableOpacity
-        onPress={() => Authenticator.login()}
-        style={[
-          styles.card,
-          {
-            backgroundColor: theme.inversePrimary,
-            borderColor: chrome.edge,
-            borderTopColor: chrome.highlight,
-            shadowColor: theme.shadow,
-            shadowOpacity: chrome.shadowOpacity,
-          },
-        ]}
-      >
+      <TouchableOpacity onPress={() => Authenticator.login()} style={styles.plainStatus}>
         <View style={{flex: 1, alignSelf: 'center', gap: 8}}>
-          <Text style={{fontSize: 17, fontWeight: "bold", color: theme.onPrimary}}>
+          <Text style={{fontSize: 17, fontWeight: "bold", color: theme.onSurface}}>
             Du er ikke innlogget
           </Text>
 
           <View style={[styles.textItem]}>
-            <Text style={{fontSize: 15, color: theme.onPrimary}}>Logg inn</Text>
-            <MaterialCommunityIcons name="login" color={theme.onPrimary} size={15}/>
+            <Text style={{fontSize: 15, color: theme.onSurface}}>Logg inn</Text>
+            <MaterialCommunityIcons name="login" color={chrome.icon} size={15}/>
           </View>
 
           {attendance.attendancePrice && attendance.attendancePrice > 0 && (
-            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} color={theme.onPrimary} />
+            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} color={theme.onSurface} />
           )}
         </View>
       </TouchableOpacity>
@@ -111,27 +99,16 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!membership && !attendee) {
     return (
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: theme.primary,
-            borderColor: chrome.edge,
-            borderTopColor: chrome.highlight,
-            shadowColor: theme.shadow,
-            shadowOpacity: chrome.shadowOpacity,
-          },
-        ]}
-      >
-        <Text style={{ color: theme.onPrimary }}>Du har ikke registert medlemskap</Text>
+      <View style={styles.plainStatus}>
+        <Text style={{ color: theme.onSurface }}>Du har ikke registrert medlemskap</Text>
 
         <View>
-          <Text style={{ color: theme.onPrimary }}>Gå til OW for å registrere deg</Text>
+          <Text style={{ color: theme.onSurfaceVariant }}>Gå til OW for å registrere deg</Text>
         </View>
 
         {attendance.attendancePrice && attendance.attendancePrice > 0 && (
           <View>
-            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} color={theme.onPrimary} />
+            <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} color={theme.onSurface} />
           </View>
         )}
       </View>
@@ -142,24 +119,12 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!pool) {
     return (
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: theme.primary,
-            alignItems: "center",
-            borderColor: chrome.edge,
-            borderTopColor: chrome.highlight,
-            shadowColor: theme.shadow,
-            shadowOpacity: chrome.shadowOpacity,
-          },
-        ]}
-      >
+      <View style={[styles.plainStatus, { alignItems: "center" }]}>
         <Text
           style={{
             fontSize: 15,
             fontWeight: 'bold',
-            color: theme.onPrimary,
+            color: theme.onSurface,
             maxWidth: '75%',
           }}
         >
@@ -175,31 +140,14 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   const servingPunishment = attendee?.earliestReservationAt && isFuture(attendee.earliestReservationAt)
 
-  const backgroundColor = !attendee ? theme.surfaceContainerHighest : attendee?.reserved === true ? theme.attending : theme.waitlist;
-  const onBackgroundColor = !attendee
-    ? theme.onSurface ?? theme.onPrimaryContainer ?? '#000'
-    : attendee?.reserved === true
-      ? theme.onAttending ?? '#000'
-      : theme.onWaitlist ?? '#000'
-
-  const cardBackground = blendColors(backgroundColor, theme.background, 0.7)
+  const statusColor = !attendee ? chrome.icon : attendee.reserved ? theme.onAttending : theme.onWaitlist;
+  const onBackgroundColor = theme.onSurface;
 
   return (
-    <View
-      style={[
-        styles.poolCard,
-        {
-          backgroundColor: cardBackground,
-          borderColor: chrome.edge,
-          borderTopColor: chrome.highlight,
-          shadowColor: theme.shadow,
-          shadowOpacity: chrome.shadowOpacity,
-        },
-      ]}
-    >
-      <View style={{ gap: 5, alignItems: "center", backgroundColor: backgroundColor, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+    <View style={styles.poolSection}>
+      <View style={{ gap: 5, alignItems: "center" }}>
         <View style={{ flexDirection: "row", margin: 5 }}>
-          <Text style={{ color: onBackgroundColor, padding: 5}}>
+          <Text style={{ color: statusColor, padding: 5, fontWeight: "700" }}>
             {pool.title}
           </Text>
 
@@ -208,7 +156,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
               <DelayPill
                 mergeDelayHours={pool.mergeDelayHours}
                 color={onBackgroundColor}
-                backgroundColor={elevate(backgroundColor, 20)}
+                backgroundColor={chrome.recessed}
               />
             </View>
             
@@ -217,7 +165,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
         
       </View>
 
-      <View style={{margin: 20}}>
+      <View style={{ marginHorizontal: 12, marginTop: 4, marginBottom: 12 }}>
         {!showRegisterCountdown && (
           <View style={{alignItems: "center"}}>
             <View style={{marginBottom: 5, alignItems: "center"}}>
@@ -228,7 +176,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
               </Text>
 
               {hasWaitlist && (
-                <Text style={{ color: onBackgroundColor, backgroundColor: backgroundColor, paddingVertical: 3, paddingHorizontal: 7, borderRadius: 7 }}>
+                <Text style={{ color: theme.onWaitlist, paddingVertical: 3, paddingHorizontal: 7 }}>
                   +{unreservedAttendeeCount} i kø
                 </Text>
               )}
@@ -424,22 +372,8 @@ const PunishmentStatus = ({ attendee, color }: PunishmentStatusProps & { color: 
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  poolCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 4,
-    overflow: "hidden",
-  },
+  plainStatus: { paddingVertical: 14, alignItems: "center", gap: 7 },
+  poolSection: { paddingVertical: 8 },
   textItem: {
     flexDirection: "row",
     alignItems: "center",

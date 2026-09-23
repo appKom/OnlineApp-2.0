@@ -10,6 +10,7 @@ import {
   Dimensions,
   Animated,
   PanResponder,
+  ScrollView,
 } from "react-native"
 import { BlurView } from "@react-native-community/blur"
 import { MaterialIcons } from "@expo/vector-icons"
@@ -17,6 +18,7 @@ import type { Attendance, Attendee } from "../../../types/event"
 import type { User } from "../../../types/user"
 import { useTheme } from "../../../utils/theme"
 import { useEventChromeColors } from "../EventSurface"
+import { EventInsetDivider } from "../EventSurface"
 
 interface ViewAttendeesButtonProps {
   attendance: Attendance
@@ -41,16 +43,24 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
 
   const [isMounted, setIsMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedGrade, setSelectedGrade] = useState<number | null>(null)
 
   const sheetAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
 
+  const grades = useMemo(
+    () => [...new Set(attendance.attendees.map(a => a.userGrade).filter((grade): grade is number => grade !== null))].sort((a, b) => a - b),
+    [attendance.attendees]
+  )
+
   const listData: ListItem[] = useMemo(() => {
-    const sorted = [...attendance.attendees].sort(
+    const sorted = attendance.attendees
+      .filter(a => selectedGrade === null || a.userGrade === selectedGrade)
+      .sort(
       (a, b) =>
         new Date(a.earliestReservationAt).getTime() -
         new Date(b.earliestReservationAt).getTime()
-    )
+      )
 
     const reserved = sorted.filter(a => a.reserved)
     const waitlist = sorted.filter(a => !a.reserved)
@@ -61,7 +71,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       data.push({
         type: "header",
         id: "header-reserved",
-        title: "Påmeldte",
+        title: `Påmeldte (${reserved.length})`,
       })
 
       reserved.forEach(a =>
@@ -77,7 +87,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       data.push({
         type: "header",
         id: "header-waitlist",
-        title: "Venteliste",
+        title: `Venteliste (${waitlist.length})`,
       })
 
       waitlist.forEach(a =>
@@ -90,7 +100,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     }
 
     return data
-  }, [attendance.attendees])
+  }, [attendance.attendees, selectedGrade])
 
   useEffect(() => {
     if (!isMounted) return
@@ -197,7 +207,8 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
               style={[
                 styles.bottomSheet,
                 {
-                  backgroundColor: theme.background,
+                  backgroundColor: chrome.surface,
+                  borderTopColor: chrome.highlight,
                   transform: [{ translateY: sheetAnim }],
                 },
               ]}
@@ -209,10 +220,41 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                     { backgroundColor: theme.onSurfaceVariant },
                   ]}
                 />
-                <Text style={[styles.modalTitle, { color: theme.onBackground }]}>
+                <Text style={[styles.modalTitle, { color: theme.onSurface }]}>
                   Påmeldingsliste
                 </Text>
               </View>
+
+              <View style={styles.filterArea}>
+                <Text style={[styles.filterLabel, { color: theme.onSurfaceVariant }]}>KLASSE</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterOptions}>
+                  {[null, ...grades].map(grade => {
+                    const selected = selectedGrade === grade
+                    return (
+                      <TouchableOpacity
+                        key={grade ?? "all"}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        onPress={() => setSelectedGrade(grade)}
+                        style={[
+                          styles.filterOption,
+                          {
+                            backgroundColor: selected ? chrome.raised : chrome.recessed,
+                            borderColor: chrome.edge,
+                            borderTopColor: selected ? chrome.highlight : chrome.edge,
+                            borderBottomColor: selected ? chrome.edge : chrome.highlight,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.filterText, { color: selected ? theme.onSurface : theme.onSurfaceVariant }]}>
+                          {grade === null ? "Alle" : `${grade}. klasse`}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </ScrollView>
+              </View>
+              <EventInsetDivider />
 
               <FlatList
                 data={listData}
@@ -221,21 +263,22 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                 maxToRenderPerBatch={10}
                 windowSize={5}
                 removeClippedSubviews
+                ListEmptyComponent={
+                  <Text style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>
+                    Ingen påmeldte i denne klassen.
+                  </Text>
+                }
                 renderItem={({ item }) =>
                   item.type === "header" ? (
-                    <Text
-                      style={[
-                        styles.sectionTitle,
-                        {
-                          backgroundColor: theme.surfaceVariant,
-                          color: theme.onSurfaceVariant,
-                        },
-                      ]}
-                    >
-                      {item.title}
-                    </Text>
+                    <View style={styles.sectionHeader}>
+                      <Text style={[styles.sectionTitle, { color: theme.onSurfaceVariant }]}>{item.title}</Text>
+                      <EventInsetDivider />
+                    </View>
                   ) : (
-                    <AttendeeRow attendee={item.attendee} user={user!} />
+                    <View>
+                      <AttendeeRow attendee={item.attendee} user={user!} />
+                      <EventInsetDivider />
+                    </View>
                   )
                 }
               />
@@ -249,23 +292,25 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
 
 const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
   const isUser = attendee.userId === user.id
 
   return (
     <View
       style={[
         styles.attendeeRow,
-        { backgroundColor: isUser ? theme.primaryContainer : "transparent" },
+        { backgroundColor: isUser ? chrome.raised : "transparent" },
       ]}
     >
-      <Image
-        source={
-          attendee.user.imageUrl ? { uri: attendee.user.imageUrl } : undefined
-        }
-        style={styles.avatar}
-      />
+      {attendee.user.imageUrl ? (
+        <Image source={{ uri: attendee.user.imageUrl }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: chrome.recessed, borderColor: chrome.edge }]}>
+          <MaterialIcons name="person-outline" size={21} color={chrome.icon} />
+        </View>
+      )}
       <View>
-        <Text style={[styles.userName, { color: theme.onBackground }]}>
+        <Text style={[styles.userName, { color: theme.onSurface }]}>
           {attendee.user.name}
         </Text>
         <Text style={[styles.userGrade, { color: theme.onSurfaceVariant }]}>
@@ -297,34 +342,36 @@ const styles = StyleSheet.create({
     height: SHEET_HEIGHT,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    overflow: "hidden",
   },
   dragHeader: {
     alignItems: "center",
     paddingVertical: 12,
     gap: 8,
   },
+  filterArea: { paddingVertical: 12 },
+  filterLabel: { marginHorizontal: 16, marginBottom: 7, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
+  filterOptions: { paddingHorizontal: 16, gap: 8 },
+  filterOption: { minHeight: 34, paddingHorizontal: 11, borderWidth: 1, borderRadius: 8, justifyContent: "center" },
+  filterText: { fontSize: 12, fontWeight: "700" },
+  emptyText: { padding: 20, textAlign: "center", fontSize: 14 },
   handle: {
     width: 40,
     height: 6,
     borderRadius: 3,
   },
   modalTitle: { fontSize: 20, fontWeight: "600" },
-  sectionTitle: {
-    marginTop: 16,
-    marginBottom: 8,
-    padding: 8,
-    borderRadius: 8,
-    fontWeight: "600",
-  },
+  sectionHeader: { paddingTop: 12 },
+  sectionTitle: { paddingHorizontal: 16, paddingVertical: 9, fontWeight: "700", fontSize: 12, letterSpacing: 0.7, textTransform: "uppercase" },
   attendeeRow: {
     flexDirection: "row",
     gap: 12,
     padding: 12,
-    borderRadius: 8,
-    marginVertical: 4,
+    paddingHorizontal: 16,
   },
   avatar: { width: 40, height: 40, borderRadius: 20 },
+  avatarFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1 },
   userName: { fontWeight: "600" },
   userGrade: { fontSize: 12 },
 })

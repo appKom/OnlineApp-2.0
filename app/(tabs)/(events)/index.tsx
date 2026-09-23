@@ -18,7 +18,7 @@ import {
   getAllPastEventsByAttendingUserId,
   getAllFutureEventsByAttendingUserId,
 } from "../../../utils/trpc";
-import AnimatedButtonGroup from "../../../components/AnimatedButtonGroup";
+import { InsetSegmentedControl } from "../../../components/InsetSegmentedControl";
 import EventCard from "../../../components/EventCard";
 import Authenticator from "utils/authenticator";
 import { useTheme } from "utils/theme";
@@ -312,35 +312,16 @@ const AllEvents: React.FC = () => {
   const renderHeader = () => (
     <View
       style={{
-        backgroundColor: chrome.surface,
+        backgroundColor: theme.background,
         paddingHorizontal: 16,
         paddingVertical: 12,
       }}
     >
-      <AnimatedButtonGroup
-        buttons={["Alle", "Mine"]}
-        selectedIndex={selectedIndex}
-        onPress={handleTabIndexChange}
-        containerStyle={{
-          borderRadius: 13,
-          backgroundColor: chrome.recessed,
-          padding: 3,
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: chrome.edge,
-          borderBottomColor: chrome.highlight,
-        }}
-        buttonStyle={{ backgroundColor: "transparent" }}
-        selectedTextStyle={{ color: theme.onSurface, fontWeight: "700" }}
-        textStyle={{ color: theme.onSurfaceVariant }}
-        highlightStyle={{
-          backgroundColor: chrome.raised,
-          borderWidth: 1,
-          borderColor: chrome.edge,
-          borderTopColor: chrome.highlight,
-          opacity: 1,
-        }}
-        highlightInset={3}
+      <InsetSegmentedControl
+        options={[{ value: 0, label: "Alle" }, { value: 1, label: "Mine" }]}
+        value={selectedIndex}
+        onChange={handleTabIndexChange}
+        accessibilitySuffix="arrangementer"
       />
     </View>
   );
@@ -386,8 +367,7 @@ const AllEvents: React.FC = () => {
         data={loading && !refreshing ? [] : currentEvents}
         keyExtractor={(bundle) => bundle.event.id}
         contentInsetAdjustmentBehavior="automatic"
-        style={{ flex: 1, backgroundColor: chrome.surface }}
-        ListHeaderComponent={null}
+        style={{ flex: 1, backgroundColor: theme.background }}
         ListEmptyComponent={renderContent}
         refreshing={refreshing}
         onRefresh={handleRefresh}
@@ -402,10 +382,7 @@ const AllEvents: React.FC = () => {
             <View style={{}}></View>
           )
         }
-        renderItem={
-          loading && !refreshing
-            ? null // Don't render items during loading
-            : ({ item, index }) => {
+        renderItem={({ item, index }) => {
                 const now = new Date();
                 const isCurrentPast = new Date(item.event.start) <= now;
                 const isPrevPast =
@@ -415,8 +392,8 @@ const AllEvents: React.FC = () => {
 
                 return (
                   <>
-                    {index === 0 && (
-                      <View style={{ backgroundColor: chrome.recessed }}>
+                    {index === 0 && !isCurrentPast && (
+                      <View style={{ backgroundColor: theme.background }}>
                         <View style={{ paddingHorizontal: 16, paddingVertical: 11 }}>
                           <Text
                             style={{
@@ -430,11 +407,11 @@ const AllEvents: React.FC = () => {
                             Kommende arrangementer
                           </Text>
                         </View>
-                        <EventInsetDivider />
+                        <EventInsetDivider onBackground />
                       </View>
                     )}
                     {isCurrentPast && !isPrevPast && (
-                      <View style={{ backgroundColor: chrome.recessed }}>
+                      <View style={{ backgroundColor: theme.background }}>
                         <View style={{ paddingHorizontal: 16, paddingVertical: 11 }}>
                           <Text
                             style={{
@@ -448,7 +425,7 @@ const AllEvents: React.FC = () => {
                             Tidligere arrangementer
                           </Text>
                         </View>
-                        <EventInsetDivider />
+                        <EventInsetDivider onBackground />
                       </View>
                     )}
                     <EventCard
@@ -458,15 +435,13 @@ const AllEvents: React.FC = () => {
                           pathname: "/event-details",
                           params: {
                             eventId: item.event.id,
-                            headerTitle: item.event.title,
                           },
                         })
                       }
                     />
                   </>
                 );
-              }
-        }
+              }}
       />
     </View>
   );

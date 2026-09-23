@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react"
-import { View, ScrollView, Text, StyleSheet, Linking, TouchableOpacity } from "react-native"
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from "react-native"
 import { MaterialIcons } from "@expo/vector-icons"
 import type {
   Attendance,
@@ -10,10 +10,8 @@ import { User } from "../../../types/user"
 import { Punishment } from "../../../types/punishment"
 
 import { AttendanceDateInfo } from "./AttendanceDateInfo"
-import { EventRules } from "./EventRules"
 import { MainPoolCard } from "./MainPoolCard"
 import { NonAttendablePoolsBox } from "./NonAttendablePoolsBox"
-import { PaymentExplanationDialog } from "./PaymentExplanationDialog"
 import { PunishmentBox } from "./PunishmentBox"
 import { RegistrationButton } from "./RegistrationButton"
 import { SelectionsForm } from "./SelectionsForm"
@@ -30,6 +28,7 @@ import { scheduleRegistrationReminder, cancelRegistrationReminder, isRegistratio
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
 import { useEventChromeColors } from "../EventSurface"
+import { EventInsetDivider } from "../EventSurface"
 
 interface AttendanceCardProps {
   user: User | null
@@ -267,10 +266,12 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
       </View>
 
       <AttendanceDateInfo attendance={attendance} attendee={attendee} chargeScheduleDate={null} />
+      <EventInsetDivider />
 
       {punishment && hasPunishment && !attendee && <PunishmentBox punishment={punishment} />}
 
       <MainPoolCard attendance={attendance} user={user} authorizeUrl={undefined} chargeScheduleDate={null} />
+      <EventInsetDivider />
 
       <View style={{ gap: 8 }}> 
         {attendee?.reserved && (attendance.selections?.length ?? 0) > 0 && (
@@ -284,6 +285,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
           <ViewAttendeesButton attendance={attendance} user={user} />
         </View>
       </View>
+      <EventInsetDivider />
 
       <RegistrationButton
         registerForAttendance={registerForAttendance}
@@ -303,17 +305,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
         onToken={handleTurnstileToken}
         siteKey={TURNSTILE_SITE_KEY}
       />
-
-      <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-        <EventRules />
-        <TouchableOpacity onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")} style={{ marginLeft: 8 }}>
-          <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
-            <MaterialIcons name="edit" size={16} color={chrome.icon} />
-            <Text style={{ fontSize: 14, color: theme.onBackground }}>Matallergier</Text>
-          </View>
-        </TouchableOpacity>
-        {attendance.attendancePrice && <PaymentExplanationDialog />}
-      </View>
 
     </ScrollView>
   )

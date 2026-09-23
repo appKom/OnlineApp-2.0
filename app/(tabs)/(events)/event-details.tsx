@@ -1,9 +1,8 @@
 import TimeLocationCard from "components/EventDetails/TimeLocationCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
 import AttendanceCard from "components/EventDetails/AttendanceCard/AttendanceCard";
-import AttendeesBottomSheet from "components/EventDetails/AttendeesBottomSheet";
-import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -14,38 +13,28 @@ import {
   Text,
   View,
   ImageBackground,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "@react-native-community/blur";
-import BottomSheet from "@gorhom/bottom-sheet";
-import { getEvent, deregisterForEvent, getExpiryDateForUser } from "utils/trpc";
+import { getEvent, getExpiryDateForUser } from "utils/trpc";
 import type { Punishment } from "types/punishment";
 import Authenticator from "utils/authenticator";
-import { getUserPoolIndex } from "utils/user-utils";
 import { EventAttendanceBundle } from "types/event";
 import {
   isRegistrationEvent,
   formatNorwegianDate,
-  getRegistrationStatus,
-  formatRegistrationPeriod,
-  sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme, useThemeMode } from "utils/theme";
 import {
   EventInsetDivider,
   EventSurface,
+  useEventChromeColors,
 } from "components/EventDetails/EventSurface";
-
-const DEREGISTER_REASON_TYPES = [
-  "SCHOOL",
-  "WORK",
-  "ECONOMY",
-  "TIME",
-  "SICK",
-  "NO_FAMILIAR_FACES",
-  "OTHER",
-] as const;
-type DeregisterReasonType = (typeof DEREGISTER_REASON_TYPES)[number];
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { EventRules } from "components/EventDetails/AttendanceCard/EventRules";
+import { PaymentExplanationDialog } from "components/EventDetails/AttendanceCard/PaymentExplanationDialog";
+import { Linking } from "react-native";
 
 const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -53,7 +42,28 @@ const EventDetails: React.FC = () => {
   const insets = useSafeAreaInsets();
   const user = Authenticator.user;
   const theme = useTheme();
+  const chrome = useEventChromeColors();
   const { mode } = useThemeMode();
+  const router = useRouter();
+
+  const renderBackButton = () => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Tilbake til arrangementer"
+      onPress={() => router.back()}
+      style={[
+        styles.backButton,
+        {
+          top: insets.top + 8,
+          backgroundColor: chrome.recessed,
+          borderColor: chrome.edge,
+          borderTopColor: chrome.highlight,
+        },
+      ]}
+    >
+      <MaterialCommunityIcons name="arrow-left" size={22} color={chrome.icon} />
+    </Pressable>
+  );
 
   const getFallbackImage = () => {
     return mode === "dark"
@@ -68,19 +78,7 @@ const EventDetails: React.FC = () => {
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
-  const bottomSheetRef = useRef<BottomSheet>(null);
-
   const isRegistration = isRegistrationEvent(event);
-
-  const userPoolIndex = useMemo(() => {
-    if (!user || !event?.attendance?.pools) return null;
-    return getUserPoolIndex(user, event.attendance.pools) ?? null;
-  }, [user, event?.attendance?.pools]);
-
-  const sortedAttendees = useMemo(
-    () => sortAttendeesByPool(event, userPoolIndex),
-    [event, userPoolIndex],
-  );
 
   // Use shared theme tokens for colors
   const colors = {
@@ -93,8 +91,6 @@ const EventDetails: React.FC = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setDescriptionExpanded(!descriptionExpanded);
   };
-
-  useEffect(() => {});
 
   useEffect(() => {
     getEvent(eventId)
@@ -140,10 +136,10 @@ const EventDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <ActivityIndicator
-        style={{ flex: 1, backgroundColor: colors.background }}
-        color={colors.text}
-      />
+      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.text} />
+        {renderBackButton()}
+      </View>
     );
   }
 
@@ -155,6 +151,7 @@ const EventDetails: React.FC = () => {
         <Text style={[styles.errorText, { color: colors.error }]}>
           {error ?? "Could not load event details"}
         </Text>
+        {renderBackButton()}
       </View>
     );
   }
@@ -203,8 +200,14 @@ const EventDetails: React.FC = () => {
             ]}
             resizeMode="contain"
           />
+          {renderBackButton()}
         </View>
-        <EventInsetDivider />
+        <EventInsetDivider onBackground />
+        <View style={styles.titleArea}>
+          <Text style={[styles.eventTitle, { color: theme.onSurface }]}>
+            {event.event.title}
+          </Text>
+        </View>
 
         <TimeLocationCard
           event={event}
@@ -239,18 +242,25 @@ const EventDetails: React.FC = () => {
             </Text>
           </EventSurface>
         )}
+        <View style={styles.relatedLinks}>
+          <EventInsetDivider onBackground />
+          <View style={styles.relatedLinksRow}>
+            <EventRules />
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")}
+              style={styles.relatedLink}
+            >
+              <MaterialCommunityIcons name="food-apple-outline" size={18} color={chrome.icon} />
+              <Text style={[styles.relatedLinkText, { color: theme.onSurface }]}>Matallergier</Text>
+            </Pressable>
+            {isRegistration && Boolean(event.attendance?.attendancePrice) && <PaymentExplanationDialog />}
+          </View>
+        </View>
         {/*ikke fjern, navbar på ios blokker bunnen av siden uten denne :p  */}
         <View style={{ height: 104 }} />
       </ScrollView>
 
-      {isRegistration && (
-        <AttendeesBottomSheet
-          bottomSheetRef={bottomSheetRef}
-          attendance={event.attendance!}
-          userPoolIndex={userPoolIndex}
-          sortedAttendees={sortedAttendees}
-        />
-      )}
     </View>
   );
 };
@@ -262,6 +272,22 @@ const styles = StyleSheet.create({
   image: {
     marginTop: 0,
   },
+  backButton: {
+    position: "absolute",
+    left: 16,
+    width: 42,
+    height: 42,
+    borderWidth: 1,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleArea: { paddingHorizontal: 24, paddingTop: 17, paddingBottom: 2 },
+  eventTitle: { fontSize: 23, lineHeight: 29, fontWeight: "700" },
+  relatedLinks: { marginHorizontal: 24, marginTop: 4 },
+  relatedLinksRow: { flexDirection: "row", flexWrap: "wrap", gap: 18, paddingVertical: 17 },
+  relatedLink: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 32 },
+  relatedLinkText: { fontSize: 14, fontWeight: "600" },
   centerContainer: {
     flex: 1,
     justifyContent: "center",

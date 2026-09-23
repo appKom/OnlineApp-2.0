@@ -5,6 +5,7 @@ import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../..
 import { useTheme, elevate } from "../../../utils/theme"
 import { AnimatedModal } from "../../AnimatedModal"
 import { useEventChromeColors } from "../EventSurface"
+import { EventInsetDivider } from "../EventSurface"
 
 interface Props {
   attendance: Attendance
@@ -53,20 +54,10 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
   )
 
   return (
-    <View style={{ 
-        backgroundColor: chrome.raised,
-        padding: 15, 
-        borderWidth: 1,
-        borderColor: chrome.edge,
-        borderTopColor: chrome.highlight,
-        borderRadius: 8, 
-        gap: 12,
-        elevation: 3,
-        shadowColor: theme.shadow,
-        shadowOpacity: chrome.shadowOpacity * 0.65,
-      }}>
+    <View style={{ gap: 6 }}>
       {attendance.selections.map((selection, index) => (
         <View key={selection.id}>
+          {index > 0 && <EventInsetDivider />}
           <TouchableOpacity
             onPress={() => setOpenModalId(selection.id)}
             style={styles.selectionRow}
@@ -156,6 +147,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+    paddingVertical: 7,
   },
   selectionInfo: {
     flex: 1,
