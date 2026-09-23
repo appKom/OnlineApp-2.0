@@ -16,6 +16,7 @@ import { MaterialIcons } from "@expo/vector-icons"
 import type { Attendance, Attendee } from "../../../types/event"
 import type { User } from "../../../types/user"
 import { useTheme } from "../../../utils/theme"
+import { useEventChromeColors } from "../EventSurface"
 
 interface ViewAttendeesButtonProps {
   attendance: Attendance
@@ -36,6 +37,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   user,
 }) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
 
   const [isMounted, setIsMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -156,17 +158,20 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
         onPress={openModal}
         style={[
           styles.button,
-          { backgroundColor: theme.surfaceContainerHigh, 
+          { backgroundColor: chrome.raised,
+            borderColor: chrome.edge,
+            borderTopColor: chrome.highlight,
             opacity: !user ? 0.5 : 1,
-            elevation: 8,
-            shadowColor: theme.shadow
+            elevation: 3,
+            shadowColor: theme.shadow,
+            shadowOpacity: chrome.shadowOpacity * 0.65,
           },
         ]}
       >
         <MaterialIcons
           name="people"
           size={20}
-          color={theme.onSurface}
+          color={chrome.icon}
         />
         <Text style={[styles.buttonText, { color: theme.onSurface }]}>
           Vis påmeldte
@@ -279,6 +284,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     padding: 12,
+    borderWidth: 1,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",

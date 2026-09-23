@@ -5,6 +5,7 @@ import { hasAttendeePaid } from "utils/attendance"
 import { format as formatDate, isEqual, isPast, isThisYear, min } from "date-fns"
 import { nb } from "date-fns/locale"
 import { useTheme } from "utils/theme"
+import { useEventChromeColors } from "../EventSurface"
 
 interface AttendanceDateInfoProps {
   attendance: Attendance
@@ -28,9 +29,7 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
     hasPaid && !isEqual(actualDeregisterDeadline, deregisterDeadline)
 
   const theme = useTheme()
-  const blockColor = showDeregisterDeadlineNotice
-    ? theme.error
-    : theme.surfaceContainerHigh
+  const chrome = useEventChromeColors()
 
   const makeDateElement = (
     label: string,
@@ -106,8 +105,13 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
           style={[
             styles.dateBlock,
             {
-              backgroundColor: blockColor,
-              elevation: 8,
+              backgroundColor:
+                key === "deregisterDeadline" && showDeregisterDeadlineNotice
+                  ? theme.error
+                  : chrome.raised,
+              borderColor: chrome.edge,
+              borderTopColor: chrome.highlight,
+              shadowOpacity: chrome.shadowOpacity * 0.65,
               shadowColor: theme.shadow,
               marginRight:
                 index !== sortedElements.length - 1 ? 8 : 0,
@@ -143,7 +147,11 @@ const styles = StyleSheet.create({
     flexBasis: "auto",
     flexShrink: 0,   // prevent shrinking → prevents wrapping
     paddingVertical: 8,
+    borderWidth: 1,
     borderRadius: 8,
     alignItems: "center",
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 3,
   },
 })

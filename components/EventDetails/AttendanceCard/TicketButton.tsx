@@ -5,6 +5,7 @@ import QRCode from "react-native-qrcode-svg"
 import type { Attendee } from "../../../types/event"
 import { useTheme } from "../../../utils/theme"
 import { AnimatedModal } from "../../AnimatedModal"
+import { useEventChromeColors } from "../EventSurface"
 
 interface TicketButtonProps {
   attendee: Attendee,
@@ -12,6 +13,7 @@ interface TicketButtonProps {
 
 export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
   const [modalVisible, setModalVisible] = useState(false)
 
   return (
@@ -21,11 +23,17 @@ export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
         onPress={() => setModalVisible(true)}
         style={[
           styles.button,
-          { backgroundColor: theme.primaryContainer, shadowColor: theme.shadow }
+          {
+            backgroundColor: chrome.raised,
+            borderColor: chrome.edge,
+            borderTopColor: chrome.highlight,
+            shadowColor: theme.shadow,
+            shadowOpacity: chrome.shadowOpacity * 0.65,
+          }
         ]}
       >
-        <MaterialCommunityIcons name="qrcode" size={20} color={theme.onPrimaryContainer} />
-        <Text style={[styles.buttonText, { color: theme.onPrimaryContainer }]}>Vis billett</Text>
+        <MaterialCommunityIcons name="qrcode" size={20} color={chrome.icon} />
+        <Text style={[styles.buttonText, { color: theme.onSurface }]}>Vis billett</Text>
       </TouchableOpacity>
 
       <AnimatedModal
@@ -62,8 +70,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderWidth: 1,
     borderRadius: 8,
-    elevation: 8,
+    elevation: 3,
   },
   buttonText: {
     fontSize: 16,

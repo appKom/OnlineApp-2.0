@@ -4,6 +4,7 @@ import { Octicons } from "@expo/vector-icons"
 import type { Attendance, Attendee, AttendanceSelectionResponse } from "../../../types/event"
 import { useTheme, elevate } from "../../../utils/theme"
 import { AnimatedModal } from "../../AnimatedModal"
+import { useEventChromeColors } from "../EventSurface"
 
 interface Props {
   attendance: Attendance
@@ -14,6 +15,7 @@ interface Props {
 
 export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit, disabled }) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
 
   const [selections, setSelections] = useState<AttendanceSelectionResponse[]>(
     attendance.selections.map(({ id: selectionId, name: selectionName }) => {
@@ -52,12 +54,16 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
 
   return (
     <View style={{ 
-        backgroundColor: theme.surfaceContainerHigh, 
+        backgroundColor: chrome.raised,
         padding: 15, 
+        borderWidth: 1,
+        borderColor: chrome.edge,
+        borderTopColor: chrome.highlight,
         borderRadius: 8, 
         gap: 12,
-        elevation: 8,
-        shadowColor: theme.shadow 
+        elevation: 3,
+        shadowColor: theme.shadow,
+        shadowOpacity: chrome.shadowOpacity * 0.65,
       }}>
       {attendance.selections.map((selection, index) => (
         <View key={selection.id}>
@@ -79,14 +85,14 @@ export const SelectionsForm: React.FC<Props> = ({ attendance, attendee, onSubmit
             <View
               style={[
                 styles.selectButton,
-                { backgroundColor: theme.primaryContainer, 
+                { backgroundColor: chrome.recessed,
+                  borderColor: chrome.edge,
+                  borderBottomColor: chrome.highlight,
                   opacity: disabled ? 0.5 : 1,
-                  elevation: 8,
-                  shadowColor: theme.shadow 
                 }
               ]}
             >
-              <Octicons name="arrow-up-left" size={20} color={theme.onPrimaryContainer} />
+              <Octicons name="arrow-up-left" size={20} color={chrome.icon} />
             </View>
           </TouchableOpacity>
 
@@ -171,6 +177,7 @@ const styles = StyleSheet.create({
   selectButton: {
     paddingHorizontal: 12,
     paddingVertical: 10,
+    borderWidth: 1,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",

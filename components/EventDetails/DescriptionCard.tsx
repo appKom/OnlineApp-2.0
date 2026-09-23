@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "utils/theme";
 import HTML from "react-native-render-html";
+import { EventSurface, useEventChromeColors } from "./EventSurface";
 
 interface DescriptionCardProps {
   description: string;
@@ -18,12 +19,12 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 }) => {
   // Use centralized theme tokens
   const theme = useTheme();
+  const chrome = useEventChromeColors();
   const colors = {
-    cardBackground: theme.surfaceContainer,
-    textPrimary: theme.secondary,
+    textPrimary: theme.onSurface,
     textSecondary: theme.onSurface,
-    toggleText: theme.onSecondaryContainer,
-    toggleTextBackground: theme.secondaryContainer,
+    toggleText: theme.onSurface,
+    toggleTextBackground: chrome.raised,
   };
 
   // Strip HTML tags for length check
@@ -35,12 +36,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   const shouldShowToggle = descriptionText.length > 256;
 
   return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.cardBackground, shadowColor: theme.shadow },
-      ]}
-    >
+    <EventSurface style={styles.card}>
       <TouchableOpacity
         key={`description-${descriptionExpanded}`}
         onPress={shouldShowToggle ? onToggleDescription : () => {}}
@@ -71,7 +67,8 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
               {
                 color: colors.toggleText,
                 backgroundColor: colors.toggleTextBackground,
-                shadowColor: theme.shadow,
+                borderColor: chrome.edge,
+                borderTopColor: chrome.highlight,
               },
             ]}
           >
@@ -79,7 +76,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
           </Text>
         )}
       </TouchableOpacity>
-    </View>
+    </EventSurface>
   );
 };
 
@@ -89,7 +86,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-    elevation: 8,
   },
   touchableContent: {
     // No additional padding needed since parent handles it
@@ -113,9 +109,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
+    borderWidth: 1,
     overflow: "hidden",
     alignSelf: "flex-start",
-    elevation: 5,
   },
   htmlBase: {
     fontSize: 16,

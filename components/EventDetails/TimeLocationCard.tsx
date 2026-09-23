@@ -10,6 +10,7 @@ import * as Calendar from "expo-calendar";
 import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { EventSurface, useEventChromeColors } from "./EventSurface";
 
 interface TimeLocationCardProps {
   event: EventAttendanceBundle;
@@ -21,9 +22,9 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
   formatNorwegianDate,
 }) => {
   const theme = useTheme();
+  const chrome = useEventChromeColors();
   const colors = {
-    cardBackground: theme.surfaceContainer,
-    textPrimary: theme.primary,
+    textPrimary: theme.onSurface,
     textSecondary: theme.onSurface,
   };
 
@@ -77,12 +78,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
   };
 
   return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.cardBackground, shadowColor: theme.shadow },
-      ]}
-    >
+    <EventSurface style={styles.card}>
       <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
         Oppmøte
       </Text>
@@ -93,15 +89,16 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
           styles.detailRow,
           {
             marginBottom: 12,
-            backgroundColor: theme.surfaceContainerHighest,
-            shadowColor: theme.shadow,
+            backgroundColor: chrome.recessed,
+            borderColor: chrome.edge,
+            borderBottomColor: chrome.highlight,
           },
         ]}
       >
         <MaterialCommunityIcons
           name="clock-outline"
           size={24}
-          color={colors.textPrimary}
+          color={chrome.icon}
           style={styles.icon}
         />
         <View style={styles.textContainer}>
@@ -116,7 +113,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
           <MaterialCommunityIcons
             name="open-in-new"
             size={28}
-            color={colors.textPrimary}
+            color={chrome.icon}
             style={styles.externalIcon}
           />
         </TouchableOpacity>
@@ -128,15 +125,16 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
           style={[
             styles.detailRow,
             {
-              backgroundColor: theme.surfaceContainerHighest,
-              shadowColor: theme.shadow,
+              backgroundColor: chrome.recessed,
+              borderColor: chrome.edge,
+              borderBottomColor: chrome.highlight,
             },
           ]}
         >
           <MaterialCommunityIcons
             name="map-marker-outline"
             size={24}
-            color={colors.textPrimary}
+            color={chrome.icon}
             style={styles.icon}
           />
           <View style={styles.textContainer}>
@@ -162,13 +160,13 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
               <MaterialCommunityIcons
                 name="open-in-new"
                 size={28}
-                color={colors.textPrimary}
+                color={chrome.icon}
               />
             </TouchableOpacity>
           )}
         </View>
       )}
-    </View>
+    </EventSurface>
   );
 };
 
@@ -179,7 +177,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     padding: 20,
-    elevation: 8,
   },
   cardTitle: {
     fontSize: 20,
@@ -191,9 +188,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     borderRadius: 10,
+    borderWidth: 1,
     padding: 4,
     paddingHorizontal: 10,
-    elevation: 5,
+    minHeight: 58,
   },
   icon: {
     marginTop: 0,

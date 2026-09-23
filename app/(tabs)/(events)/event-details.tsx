@@ -31,6 +31,10 @@ import {
   sortAttendeesByPool,
 } from "utils/event-utils";
 import { useTheme, useThemeMode } from "utils/theme";
+import {
+  EventInsetDivider,
+  EventSurface,
+} from "components/EventDetails/EventSurface";
 
 const DEREGISTER_REASON_TYPES = [
   "SCHOOL",
@@ -200,6 +204,7 @@ const EventDetails: React.FC = () => {
             resizeMode="contain"
           />
         </View>
+        <EventInsetDivider />
 
         <TimeLocationCard
           event={event}
@@ -223,7 +228,7 @@ const EventDetails: React.FC = () => {
             parentAttendance={event.parentAttendance ?? null}
           />
         ) : (
-          <View style={styles.noRegistrationContainer}>
+          <EventSurface style={styles.noRegistrationContainer}>
             <Text
               style={[
                 styles.noRegistrationText,
@@ -232,7 +237,7 @@ const EventDetails: React.FC = () => {
             >
               Dette er ikke et påmeldingsarrangement.
             </Text>
-          </View>
+          </EventSurface>
         )}
         {/*ikke fjern, navbar på ios blokker bunnen av siden uten denne :p  */}
         <View style={{ height: 104 }} />
@@ -271,6 +276,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 16,
     marginBottom: 16,
+    padding: 16,
   },
   noRegistrationText: {
     fontSize: 16,

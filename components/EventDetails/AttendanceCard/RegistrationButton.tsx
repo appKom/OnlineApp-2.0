@@ -10,6 +10,7 @@ import { getAttendee, getAttendablePool, getAttendanceStatus, getReservedAttende
 import { findActiveMembership } from "../../../utils/user-utils"
 import { useTheme } from "../../../utils/theme"
 import { DeregisterModal, type DeregisterReasonFormResult } from "../DeregisterModal"
+import { useEventChromeColors } from "../EventSurface"
 
 const getButtonColor = (
   theme: ReturnType<typeof useTheme>,
@@ -105,6 +106,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   isVerified,
 }) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
   const [deregisterModalOpen, setDeregisterModalOpen] = useState(false)
 
   const attendee = getAttendee(attendance, user)
@@ -166,9 +168,12 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
           styles.button,
           {
             backgroundColor: colors.backgroundColor,
+            borderColor: chrome.edge,
+            borderTopColor: chrome.highlight,
             opacity: disabled ? 0.6 : 1,
-            elevation: 8,
-            shadowColor: theme.shadow
+            elevation: 4,
+            shadowColor: theme.shadow,
+            shadowOpacity: chrome.shadowOpacity,
           },
         ]}
       >
@@ -183,7 +188,16 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
       </TouchableOpacity>
 
       {disabled && finalDisabledText && (
-        <View style={[styles.disabledTextContainer, { backgroundColor: theme.surfaceVariant }]}>
+        <View
+          style={[
+            styles.disabledTextContainer,
+            {
+              backgroundColor: chrome.recessed,
+              borderColor: chrome.edge,
+              borderBottomColor: chrome.highlight,
+            },
+          ]}
+        >
           <MaterialCommunityIcons name="alert-circle" size={16} color={theme.onSurfaceVariant} />
           <Text style={[styles.disabledText, { color: theme.onSurfaceVariant }]}>{finalDisabledText}</Text>
         </View>
@@ -212,6 +226,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     minHeight: 48,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
   },
   buttonContent: {
     flexDirection: "row",
@@ -228,6 +245,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    borderWidth: 1,
     borderRadius: 6,
   },
   disabledText: {

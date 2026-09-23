@@ -15,6 +15,7 @@ import {
   CollapsibleContent,
 } from "../../Collapsible"
 import { useTheme, withAlpha, elevate } from "../../../utils/theme"
+import { useEventChromeColors } from "../EventSurface"
 
 interface NonAttendablePoolsBoxProps {
   attendance: Attendance
@@ -26,6 +27,7 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
   user,
 }) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
 
   if (!attendance.pools.length) {
     return <Text>Ingen påmeldingsgrupper</Text>
@@ -41,12 +43,16 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
   return (
     <View
       style={{
-        backgroundColor: theme.surfaceContainerHigh,
+        backgroundColor: chrome.raised,
         paddingVertical: 8,
         paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: chrome.edge,
+        borderTopColor: chrome.highlight,
         borderRadius: 8,
-        elevation: 8,
+        elevation: 3,
         shadowColor: theme.shadow,
+        shadowOpacity: chrome.shadowOpacity * 0.65,
       }}
     >
       <Collapsible defaultOpen={!hasAttendablePool}>
@@ -68,7 +74,7 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
               <Animated.View style={{ transform: [{ rotate: rotation }] }}>
                 <MaterialIcons
                   name="keyboard-arrow-down"
-                  color={theme.onSurface}
+                  color={chrome.icon}
                   size={30}
                 />
               </Animated.View>
@@ -102,6 +108,7 @@ const AttendanceBoxPoolSmall = ({
   attendance,
 }: AttendanceBoxPoolSmallProps) => {
   const theme = useTheme()
+  const chrome = useEventChromeColors()
 
   const reservedAttendeeCount = getReservedAttendeeCount(attendance, pool.id)
   const unreservedAttendeeCount = getUnreservedAttendeeCount(attendance, pool.id)
@@ -112,8 +119,11 @@ const AttendanceBoxPoolSmall = ({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: elevate(theme.surfaceContainerHighest, 20),
+        backgroundColor: chrome.recessed,
         paddingHorizontal: 10,
+        borderWidth: 1,
+        borderColor: chrome.edge,
+        borderBottomColor: chrome.highlight,
         borderRadius: 10,
         height: 35,
         marginTop: 5,

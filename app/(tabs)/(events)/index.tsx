@@ -23,6 +23,10 @@ import EventCard from "../../../components/EventCard";
 import Authenticator from "utils/authenticator";
 import { useTheme } from "utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
+import {
+  EventInsetDivider,
+  useEventChromeColors,
+} from "../../../components/EventDetails/EventSurface";
 
 type TabType = "alle" | "mine";
 
@@ -62,6 +66,7 @@ const AllEvents: React.FC = () => {
 
   const router = useRouter();
   const theme = useTheme();
+  const chrome = useEventChromeColors();
 
   const currentTab: TabType = selectedIndex === 0 ? "alle" : "mine";
   const allEvents = [...futureEvents, ...pastEvents];
@@ -307,7 +312,7 @@ const AllEvents: React.FC = () => {
   const renderHeader = () => (
     <View
       style={{
-        backgroundColor: theme.surface,
+        backgroundColor: chrome.surface,
         paddingHorizontal: 16,
         paddingVertical: 12,
       }}
@@ -318,20 +323,24 @@ const AllEvents: React.FC = () => {
         onPress={handleTabIndexChange}
         containerStyle={{
           borderRadius: 13,
-          backgroundColor: theme.primaryContainer,
+          backgroundColor: chrome.recessed,
           padding: 3,
           overflow: "hidden",
-          elevation: 8,
-          shadowColor: theme.shadow
+          borderWidth: 1,
+          borderColor: chrome.edge,
+          borderBottomColor: chrome.highlight,
         }}
         buttonStyle={{ backgroundColor: "transparent" }}
-        selectedTextStyle={{ color: theme.onSecondaryFixed }}
-        textStyle={{ color: theme.onPrimaryContainer }}
+        selectedTextStyle={{ color: theme.onSurface, fontWeight: "700" }}
+        textStyle={{ color: theme.onSurfaceVariant }}
         highlightStyle={{
-          backgroundColor: theme.secondaryFixedDim,
+          backgroundColor: chrome.raised,
+          borderWidth: 1,
+          borderColor: chrome.edge,
+          borderTopColor: chrome.highlight,
           opacity: 1,
         }}
-        highlightInset={6}
+        highlightInset={3}
       />
     </View>
   );
@@ -377,7 +386,7 @@ const AllEvents: React.FC = () => {
         data={loading && !refreshing ? [] : currentEvents}
         keyExtractor={(bundle) => bundle.event.id}
         contentInsetAdjustmentBehavior="automatic"
-        style={{ flex: 1, backgroundColor: theme.background }}
+        style={{ flex: 1, backgroundColor: chrome.surface }}
         ListHeaderComponent={null}
         ListEmptyComponent={renderContent}
         refreshing={refreshing}
@@ -407,41 +416,39 @@ const AllEvents: React.FC = () => {
                 return (
                   <>
                     {index === 0 && (
-                      <View
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 12,
-                          backgroundColor: theme.surfaceContainerHigh,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "600",
-                            color: theme.onBackground,
-                          }}
-                        >
-                          Kommende arrangementer
-                        </Text>
+                      <View style={{ backgroundColor: chrome.recessed }}>
+                        <View style={{ paddingHorizontal: 16, paddingVertical: 11 }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "700",
+                              letterSpacing: 0.8,
+                              textTransform: "uppercase",
+                              color: theme.onSurfaceVariant,
+                            }}
+                          >
+                            Kommende arrangementer
+                          </Text>
+                        </View>
+                        <EventInsetDivider />
                       </View>
                     )}
                     {isCurrentPast && !isPrevPast && (
-                      <View
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 12,
-                          backgroundColor: theme.surfaceContainerHigh,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            fontWeight: "600",
-                            color: theme.onBackground,
-                          }}
-                        >
-                          Tidligere arrangementer
-                        </Text>
+                      <View style={{ backgroundColor: chrome.recessed }}>
+                        <View style={{ paddingHorizontal: 16, paddingVertical: 11 }}>
+                          <Text
+                            style={{
+                              fontSize: 12,
+                              fontWeight: "700",
+                              letterSpacing: 0.8,
+                              textTransform: "uppercase",
+                              color: theme.onSurfaceVariant,
+                            }}
+                          >
+                            Tidligere arrangementer
+                          </Text>
+                        </View>
+                        <EventInsetDivider />
                       </View>
                     )}
                     <EventCard

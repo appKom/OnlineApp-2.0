@@ -23,6 +23,7 @@ import {
 import { nb } from "date-fns/locale"
 import { Ionicons, FontAwesome6, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme, blendColors, elevate } from "utils/theme";
+import { useEventChromeColors } from "../EventSurface";
 
 interface MainPoolCardProps {
   attendance: Attendance
@@ -33,6 +34,7 @@ interface MainPoolCardProps {
 
 export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, authorizeUrl, chargeScheduleDate }) => {
   const theme = useTheme();
+  const chrome = useEventChromeColors();
   const now = new Date();
   const attendee = getAttendee(attendance, user)
   
@@ -74,7 +76,19 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!user) {
     return (
-      <TouchableOpacity onPress={() => Authenticator.login()} style={[styles.card, {backgroundColor: theme.inversePrimary, shadowColor: theme.shadow}]}>
+      <TouchableOpacity
+        onPress={() => Authenticator.login()}
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.inversePrimary,
+            borderColor: chrome.edge,
+            borderTopColor: chrome.highlight,
+            shadowColor: theme.shadow,
+            shadowOpacity: chrome.shadowOpacity,
+          },
+        ]}
+      >
         <View style={{flex: 1, alignSelf: 'center', gap: 8}}>
           <Text style={{fontSize: 17, fontWeight: "bold", color: theme.onPrimary}}>
             Du er ikke innlogget
@@ -97,7 +111,18 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!membership && !attendee) {
     return (
-      <View style={[styles.card, {backgroundColor: theme.primary, shadowColor: theme.shadow}]}> 
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.primary,
+            borderColor: chrome.edge,
+            borderTopColor: chrome.highlight,
+            shadowColor: theme.shadow,
+            shadowOpacity: chrome.shadowOpacity,
+          },
+        ]}
+      >
         <Text style={{ color: theme.onPrimary }}>Du har ikke registert medlemskap</Text>
 
         <View>
@@ -117,7 +142,19 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
 
   if (!pool) {
     return (
-      <View style={[styles.card, { backgroundColor: theme.primary, alignItems: 'center', shadowColor: theme.shadow}]}>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.primary,
+            alignItems: "center",
+            borderColor: chrome.edge,
+            borderTopColor: chrome.highlight,
+            shadowColor: theme.shadow,
+            shadowOpacity: chrome.shadowOpacity,
+          },
+        ]}
+      >
         <Text
           style={{
             fontSize: 15,
@@ -148,7 +185,18 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, au
   const cardBackground = blendColors(backgroundColor, theme.background, 0.7)
 
   return (
-    <View style={{backgroundColor: cardBackground, borderRadius: 12, shadowColor: theme.shadow, elevation: 8}}>
+    <View
+      style={[
+        styles.poolCard,
+        {
+          backgroundColor: cardBackground,
+          borderColor: chrome.edge,
+          borderTopColor: chrome.highlight,
+          shadowColor: theme.shadow,
+          shadowOpacity: chrome.shadowOpacity,
+        },
+      ]}
+    >
       <View style={{ gap: 5, alignItems: "center", backgroundColor: backgroundColor, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
         <View style={{ flexDirection: "row", margin: 5 }}>
           <Text style={{ color: onBackgroundColor, padding: 5}}>
@@ -379,7 +427,18 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     borderRadius: 12,
-    elevation: 8,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  poolCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: "hidden",
   },
   textItem: {
     flexDirection: "row",

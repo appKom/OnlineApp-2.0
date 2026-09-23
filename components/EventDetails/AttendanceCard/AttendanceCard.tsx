@@ -29,6 +29,7 @@ import { getAttendee } from "../../../utils/attendance"
 import { scheduleRegistrationReminder, cancelRegistrationReminder, isRegistrationReminderScheduled } from "../../../utils/notifications"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
+import { useEventChromeColors } from "../EventSurface"
 
 interface AttendanceCardProps {
   user: User | null
@@ -54,6 +55,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const [isVerified, setIsVerified] = useState(false)
   const [pendingTurnstileToken, setPendingTurnstileToken] = useState<string | null>(null)
   const theme = useTheme()
+  const chrome = useEventChromeColors()
 
   useEffect(() => {
     setAttendanceStatus(getAttendanceStatus(attendance))
@@ -242,12 +244,23 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, {backgroundColor: theme.surfaceContainer, shadowColor: theme.shadow}]}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        {
+          backgroundColor: chrome.surface,
+          borderColor: chrome.edge,
+          borderTopColor: chrome.highlight,
+          shadowColor: theme.shadow,
+          shadowOpacity: chrome.shadowOpacity,
+        },
+      ]}
+    >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ color: theme.primary, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
+        <Text style={{ color: theme.onSurface, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
         <TouchableOpacity onPress={handleToggleNotification} style={{ padding: 8 }}>
           <View style={{ alignItems: "center" }}>
-            <MaterialIcons name={notificationScheduled ? "notifications-active" : "notifications"} size={24} color={theme.primary} />
+            <MaterialIcons name={notificationScheduled ? "notifications-active" : "notifications"} size={24} color={chrome.icon} />
             {/* <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>{notificationScheduled ? "Avbryt" : "Påminnelse"}</Text> */}
           </View>
         </TouchableOpacity>
@@ -295,7 +308,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
         <EventRules />
         <TouchableOpacity onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")} style={{ marginLeft: 8 }}>
           <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
-            <MaterialIcons name="edit" size={16} color={theme.onBackground} />
+            <MaterialIcons name="edit" size={16} color={chrome.icon} />
             <Text style={{ fontSize: 14, color: theme.onBackground }}>Matallergier</Text>
           </View>
         </TouchableOpacity>
@@ -311,8 +324,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginBottom: 20,
     borderRadius: 12,
+    borderWidth: 1,
     padding: 20,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 5,
     gap: 12,
   },
 })
