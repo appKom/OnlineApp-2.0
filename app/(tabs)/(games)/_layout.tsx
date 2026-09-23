@@ -1,40 +1,25 @@
-import { Stack, useSegments } from "expo-router";
-import Header from "../../../components/Header";
-import { useTheme } from "../../../utils/theme";
+import { Stack } from "expo-router";
+import { useThemeMode } from "../../../utils/theme";
 
 export default function GamesLayout() {
-  const segments = useSegments();
-  const current = segments[segments.length - 1] ?? "index";
-  const theme = useTheme();
-
-  const titleMap: Record<string, string> = {
-    index: "",
-    spinline: "SpinLine",
-    dice: "",
-    roulette: "",
-    questions_100: "",
-    bunken: "",
-  };
-  const title = titleMap[current] ?? "Spill";
+  const { mode } = useThemeMode();
+  const backgroundColor = mode === "dark" ? "#043728" : "#07523A";
 
   return (
-    <>
-      {title ? <Header title={title} /> : null}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: true,
-          animation: "default",
-          contentStyle: { backgroundColor: theme.background },
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="spinline" />
-        <Stack.Screen name="dice" />
-        <Stack.Screen name="roulette" />
-        <Stack.Screen name="questions_100" />
-        <Stack.Screen name="bunken" />
-      </Stack>
-    </>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: true,
+        animation: "default",
+        contentStyle: { backgroundColor },
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="spinline" />
+      <Stack.Screen name="dice" />
+      <Stack.Screen name="roulette" />
+      <Stack.Screen name="questions_100" />
+      <Stack.Screen name="bunken" />
+    </Stack>
   );
 }

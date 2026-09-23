@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from "react";
 import { View, StyleSheet, Text, Platform, Dimensions } from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
+import { CasinoFeltBackground, FELT_BASE_DARK, FELT_BASE_LIGHT } from "../../../components/GamesHub/CasinoFeltBackground";
 import { useThemeMode } from "../../../utils/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -29,13 +30,8 @@ const CREAM_DARK = "#F1E7D0";
 const RED = "#B3261E";
 const BLACK = "#191919";
 
-const TABLE_GREEN_LIGHT = "#0F6B47";
-const TABLE_GREEN_DARK = "#0A4E34";
-const TABLE_PATCH_LIGHT = "#167A52";
-const TABLE_PATCH_DARK = "#0D5A3C";
-const TABLE_SHADOW_LIGHT = "#0A4B32";
-const TABLE_SHADOW_DARK = "#062D1E";
-const TABLE_RAIL = "rgba(217,191,106,0.26)";
+const TABLE_GREEN_LIGHT = FELT_BASE_LIGHT;
+const TABLE_GREEN_DARK = FELT_BASE_DARK;
 
 // Tilfeldig rekkefølge på alle kort bortsett fra nr.67
 const FIXED_CARD_NUMBER = 67;
@@ -221,45 +217,6 @@ function OnlineSuitIcon({
   );
 }
 
-function CasinoFeltBackground({ darkMode }: { darkMode: boolean }) {
-  const patch = darkMode ? TABLE_PATCH_DARK : TABLE_PATCH_LIGHT;
-  const shadow = darkMode ? TABLE_SHADOW_DARK : TABLE_SHADOW_LIGHT;
-
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchTop,
-          { backgroundColor: patch, opacity: 0.42 },
-        ]}
-      />
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchBottom,
-          { backgroundColor: shadow, opacity: 0.36 },
-        ]}
-      />
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchLeft,
-          { backgroundColor: shadow, opacity: 0.22 },
-        ]}
-      />
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchRight,
-          { backgroundColor: patch, opacity: 0.18 },
-        ]}
-      />
-      <View style={styles.tableRail} />
-      <View style={styles.tableRailInner} />
-    </View>
-  );
-}
 
 function getCardPalette(index: number) {
   const isRedCard = index % 2 === 0;
@@ -440,7 +397,7 @@ export default function CasinoQuestionsDeckScreen() {
   }));
 
   return (
-    <TabScreenContainer>
+    <TabScreenContainer backgroundColor={backgroundColor}>
       <View
         style={[
           styles.container,
@@ -500,54 +457,6 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
 
-  feltPatch: {
-    position: "absolute",
-    borderRadius: 999,
-  },
-  feltPatchTop: {
-    width: 420,
-    height: 420,
-    top: -130,
-    left: -70,
-  },
-  feltPatchBottom: {
-    width: 520,
-    height: 520,
-    bottom: -220,
-    right: -140,
-  },
-  feltPatchLeft: {
-    width: 260,
-    height: 260,
-    top: "38%",
-    left: -110,
-  },
-  feltPatchRight: {
-    width: 220,
-    height: 220,
-    top: 90,
-    right: -70,
-  },
-  tableRail: {
-    position: "absolute",
-    top: 18,
-    bottom: 18 + 80,
-    left: 12,
-    right: 12,
-    borderRadius: 32,
-    borderWidth: 3,
-    borderColor: TABLE_RAIL,
-  },
-  tableRailInner: {
-    position: "absolute",
-    top: 28,
-    bottom: 28 + 80,
-    left: 22,
-    right: 22,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: "rgba(247,241,222,0.08)",
-  },
 
   content: {
     flex: 1,

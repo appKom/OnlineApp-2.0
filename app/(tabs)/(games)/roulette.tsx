@@ -1,10 +1,18 @@
 import { Image } from "expo-image";
-import React, { useCallback, useRef, useState } from "react";
-import { View, StyleSheet, Pressable, Text, Platform } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Text,
+  Platform,
+  useWindowDimensions,
+} from "react-native";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
-import { useTheme, useThemeMode } from "../../../utils/theme";
+import { CasinoFeltBackground, FELT_BASE_DARK, FELT_BASE_LIGHT } from "../../../components/GamesHub/CasinoFeltBackground";
+import { useThemeMode } from "../../../utils/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,15 +21,19 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import Svg, {
+  Defs,
   Path,
   Circle,
   Text as SvgText,
   Polygon,
   Line,
+  LinearGradient,
+  Rect,
+  Stop,
 } from "react-native-svg";
 import * as Haptics from "expo-haptics";
+import { StatusBar } from "expo-status-bar";
 
-const WHEEL_SIZE = 340;
 const TWO_PI = Math.PI * 2;
 const centerLogo = require("assets/svg/online_hvit_o.svg");
 
@@ -30,18 +42,8 @@ const GOLD_LIGHT = "#F3DE9B";
 const CREAM_DARK = "#F1E7D0";
 const CREAM = "#F7F1DE";
 
-const TABLE_GREEN_LIGHT = "#0F6B47";
-const TABLE_GREEN_DARK = "#0A4E34";
-const TABLE_PATCH_LIGHT = "#167A52";
-const TABLE_PATCH_DARK = "#0D5A3C";
-const TABLE_SHADOW_LIGHT = "#0A4B32";
-const TABLE_SHADOW_DARK = "#062D1E";
-
-const WOOD_BASE = "#7A4A2A";
-const WOOD_DARK = "#5C371F";
-const WOOD_LIGHT = "#9A643C";
-const WOOD_LINE = "#B67A4E";
-const WOOD_SHADOW = "#3B2415";
+const TABLE_GREEN_LIGHT = FELT_BASE_LIGHT;
+const TABLE_GREEN_DARK = FELT_BASE_DARK;
 
 // Europeisk roulette-rekkefølge
 const ROULETTE_NUMBERS = [
@@ -199,63 +201,6 @@ async function triggerResultHaptic() {
   } catch {}
 }
 
-function CasinoFeltBackground({ darkMode }: { darkMode: boolean }) {
-  const patch = darkMode ? TABLE_PATCH_DARK : TABLE_PATCH_LIGHT;
-  const shadow = darkMode ? TABLE_SHADOW_DARK : TABLE_SHADOW_LIGHT;
-
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchTop,
-          { backgroundColor: patch, opacity: 0.45 },
-        ]}
-      />
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchBottom,
-          { backgroundColor: shadow, opacity: 0.38 },
-        ]}
-      />
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchLeft,
-          { backgroundColor: shadow, opacity: 0.22 },
-        ]}
-      />
-      <View
-        style={[
-          styles.feltPatch,
-          styles.feltPatchRight,
-          { backgroundColor: patch, opacity: 0.18 },
-        ]}
-      />
-      <View style={styles.tableRail} />
-      <View style={styles.tableRailInner} />
-    </View>
-  );
-}
-
-function WoodPanel({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={styles.resultBox}>
-      <View style={styles.woodFill} />
-      <View style={[styles.woodGrainLine, styles.woodGrain1]} />
-      <View style={[styles.woodGrainLine, styles.woodGrain2]} />
-      <View style={[styles.woodGrainLine, styles.woodGrain3]} />
-      <View style={[styles.woodGrainLine, styles.woodGrain4]} />
-      <View style={[styles.woodKnots, styles.woodKnot1]} />
-      <View style={[styles.woodKnots, styles.woodKnot2]} />
-      <View style={styles.woodHighlightTop} />
-      <View style={styles.woodShadeBottom} />
-      <View style={styles.resultInnerBorder} />
-      <View style={styles.resultContent}>{children}</View>
-    </View>
-  );
-}
 
 function RouletteWheel({
   size,
@@ -402,28 +347,39 @@ function Pointer() {
   );
 }
 
+function ResultFelt({ width }: { width: number }) {
+  return (
+    <Svg pointerEvents="none" width={width} height={226} style={StyleSheet.absoluteFill}>
+      <Defs>
+        <LinearGradient id="roulettePlacemat" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor="#9B292D" />
+          <Stop offset="0.52" stopColor="#7E1E25" />
+          <Stop offset="1" stopColor="#5E1720" />
+        </LinearGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill="url(#roulettePlacemat)" />
+      {Array.from({ length: 20 }, (_, index) => (
+        <Line key={index} x1={index * 28 - 180} y1="0" x2={index * 28 + 90} y2="100%" stroke="#F4D897" strokeOpacity="0.055" strokeWidth="1" />
+      ))}
+    </Svg>
+  );
+}
+
 export default function RouletteScreen() {
-  const theme = useTheme();
   const { mode } = useThemeMode();
   const darkMode = mode === "dark";
   const backgroundColor = darkMode ? TABLE_GREEN_DARK : TABLE_GREEN_LIGHT;
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const wheelSize = Math.min(width - 64, height * 0.43, 340);
 
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [showHint, setShowHint] = useState(false);
-
   const spinningRef = useRef(false);
 
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
-
-  useFocusEffect(
-    useCallback(() => {
-      setShowHint(true);
-    }, []),
-  );
 
   const wheelAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}rad` }, { scale: scale.value }],
@@ -437,7 +393,7 @@ export default function RouletteScreen() {
     setSelectedNumber(null);
     setSelectedAction(null);
 
-    await triggerSpinHaptic();
+    void triggerSpinHaptic();
 
     const winnerIndex = Math.floor(Math.random() * SEGMENT_COUNT);
     const winnerNumber = ROULETTE_NUMBERS[winnerIndex];
@@ -471,34 +427,66 @@ export default function RouletteScreen() {
     }, duration);
   };
 
-  return (
-    <TabScreenContainer>
-      <View
-        style={[
-          styles.container,
-          {
-            paddingTop: insets.top,
-            backgroundColor,
-          },
-        ]}
-      >
-        <CasinoFeltBackground darkMode={darkMode} />
+  const resultColor = selectedNumber === 0
+    ? "#0C7847"
+    : selectedNumber !== null && RED_NUMBERS.has(selectedNumber)
+      ? "#A7262A"
+      : "#1B1B1B";
+  const resultType =
+    selectedNumber === 0
+      ? "GRØNN · SPESIAL"
+      : selectedNumber !== null && RED_NUMBERS.has(selectedNumber)
+        ? "RØD · DU GJØR DET"
+        : "SVART · ANDRE GJØR DET";
 
-        <View style={styles.centerContainer}>
+  return (
+    <TabScreenContainer backgroundColor={backgroundColor}>
+      <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <CasinoFeltBackground darkMode={darkMode} />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop:
+                Math.max(insets.top, Platform.OS === "ios" ? 54 : 24) + 18,
+              paddingBottom: Math.max(insets.bottom, 20) + 96,
+            },
+          ]}
+          contentInsetAdjustmentBehavior="never"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.deckHeader}>
             <Text style={styles.deckTitle}>ROULETTE</Text>
             <Text style={styles.deckSubtitle}>
-              {isSpinning ? "Spinner..." : "Trykk på hjulet for å spinne"}
+              Trykk på hjulet for å spinne
             </Text>
           </View>
 
-          <View style={styles.wheelArea}>
+          <View
+            style={[
+              styles.wheelArea,
+              { width: wheelSize + 24, height: wheelSize + 36 },
+            ]}
+          >
             <Pointer />
 
-            <Pressable onPress={spinWheel} style={styles.pressable}>
-              <View style={styles.wheelWrapper}>
+            <Pressable
+              onPress={spinWheel}
+              disabled={isSpinning}
+              accessibilityRole="button"
+              accessibilityLabel="Spinn roulettehjulet"
+              style={styles.pressable}
+            >
+              <View
+                style={[
+                  styles.wheelWrapper,
+                  { width: wheelSize, height: wheelSize },
+                ]}
+              >
                 <RouletteWheel
-                  size={WHEEL_SIZE}
+                  size={wheelSize}
                   rotationStyle={wheelAnimatedStyle}
                 />
 
@@ -513,62 +501,34 @@ export default function RouletteScreen() {
             </Pressable>
           </View>
 
-          <WoodPanel>
-            <Text style={styles.resultLabel}>RESULTAT</Text>
-
-            <Text style={[styles.result, { color: GOLD_LIGHT }]}>
+          <View style={styles.resultPanel}>
+            <ResultFelt width={Math.min(width - 48, 410)} />
+            <View pointerEvents="none" style={styles.placematBorder} />
+            <View pointerEvents="none" style={styles.placematDiamond} />
+            <Text style={styles.resultEyebrow}>
               {selectedNumber === null
-                ? "Ingen vinner enda"
-                : `Vinner: ${selectedNumber}`}
+                ? isSpinning
+                  ? "SPINNER"
+                  : "KLAR FOR EN RUNDE"
+                : resultType}
             </Text>
-
-            {selectedAction && (
-              <Text style={[styles.actionText, { color: CREAM }]}>
-                {selectedAction}
-              </Text>
-            )}
-          </WoodPanel>
-        </View>
-
-        {showHint && (
-          <View style={styles.hintOverlay}>
-            <Pressable
-              style={styles.hintBackdrop}
-              onPress={() => setShowHint(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Lukk forklaring"
-            />
-
-            <Pressable
-              style={styles.hintPopup}
-              onPress={() => {}}
-              accessibilityRole="summary"
-              accessibilityLabel="Forklaring av roulette-farger"
-            >
-              <Text style={styles.hintTitle}>Slik funker roulette</Text>
-              <Text style={styles.hintText}>
-                Rød: du gjør utfordringen selv.
-                {"\n"}
-                Svart: utfordringen gis videre, enten til én person eller til
-                alle
-              </Text>
-
-              <Text style={styles.hintHintText}>
-                Trykk utenfor boksen for å lukke.
-              </Text>
-
-              <Pressable
-                style={styles.hintCloseButton}
-                onPress={() => setShowHint(false)}
-                accessibilityRole="button"
-                accessibilityLabel="Skjul forklaring"
-                hitSlop={8}
+              <View
+                style={[
+                  styles.numberBadge,
+                  {
+                    backgroundColor: selectedNumber === null ? "#381B1D" : resultColor,
+                  },
+                ]}
               >
-                <Text style={styles.hintCloseText}>Skjønner</Text>
-              </Pressable>
-            </Pressable>
+                <Text style={styles.resultNumber}>{selectedNumber ?? "?"}</Text>
+              </View>
+            <ScrollView style={styles.actionSlot} contentContainerStyle={styles.actionSlotContent} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+              <Text style={styles.actionText}>
+                {selectedAction ?? (isSpinning ? "Venter på resultatet..." : "Resultat og utfordring vises her")}
+              </Text>
+            </ScrollView>
           </View>
-        )}
+        </ScrollView>
       </View>
     </TabScreenContainer>
   );
@@ -577,61 +537,19 @@ export default function RouletteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 120,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
   },
 
-  feltPatch: {
-    position: "absolute",
-    borderRadius: 999,
-  },
-  feltPatchTop: {
-    width: 420,
-    height: 420,
-    top: -130,
-    left: -70,
-  },
-  feltPatchBottom: {
-    width: 520,
-    height: 520,
-    bottom: -220,
-    right: -140,
-  },
-  feltPatchLeft: {
-    width: 260,
-    height: 260,
-    top: "38%",
-    left: -110,
-  },
-  feltPatchRight: {
-    width: 220,
-    height: 220,
-    top: 90,
-    right: -70,
-  },
-  tableRail: {
-    position: "absolute",
-    top: 18,
-    bottom: 18 + 80,
-    left: 12,
-    right: 12,
-    borderRadius: 32,
-    borderWidth: 3,
-    borderColor: "rgba(217,191,106,0.24)",
-  },
-  tableRailInner: {
-    position: "absolute",
-    top: 28,
-    bottom: 28 + 80,
-    left: 22,
-    right: 22,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: "rgba(247,241,222,0.08)",
-  },
 
   wheelWrapper: {
-    width: WHEEL_SIZE,
-    height: WHEEL_SIZE,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -644,15 +562,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
   wheelArea: {
-    width: WHEEL_SIZE,
-    height: WHEEL_SIZE + 52,
     justifyContent: "flex-start",
     alignItems: "center",
   },
@@ -660,6 +570,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 12,
+    marginTop: 16,
   },
   pointerContainer: {
     position: "absolute",
@@ -669,126 +580,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  resultBox: {
-    marginTop: 0,
-    minHeight: 128,
-    width: "90%",
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: GOLD,
-    shadowColor: WOOD_SHADOW,
-    shadowOpacity: 0.42,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 9,
-  },
-  woodFill: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: WOOD_BASE,
-  },
-  woodGrainLine: {
-    position: "absolute",
-    left: -20,
-    right: -20,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: WOOD_LINE,
-    opacity: 0.18,
-  },
-  woodGrain1: {
-    top: 18,
-    transform: [{ rotate: "1.5deg" }],
-  },
-  woodGrain2: {
-    top: 44,
-    transform: [{ rotate: "-1.2deg" }],
-  },
-  woodGrain3: {
-    top: 76,
-    transform: [{ rotate: "0.8deg" }],
-  },
-  woodGrain4: {
-    bottom: 18,
-    transform: [{ rotate: "-1deg" }],
-  },
-  woodKnots: {
-    position: "absolute",
-    width: 68,
-    height: 24,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: "rgba(59,36,21,0.24)",
-    backgroundColor: "rgba(247,241,222,0.04)",
-  },
-  woodKnot1: {
-    top: 38,
-    right: 26,
-    transform: [{ rotate: "8deg" }],
-  },
-  woodKnot2: {
-    bottom: 22,
-    left: 20,
-    transform: [{ rotate: "-12deg" }],
-  },
-  woodHighlightTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 20,
-    backgroundColor: WOOD_LIGHT,
-    opacity: 0.18,
-  },
-  woodShadeBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 24,
-    backgroundColor: WOOD_DARK,
-    opacity: 0.34,
-  },
-  resultInnerBorder: {
-    position: "absolute",
-    top: 8,
-    bottom: 8,
-    left: 8,
-    right: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(243,222,155,0.22)",
-  },
-  resultContent: {
-    minHeight: 128,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resultLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 2.2,
-    color: GOLD,
-    marginBottom: 8,
-  },
-  result: {
-    fontSize: 24,
-    fontWeight: "800",
-    textAlign: "center",
-    letterSpacing: 0.35,
-  },
   actionText: {
-    marginTop: 12,
-    fontSize: 18,
+    marginTop: 10,
+    color: CREAM,
+    fontSize: 17,
     fontWeight: "600",
     textAlign: "center",
-    lineHeight: 25,
+    lineHeight: 24,
   },
   deckHeader: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 18,
   },
 
   deckTitle: {
@@ -804,63 +606,75 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: "center",
   },
-  hintOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  resultPanel: {
+    width: "100%",
+    maxWidth: 410,
+    height: 226,
+    marginTop: 4,
+    paddingHorizontal: 28,
+    paddingTop: 22,
+    paddingBottom: 21,
+    alignItems: "center",
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: GOLD,
+    backgroundColor: "#7E1E25",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  placematBorder: {
+    position: "absolute",
+    top: 9,
+    bottom: 9,
+    left: 9,
+    right: 9,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: "rgba(244, 216, 151, 0.68)",
+  },
+  placematDiamond: {
+    position: "absolute",
+    top: 13,
+    width: 7,
+    height: 7,
+    backgroundColor: GOLD,
+    transform: [{ rotate: "45deg" }],
+  },
+  resultEyebrow: {
+    color: GOLD_LIGHT,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textAlign: "center",
+  },
+  numberBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 60,
+    marginTop: 10,
+    borderWidth: 2,
+    borderColor: GOLD_LIGHT,
   },
-  hintBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(6, 22, 15, 0.58)",
-  },
-  hintPopup: {
-    width: "86%",
-    maxWidth: 360,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    backgroundColor: "rgba(14, 50, 35, 0.96)",
-    borderWidth: 1,
-    borderColor: "rgba(243, 222, 155, 0.64)",
-    shadowColor: "#000",
-    shadowOpacity: 0.32,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 14,
-  },
-  hintTitle: {
-    color: GOLD_LIGHT,
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 8,
-    letterSpacing: 0.2,
-  },
-  hintText: {
+  resultNumber: {
+    fontSize: 37,
+    lineHeight: 43,
+    fontWeight: "900",
     color: CREAM,
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: "center",
-    fontWeight: "600",
   },
-  hintHintText: {
-    marginTop: 8,
-    color: CREAM_DARK,
-    fontSize: 12,
-    textAlign: "center",
+  actionSlot: {
+    flex: 1,
+    width: "100%",
+    marginTop: 10,
   },
-  hintCloseButton: {
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: "rgba(217, 191, 106, 0.22)",
-  },
-  hintCloseText: {
-    color: GOLD_LIGHT,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+  actionSlotContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
