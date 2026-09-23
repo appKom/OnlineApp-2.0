@@ -1,109 +1,152 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Button,
+  ActivityIndicator,
+  Alert,
+  Image,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  useColorScheme,
-  View,
-  Alert,
-  Image,
   TouchableOpacity,
-  RefreshControl,
+  View,
 } from "react-native";
-import { useEffect, useState } from "react";
-import Authenticator from "../../../utils/authenticator";
-import { getUser } from "utils/trpc"; // You'll need to create this
-import { User } from "types/user";
-import { findActiveMembership, getGrade } from "utils/user-utils";
-import { useTheme, useThemeMode } from "../../../utils/theme";
+import {
+  ProfileInfoRow,
+  ProfileSurface,
+  QuickFact,
+  SectionLabel,
+  ThemeSelector,
+} from "../../../components/Profile/ProfileSurface";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
-import NotificationSettings from "../../../components/NotificationSettings";
+import { EventAttendanceBundle } from "../../../types/event";
+import { Membership, User } from "../../../types/user";
+import Authenticator from "../../../utils/authenticator";
+import { useTheme, useThemeMode } from "../../../utils/theme";
+import {
+  getAllFutureEventsByAttendingUserId,
+  getGroupsByMember,
+  getUser,
+} from "../../../utils/trpc";
+import {
+  findActiveMembership,
+  getGenderName,
+  getGrade,
+  getMembershipTypeName,
+  getSpecializationName,
+} from "../../../utils/user-utils";
+
+type ProfileOverview = {
+  groupCount: number | null;
+  nextEvent: EventAttendanceBundle | null;
+};
+
+const emptyOverview: ProfileOverview = {
+  groupCount: null,
+  nextEvent: null,
+};
 
 export default function ProfileScreen() {
   const theme = useTheme();
   const { selectedMode, setMode } = useThemeMode();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isOverviewLoading, setIsOverviewLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showMembershipHistory, setShowMembershipHistory] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [overview, setOverview] = useState<ProfileOverview>(emptyOverview);
   const [error, setError] = useState<string | null>(null);
-  const [notificationPreferences, setNotificationPreferences] = useState({
-    enabled: true,
-    social: true,
-    academic: true,
-    company: true,
-    generalAssembly: true,
-    internal: true,
-    other: true,
-    welcome: true,
-  });
 
   useEffect(() => {
-    // Initialize Auth0 when component mounts
     Authenticator.initialize(
       "auth.online.ntnu.no",
       "EniGfQ4MlcVuS2FWbUMmCjaFB65EqjzZ",
     );
 
-    // Check if already logged in
-    checkLoginStatus();
-
-    // Listen to login state changes
     const removeListener = Authenticator.addLoginStateListener((loggedIn) => {
       setIsLoggedIn(loggedIn);
       if (loggedIn) {
-        loadUserProfile();
+        void loadUserProfile();
       } else {
         setUser(null);
+        setOverview(emptyOverview);
         setError(null);
       }
     });
 
+    void checkLoginStatus();
     return removeListener;
   }, []);
 
   const checkLoginStatus = async () => {
     try {
       const credentials = await Authenticator.fetchStoredCredentials();
-      const isAuthenticated = !!credentials;
+      const isAuthenticated = Boolean(credentials);
       setIsLoggedIn(isAuthenticated);
 
       if (isAuthenticated) {
-        loadUserProfile();
+        await loadUserProfile();
       }
-    } catch (error) {
-      console.log("Error checking login status:", error);
-      setError("Failed to check login status");
+    } catch (loginError) {
+      console.error("Error checking login status:", loginError);
+      setError("Kunne ikke kontrollere innloggingen.");
+    } finally {
+      setIsCheckingAuth(false);
     }
   };
 
   const loadUserProfile = async () => {
+    setError(null);
+    setIsProfileLoading(user === null);
+
     try {
-      setError(null);
-      const userProfile = Authenticator.user ?? (await getUser());
+      const userProfile = await getUser();
+      if (!userProfile) {
+        throw new Error("Authenticated user was not returned by the API");
+      }
+
+      Authenticator.user = userProfile;
       setUser(userProfile);
-    } catch (error) {
-      console.error("Error loading user profile:", error);
-      setError("Failed to load profile");
+      setIsProfileLoading(false);
+      setIsOverviewLoading(true);
+
+      const [groupsResult, eventsResult] = await Promise.allSettled([
+        getGroupsByMember(userProfile.id),
+        getAllFutureEventsByAttendingUserId(userProfile.id, 1, undefined, "asc"),
+      ]);
+
+      setOverview({
+        groupCount:
+          groupsResult.status === "fulfilled"
+            ? groupsResult.value.length
+            : null,
+        nextEvent:
+          eventsResult.status === "fulfilled"
+            ? eventsResult.value?.items?.[0] ?? null
+            : null,
+      });
+    } catch (profileError) {
+      console.error("Error loading user profile:", profileError);
+      setError("Kunne ikke laste profilen din.");
+    } finally {
+      setIsProfileLoading(false);
+      setIsOverviewLoading(false);
     }
   };
 
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      console.log("🔄 Starting login...");
       const credentials = await Authenticator.login();
-
-      if (credentials) {
-        console.log("✅ Login successful!");
-        // Profile will load automatically via the listener
-      } else {
-        console.log("❌ Login failed or was cancelled");
-        Alert.alert("Login Failed", "Login was unsuccessful or cancelled.");
+      if (!credentials) {
+        Alert.alert("Innlogging avbrutt", "Du ble ikke logget inn.");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      Alert.alert("Error", "An error occurred during login.");
+    } catch (loginError) {
+      console.error("Login error:", loginError);
+      Alert.alert("Feil", "Det oppstod en feil under innloggingen.");
     } finally {
       setIsLoading(false);
     }
@@ -113,9 +156,9 @@ export default function ProfileScreen() {
     setIsLoading(true);
     try {
       await Authenticator.logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-      Alert.alert("Error", "An error occurred during logout.");
+    } catch (logoutError) {
+      console.error("Logout error:", logoutError);
+      Alert.alert("Feil", "Det oppstod en feil under utloggingen.");
     } finally {
       setIsLoading(false);
     }
@@ -127,56 +170,81 @@ export default function ProfileScreen() {
     setIsRefreshing(false);
   };
 
-  const formatMembershipType = (type: string) => {
-    return type
-      .replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const activeMembership = useMemo(
+    () => (user ? findActiveMembership(user) : null),
+    [user],
+  );
 
-  const formatSpecialization = (spec: string | null) => {
-    if (!spec) return "Not specified";
-    return spec
-      .replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const previousMemberships = useMemo(() => {
+    if (!user) return [];
+    return user.memberships
+      .filter((membership) => membership.id !== activeMembership?.id)
+      .sort(
+        (a, b) =>
+          new Date(b.start).getTime() - new Date(a.start).getTime(),
+      );
+  }, [activeMembership?.id, user]);
+
+  if (isCheckingAuth) {
+    return <ProfileLoadingState />;
+  }
 
   if (!isLoggedIn) {
     return (
       <TabScreenContainer>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          style={[styles.container, { backgroundColor: theme.background }]}
+          contentContainerStyle={styles.loggedOutContent}
+          style={{ backgroundColor: theme.background }}
         >
-          <View style={styles.content}>
-            <Text style={[styles.title, { color: theme.onBackground }]}>
-              Velkommen til Online-Appen!
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.onSurfaceVariant }]}>
-              Vennligst logg inn for å se og administrere profilen din.
-            </Text>
-
-            <TouchableOpacity
+          <ProfileSurface style={styles.loginCard}>
+            <View
               style={[
-                styles.loginButton,
+                styles.loginIcon,
+                { backgroundColor: theme.primaryContainer },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="account-circle-outline"
+                size={42}
+                color={theme.onPrimaryContainer}
+              />
+            </View>
+            <Text style={[styles.loginTitle, { color: theme.onSurface }]}>Velkommen til Online</Text>
+            <Text
+              style={[
+                styles.loginDescription,
+                { color: theme.onSurfaceVariant },
+              ]}
+            >
+              Logg inn for å se medlemskapet, gruppene og profilen din.
+            </Text>
+            {error && (
+              <Text style={[styles.inlineError, { color: theme.error }]}>{error}</Text>
+            )}
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.84}
+              disabled={isLoading}
+              onPress={handleLogin}
+              style={[
+                styles.primaryButton,
                 {
-                  opacity: isLoading ? 0.6 : 1,
-                  backgroundColor: theme.attending,
-                  elevation: 8,
-                  shadowColor: theme.shadow,
+                  backgroundColor: theme.primary,
+                  opacity: isLoading ? 0.65 : 1,
                 },
               ]}
-              onPress={handleLogin}
-              disabled={isLoading}
             >
-              <Text
-                style={[styles.loginButtonText, { color: theme.onAttending }]}
-              >
-                {isLoading ? "Logger Inn..." : "Logg Inn"}
-              </Text>
+              {isLoading ? (
+                <ActivityIndicator color={theme.onPrimary} />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="login" size={20} color={theme.onPrimary} />
+                  <Text style={[styles.primaryButtonText, { color: theme.onPrimary }]}>Logg inn</Text>
+                </>
+              )}
             </TouchableOpacity>
-          </View>
+          </ProfileSurface>
         </ScrollView>
       </TabScreenContainer>
     );
@@ -186,752 +254,517 @@ export default function ProfileScreen() {
     <TabScreenContainer>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={[styles.container, { backgroundColor: theme.background }]}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.primary} />
         }
+        style={[styles.container, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.content}
       >
-        <View style={styles.content}>
-          {error && (
-            <View
-              style={[
-                styles.errorContainer,
-                { backgroundColor: theme.errorContainer },
-              ]}
-            >
-              <Text
-                style={[styles.errorText, { color: theme.onErrorContainer }]}
-              >
-                {error}
-              </Text>
-              <TouchableOpacity
-                onPress={loadUserProfile}
-                style={styles.retryButton}
-              >
-                <Text style={styles.retryButtonText}>Prøv igjen</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {user ? (
-            <>
-              {/* Profile Header */}
-              <View
-                style={[
-                  styles.profileHeader,
-                  {
-                    backgroundColor: theme.surfaceContainer,
-                    elevation: 8,
-                    shadowColor: theme.shadow,
-                  },
-                ]}
-              >
-                {user.imageUrl ? (
-                  <Image
-                    source={{ uri: user.imageUrl }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.avatarPlaceholder,
-                      { backgroundColor: theme.surfaceVariant },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.avatarText,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      {user.name?.charAt(0)?.toUpperCase() ||
-                        user.email?.charAt(0)?.toUpperCase() ||
-                        "?"}
-                    </Text>
-                  </View>
-                )}
-
-                <Text style={[styles.name, { color: theme.onBackground }]}>
-                  {user.name || "Unknown User"}
-                </Text>
-
-                <Text style={[styles.email, { color: theme.onSurfaceVariant }]}>
-                  {user.email}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.profileSlug,
-                    { color: theme.onSurfaceVariant },
-                  ]}
-                >
-                  @{user.profileSlug}
-                </Text>
-              </View>
-
-              {/* Biography */}
-              {user.biography && (
-                <View
-                  style={[
-                    styles.section,
-                    {
-                      backgroundColor: theme.surfaceContainer,
-                      elevation: 8,
-                      shadowColor: theme.shadow,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.sectionTitle, { color: theme.onBackground }]}
-                  >
-                    Biografi
-                  </Text>
-                  <Text
-                    style={[
-                      styles.sectionContent,
-                      { color: theme.onSurfaceVariant },
-                    ]}
-                  >
-                    {user.biography}
-                  </Text>
-                </View>
-              )}
-
-              {/* Personal Information */}
-              <View
-                style={[
-                  styles.section,
-                  {
-                    backgroundColor: theme.surfaceContainer,
-                    elevation: 8,
-                    shadowColor: theme.shadow,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.sectionTitle, { color: theme.onBackground }]}
-                >
-                  Personlig Informasjon
-                </Text>
-
-                {user.phone && (
-                  <View style={styles.infoRow}>
-                    <Text
-                      style={[
-                        styles.infoLabel,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      Telefonnummer:
-                    </Text>
-                    <Text
-                      style={[styles.infoValue, { color: theme.onBackground }]}
-                    >
-                      {user.phone}
-                    </Text>
-                  </View>
-                )}
-
-                {user.gender && (
-                  <View style={styles.infoRow}>
-                    <Text
-                      style={[
-                        styles.infoLabel,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      Kjønn:
-                    </Text>
-                    <Text
-                      style={[styles.infoValue, { color: theme.onBackground }]}
-                    >
-                      {user.gender}
-                    </Text>
-                  </View>
-                )}
-
-                {user.dietaryRestrictions && (
-                  <View style={styles.infoRow}>
-                    <Text
-                      style={[
-                        styles.infoLabel,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      Dietære Restriksjoner:
-                    </Text>
-                    <Text
-                      style={[styles.infoValue, { color: theme.onBackground }]}
-                    >
-                      {user.dietaryRestrictions}
-                    </Text>
-                  </View>
-                )}
-
-                {user.ntnuUsername && (
-                  <View style={styles.infoRow}>
-                    <Text
-                      style={[
-                        styles.infoLabel,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      NTNU Brukernavn:
-                    </Text>
-                    <Text
-                      style={[styles.infoValue, { color: theme.onBackground }]}
-                    >
-                      {user.ntnuUsername}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Settings */}
-
-              <View
-                style={[
-                  styles.section,
-                  {
-                    backgroundColor: theme.surfaceContainer,
-                    elevation: 8,
-                    shadowColor: theme.shadow,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.sectionTitle, { color: theme.onBackground }]}
-                >
-                  Innstillinger
-                </Text>
-
-                <View style={styles.settingRow}>
-                  <View style={styles.settingTextContainer}>
-                    <Text
-                      style={[
-                        styles.infoLabel,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      Tema
-                    </Text>
-                    <Text
-                      style={[
-                        styles.settingDescription,
-                        { color: theme.onSurfaceVariant },
-                      ]}
-                    >
-                      Velg mellom mørk, system eller lys
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  style={[
-                    styles.themeToggle,
-                    {
-                      backgroundColor: theme.surfaceContainerHigh,
-                      borderColor: theme.outlineVariant,
-                    },
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.themeOption,
-                      selectedMode === "dark" && {
-                        backgroundColor: theme.secondaryContainer,
-                        borderColor: theme.secondary,
-                        borderWidth: 1.5,
-                      },
-                    ]}
-                    onPress={() => setMode("dark")}
-                    activeOpacity={0.85}
-                  >
-                    <Text
-                      style={[
-                        styles.themeOptionText,
-                        {
-                          color:
-                            selectedMode === "dark"
-                              ? theme.onSecondaryContainer
-                              : theme.onSurfaceVariant,
-                          fontWeight: selectedMode === "dark" ? "700" : "600",
-                        },
-                      ]}
-                    >
-                      Mørk
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.themeOption,
-                      selectedMode === "system" && {
-                        backgroundColor: theme.secondaryContainer,
-                        borderColor: theme.secondary,
-                        borderWidth: 1.5,
-                      },
-                    ]}
-                    onPress={() => setMode("system")}
-                    activeOpacity={0.85}
-                  >
-                    <Text
-                      style={[
-                        styles.themeOptionText,
-                        {
-                          color:
-                            selectedMode === "system"
-                              ? theme.onSecondaryContainer
-                              : theme.onSurfaceVariant,
-                          fontWeight: selectedMode === "system" ? "700" : "600",
-                        },
-                      ]}
-                    >
-                      System
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.themeOption,
-                      selectedMode === "light" && {
-                        backgroundColor: theme.secondaryContainer,
-                        borderColor: theme.secondary,
-                        borderWidth: 1.5,
-                      },
-                    ]}
-                    onPress={() => setMode("light")}
-                    activeOpacity={0.85}
-                  >
-                    <Text
-                      style={[
-                        styles.themeOptionText,
-                        {
-                          color:
-                            selectedMode === "light"
-                              ? theme.onSecondaryContainer
-                              : theme.onSurfaceVariant,
-                          fontWeight: selectedMode === "light" ? "700" : "600",
-                        },
-                      ]}
-                    >
-                      Lys
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Memberships */}
-              {user.memberships && user.memberships.length > 0 && (
-                <View
-                  style={[
-                    styles.section,
-                    {
-                      backgroundColor: theme.surfaceContainer,
-                      elevation: 8,
-                      shadowColor: theme.shadow,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.sectionTitle, { color: theme.onBackground }]}
-                  >
-                    Medlemskap ({user.memberships.length})
-                  </Text>
-
-                  {user.memberships.map((membership, index) => (
-                    <View
-                      key={membership.id}
-                      style={[
-                        styles.membershipCard,
-                        {
-                          backgroundColor: theme.surfaceContainerHigh,
-                          elevation: 5,
-                          shadowColor: theme.shadow,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.membershipType,
-                          { color: theme.secondary },
-                        ]}
-                      >
-                        {formatMembershipType(membership.type)}
-                      </Text>
-
-                      <Text
-                        style={[
-                          styles.membershipSpec,
-                          { color: theme.onSurfaceVariant },
-                        ]}
-                      >
-                        {formatSpecialization(membership.specialization)}
-                      </Text>
-
-                      <Text
-                        style={[
-                          styles.membershipDates,
-                          { color: theme.onSurfaceVariant },
-                        ]}
-                      >
-                        {new Date(membership.start).toLocaleDateString()} -{" "}
-                        {new Date(membership.end).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Flags */}
-              {/* {user.flags && user.flags.length > 0 && (
-              <View
-                style={[
-                  styles.section,
-                  { backgroundColor: isDark ? "#111" : "#f8f9fa" },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    { color: isDark ? "#fff" : "#000" },
-                  ]}
-                >
-                  Flagg
-                </Text>
-                <View style={styles.flagsContainer}>
-                  {user.flags.map((flag, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.flag,
-                        { backgroundColor: isDark ? "#333" : "#e3f2fd" },
-                      ]}
-                    >
-                      <Text style={[styles.flagText, { color: "#fab759" }]}>
-                        {flag}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )} */}
-
-              {/* Account Information */}
-              <View
-                style={[
-                  styles.section,
-                  {
-                    backgroundColor: theme.surfaceContainer,
-                    elevation: 8,
-                    shadowColor: theme.shadow,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.sectionTitle, { color: theme.onBackground }]}
-                >
-                  Kontoinformasjon
-                </Text>
-
-                <View style={styles.infoRow}>
-                  <Text
-                    style={[
-                      styles.infoLabel,
-                      { color: theme.onSurfaceVariant },
-                    ]}
-                  >
-                    Studieår
-                  </Text>
-                  <Text
-                    style={[styles.infoValue, { color: theme.onBackground }]}
-                  >
-                    {findActiveMembership(user)
-                      ? getGrade(findActiveMembership(user)!)
-                      : "Not available"}
-                    . klasse
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text
-                    style={[
-                      styles.infoLabel,
-                      { color: theme.onSurfaceVariant },
-                    ]}
-                  >
-                    Medlem siden:
-                  </Text>
-                  <Text
-                    style={[styles.infoValue, { color: theme.onBackground }]}
-                  >
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Text
-                    style={[
-                      styles.infoLabel,
-                      { color: theme.onSurfaceVariant },
-                    ]}
-                  >
-                    Sist oppdatert:
-                  </Text>
-                  <Text
-                    style={[styles.infoValue, { color: theme.onBackground }]}
-                  >
-                    {new Date(user.updatedAt).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Notification Settings Component */}
-              {/* <NotificationSettings
-              preferences={notificationPreferences}
-              onPreferencesChange={setNotificationPreferences}
-            /> */}
-            </>
-          ) : (
-            <View style={styles.loadingContainer}>
-              <Text
-                style={[styles.loadingText, { color: theme.onSurfaceVariant }]}
-              >
-                Laster profil...
-              </Text>
-            </View>
-          )}
-
-          {/* Logout Button */}
-          <TouchableOpacity
+        {error && (
+          <View
+            accessibilityRole="alert"
             style={[
-              styles.logoutButton,
-              {
-                backgroundColor: theme.deregisterButton,
-                opacity: isLoading ? 0.6 : 1,
-                elevation: 8,
-                shadowColor: theme.shadow,
-              },
+              styles.errorBanner,
+              { backgroundColor: theme.errorContainer, borderColor: theme.error },
             ]}
-            onPress={handleLogout}
-            disabled={isLoading}
           >
-            <Text
-              style={[
-                styles.logoutButtonText,
-                { color: theme.onDeregisterButton },
-              ]}
+            <MaterialCommunityIcons name="alert-circle-outline" size={22} color={theme.onErrorContainer} />
+            <Text style={[styles.errorText, { color: theme.onErrorContainer }]}>{error}</Text>
+            <TouchableOpacity onPress={loadUserProfile}>
+              <Text style={[styles.retryText, { color: theme.onErrorContainer }]}>Prøv igjen</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {isProfileLoading || !user ? (
+          <ProfileLoadingCard />
+        ) : (
+          <>
+            <ProfileHero user={user} activeMembership={activeMembership} />
+
+            <View style={styles.quickFacts}>
+              <QuickFact
+                icon="account-group-outline"
+                value={
+                  isOverviewLoading
+                    ? "…"
+                    : overview.groupCount === null
+                      ? "–"
+                      : String(overview.groupCount)
+                }
+                label="Grupper"
+              />
+              <QuickFact
+                icon="calendar-check-outline"
+                value={
+                  isOverviewLoading
+                    ? "…"
+                    : overview.nextEvent
+                      ? formatNextEventDate(overview.nextEvent.event.start)
+                      : "Ingen"
+                }
+                label={overview.nextEvent?.event.title ?? "Neste arrangement"}
+              />
+              <QuickFact icon="clock-outline" value={formatAccountAge(user.createdAt)} label="I Online" />
+            </View>
+
+            <View>
+              <SectionLabel>Medlemskap</SectionLabel>
+              <MembershipCard
+                membership={activeMembership}
+                previousMemberships={previousMemberships}
+                showHistory={showMembershipHistory}
+                onToggleHistory={() => setShowMembershipHistory((current) => !current)}
+              />
+            </View>
+
+            <View>
+              <SectionLabel>Din informasjon</SectionLabel>
+              <ProfileSurface>
+                <ProfileInfoRow icon="email-outline" label="E-post" value={user.email || "Ikke oppgitt"} />
+                <ProfileInfoRow icon="phone-outline" label="Telefon" value={user.phone || "Ikke oppgitt"} />
+                <ProfileInfoRow
+                  icon="school-outline"
+                  label="NTNU-bruker"
+                  value={user.ntnuUsername || "Ikke oppgitt"}
+                />
+                <ProfileInfoRow icon="account-outline" label="Kjønn" value={getGenderName(user.gender)} />
+                <ProfileInfoRow
+                  icon="food-apple-outline"
+                  label="Kosthold"
+                  value={user.dietaryRestrictions || "Ingen kostholdsrestriksjoner"}
+                  isLast
+                />
+              </ProfileSurface>
+            </View>
+
+            <View>
+              <SectionLabel>Utseende</SectionLabel>
+              <ThemeSelector selectedMode={selectedMode} onChange={setMode} />
+            </View>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.72}
+              disabled={isLoading}
+              onPress={handleLogout}
+              style={[styles.logoutButton, { opacity: isLoading ? 0.55 : 1 }]}
             >
-              {isLoading ? "Logger Ut..." : "Logg Ut"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {/* <View style={{ height: 104 }} /> */}
+              {isLoading ? (
+                <ActivityIndicator color={theme.error} />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="logout" size={20} color={theme.error} />
+                  <Text style={[styles.logoutText, { color: theme.error }]}>Logg ut</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </TabScreenContainer>
   );
 }
 
+function ProfileHero({ user, activeMembership }: { user: User; activeMembership: Membership | null }) {
+  const theme = useTheme();
+  const grade = activeMembership ? getGrade(activeMembership) : null;
+  const membershipSummary = activeMembership
+    ? [grade ? `${grade}. klasse` : null, getMembershipTypeName(activeMembership.type)]
+        .filter(Boolean)
+        .join(" · ")
+    : "Ingen aktivt medlemskap";
+
+  return (
+    <ProfileSurface style={styles.hero}>
+      <View style={styles.heroMain}>
+        {user.imageUrl ? (
+          <Image
+            accessibilityLabel={`Profilbilde av ${user.name ?? user.username}`}
+            source={{ uri: user.imageUrl }}
+            style={[
+              styles.avatar,
+              { borderColor: theme.surfaceBright, backgroundColor: theme.surfaceContainerHigh },
+            ]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.avatar,
+              styles.avatarPlaceholder,
+              { borderColor: theme.surfaceBright, backgroundColor: theme.primaryContainer },
+            ]}
+          >
+            <Text style={[styles.avatarInitials, { color: theme.onPrimaryContainer }]}>
+              {getInitials(user.name ?? user.username)}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.identity}>
+          <Text numberOfLines={2} style={[styles.name, { color: theme.onSurface }]}>
+            {user.name || "Ukjent bruker"}
+          </Text>
+          <Text numberOfLines={1} style={[styles.username, { color: theme.onSurfaceVariant }]}>
+            @{user.username}
+          </Text>
+          <View style={[styles.membershipPill, { backgroundColor: theme.secondaryContainer }]}>
+            <MaterialCommunityIcons
+              name={activeMembership ? "badge-account-outline" : "account-alert-outline"}
+              size={15}
+              color={theme.onSecondaryContainer}
+            />
+            <Text
+              numberOfLines={1}
+              style={[styles.membershipPillText, { color: theme.onSecondaryContainer }]}
+            >
+              {membershipSummary}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {user.biography ? (
+        <Text
+          style={[
+            styles.biography,
+            { color: theme.onSurfaceVariant, borderTopColor: theme.outlineVariant },
+          ]}
+        >
+          {user.biography}
+        </Text>
+      ) : null}
+    </ProfileSurface>
+  );
+}
+
+function MembershipCard({
+  membership,
+  previousMemberships,
+  showHistory,
+  onToggleHistory,
+}: {
+  membership: Membership | null;
+  previousMemberships: Membership[];
+  showHistory: boolean;
+  onToggleHistory: () => void;
+}) {
+  const theme = useTheme();
+
+  if (!membership) {
+    return (
+      <ProfileSurface style={styles.emptyMembershipCard}>
+        <View style={[styles.membershipIcon, { backgroundColor: theme.errorContainer }]}>
+          <MaterialCommunityIcons
+            name="card-account-details-outline"
+            size={25}
+            color={theme.onErrorContainer}
+          />
+        </View>
+        <View style={styles.membershipCopy}>
+          <Text style={[styles.membershipTitle, { color: theme.onSurface }]}>Ingen aktivt medlemskap</Text>
+          <Text style={[styles.membershipSubtitle, { color: theme.onSurfaceVariant }]}>
+            Medlemskapet ditt vises her når det er aktivt.
+          </Text>
+        </View>
+      </ProfileSurface>
+    );
+  }
+
+  const grade = getGrade(membership);
+  const specialization = getSpecializationName(membership.specialization);
+
+  return (
+    <ProfileSurface style={styles.membershipCard}>
+      <View style={styles.membershipTopRow}>
+        <View style={[styles.membershipIcon, { backgroundColor: theme.secondaryContainer }]}>
+          <MaterialCommunityIcons
+            name="badge-account-outline"
+            size={25}
+            color={theme.onSecondaryContainer}
+          />
+        </View>
+        <View style={styles.membershipCopy}>
+          <Text style={[styles.membershipTitle, { color: theme.onSurface }]}>Aktivt medlem</Text>
+          <Text style={[styles.membershipSubtitle, { color: theme.onSurfaceVariant }]}>
+            {[getMembershipTypeName(membership.type), specialization].filter(Boolean).join(" · ")}
+          </Text>
+        </View>
+        {grade !== null && (
+          <Text style={[styles.grade, { color: theme.secondary }]}>{grade}. klasse</Text>
+        )}
+      </View>
+
+      <View
+        style={[
+          styles.membershipValidity,
+          { backgroundColor: theme.surfaceContainerLowest, borderColor: theme.outlineVariant },
+        ]}
+      >
+        <MaterialCommunityIcons name="calendar-check-outline" size={17} color={theme.onSurfaceVariant} />
+        <Text style={[styles.membershipValidityText, { color: theme.onSurfaceVariant }]}>
+          {membership.end ? `Gyldig til ${formatDate(membership.end)}` : "Livstidsmedlemskap"}
+        </Text>
+      </View>
+
+      {previousMemberships.length > 0 && (
+        <>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showHistory }}
+            activeOpacity={0.72}
+            onPress={onToggleHistory}
+            style={styles.historyToggle}
+          >
+            <Text style={[styles.historyToggleText, { color: theme.primary }]}>
+              {showHistory
+                ? "Skjul tidligere medlemskap"
+                : `Vis historikk (${previousMemberships.length})`}
+            </Text>
+            <MaterialCommunityIcons
+              name={showHistory ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={theme.primary}
+            />
+          </TouchableOpacity>
+
+          {showHistory && (
+            <View style={[styles.historyList, { borderTopColor: theme.outlineVariant }]}>
+              {previousMemberships.map((item) => (
+                <View key={item.id} style={styles.historyRow}>
+                  <View style={styles.historyCopy}>
+                    <Text style={[styles.historyTitle, { color: theme.onSurface }]}>
+                      {getMembershipTypeName(item.type)}
+                    </Text>
+                    <Text style={[styles.historyDates, { color: theme.onSurfaceVariant }]}>
+                      {formatMembershipRange(item)}
+                    </Text>
+                  </View>
+                  {getGrade(item) !== null && (
+                    <Text style={[styles.historyGrade, { color: theme.onSurfaceVariant }]}>
+                      {getGrade(item)}. klasse
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+        </>
+      )}
+    </ProfileSurface>
+  );
+}
+
+function ProfileLoadingState() {
+  const theme = useTheme();
+  return (
+    <TabScreenContainer>
+      <View style={styles.centeredState}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={[styles.loadingText, { color: theme.onSurfaceVariant }]}>Laster profil…</Text>
+      </View>
+    </TabScreenContainer>
+  );
+}
+
+function ProfileLoadingCard() {
+  const theme = useTheme();
+  return (
+    <ProfileSurface style={styles.loadingCard}>
+      <ActivityIndicator size="large" color={theme.primary} />
+      <Text style={[styles.loadingText, { color: theme.onSurfaceVariant }]}>Laster profilen din…</Text>
+    </ProfileSurface>
+  );
+}
+
+function getInitials(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
+function formatNextEventDate(date: Date): string {
+  const value = new Date(date);
+  const weekday = value.toLocaleDateString("nb-NO", { weekday: "short" });
+  const time = value.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  return `${weekday} ${time}`;
+}
+
+function formatAccountAge(createdAt: Date): string {
+  const created = new Date(createdAt);
+  const now = new Date();
+  let months =
+    (now.getFullYear() - created.getFullYear()) * 12 +
+    now.getMonth() -
+    created.getMonth();
+  if (now.getDate() < created.getDate()) months -= 1;
+
+  if (months >= 12) return `${Math.floor(months / 12)} år`;
+  if (months >= 1) return `${months} mnd.`;
+  return "Ny";
+}
+
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString("nb-NO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatMembershipRange(membership: Membership): string {
+  const start = new Date(membership.start).toLocaleDateString("nb-NO", {
+    month: "short",
+    year: "numeric",
+  });
+  const end = membership.end
+    ? new Date(membership.end).toLocaleDateString("nb-NO", {
+        month: "short",
+        year: "numeric",
+      })
+    : "nå";
+  return `${start}–${end}`;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   content: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 28,
+    gap: 16,
+  },
+  loggedOutContent: {
+    flexGrow: 1,
+    justifyContent: "center",
     padding: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 40,
-  },
-  profileHeader: {
+  loginCard: { padding: 24, alignItems: "center" },
+  loginIcon: {
+    width: 72,
+    height: 72,
+    marginBottom: 18,
+    borderRadius: 24,
     alignItems: "center",
-    padding: 24,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 16,
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
   },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: "600",
+  loginTitle: { fontSize: 24, fontWeight: "700", textAlign: "center" },
+  loginDescription: {
+    maxWidth: 300,
+    marginTop: 8,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
   },
-  name: {
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  profileSlug: {
-    fontSize: 14,
-    fontStyle: "italic",
-  },
-  section: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  sectionContent: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  infoRow: {
+  inlineError: { marginTop: 12, fontSize: 13, textAlign: "center" },
+  primaryButton: {
+    minWidth: 180,
+    minHeight: 50,
+    marginTop: 22,
+    paddingHorizontal: 22,
+    borderRadius: 13,
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 9,
   },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    flex: 1,
-  },
-  infoValue: {
-    fontSize: 14,
-    flex: 1,
-    textAlign: "right",
-  },
-  membershipCard: {
-    padding: 12,
-    borderRadius: 8,
-  },
-  membershipType: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  membershipSpec: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  membershipDates: {
-    fontSize: 12,
-  },
-  flagsContainer: {
+  primaryButtonText: { fontSize: 15, fontWeight: "700" },
+  errorBanner: {
+    minHeight: 52,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderRadius: 13,
     flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  flag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  flagText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  loginButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 8,
     alignItems: "center",
+    gap: 10,
   },
-  loginButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  logoutButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 8,
+  errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  retryText: { fontSize: 13, fontWeight: "700" },
+  hero: { padding: 18 },
+  heroMain: { flexDirection: "row", alignItems: "center", gap: 14 },
+  avatar: { width: 82, height: 82, borderWidth: 1, borderRadius: 41 },
+  avatarPlaceholder: { alignItems: "center", justifyContent: "center" },
+  avatarInitials: { fontSize: 27, fontWeight: "700" },
+  identity: { minWidth: 0, flex: 1 },
+  name: { fontSize: 22, lineHeight: 27, fontWeight: "700" },
+  username: { marginTop: 2, fontSize: 13 },
+  membershipPill: {
+    maxWidth: "100%",
+    minHeight: 28,
+    marginTop: 9,
+    paddingHorizontal: 9,
+    borderRadius: 9,
+    alignSelf: "flex-start",
+    flexDirection: "row",
     alignItems: "center",
+    gap: 5,
+  },
+  membershipPillText: { flexShrink: 1, fontSize: 11, fontWeight: "700" },
+  biography: {
     marginTop: 16,
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  errorContainer: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  errorText: {
-    flex: 1,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
     fontSize: 14,
+    lineHeight: 21,
   },
-  retryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  loadingContainer: {
-    padding: 40,
+  quickFacts: { flexDirection: "row", gap: 9 },
+  membershipCard: { padding: 15 },
+  membershipTopRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  membershipIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
   },
-  loadingText: {
-    fontSize: 16,
-  },
-  settingRow: {
-    marginBottom: 12,
-  },
-
-  settingTextContainer: {
-    flex: 1,
-  },
-
-  settingDescription: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  themeToggle: {
-    flexDirection: "row",
+  membershipCopy: { minWidth: 0, flex: 1 },
+  membershipTitle: { fontSize: 16, fontWeight: "700" },
+  membershipSubtitle: { marginTop: 3, fontSize: 12, lineHeight: 17 },
+  grade: { maxWidth: 72, fontSize: 13, lineHeight: 17, fontWeight: "700", textAlign: "right" },
+  membershipValidity: {
+    minHeight: 36,
+    marginTop: 13,
+    paddingHorizontal: 10,
     borderWidth: 1,
     borderRadius: 10,
-    padding: 4,
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
-
-  themeOption: {
-    flex: 1,
-    paddingVertical: 10,
+  membershipValidityText: { flex: 1, fontSize: 12 },
+  emptyMembershipCard: {
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  historyToggle: {
+    minHeight: 42,
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  historyToggleText: { fontSize: 13, fontWeight: "700" },
+  historyList: { paddingTop: 5, borderTopWidth: StyleSheet.hairlineWidth },
+  historyRow: { minHeight: 52, flexDirection: "row", alignItems: "center", gap: 10 },
+  historyCopy: { flex: 1 },
+  historyTitle: { fontSize: 13, fontWeight: "600" },
+  historyDates: { marginTop: 2, fontSize: 11 },
+  historyGrade: { fontSize: 12 },
+  logoutButton: {
+    minHeight: 50,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: "transparent",
+    gap: 8,
   },
-
-  themeOptionText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  logoutText: { fontSize: 14, fontWeight: "700" },
+  centeredState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  loadingCard: { minHeight: 180, alignItems: "center", justifyContent: "center", gap: 12 },
+  loadingText: { fontSize: 14 },
 });

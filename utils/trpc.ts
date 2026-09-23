@@ -4,6 +4,7 @@ import Authenticator from "./authenticator";
 import { jwtDecode } from "jwt-decode";
 import { User } from "types/user";
 import { UserClaims } from "types/user-claims";
+import { UserGroup } from "types/group";
 import {
   RegistrationAvailabilityResult,
   EventAttendanceBundle,
@@ -174,6 +175,11 @@ export async function getUser(): Promise<User | null> {
 
   const result = await client.query("user.get", decoded.sub);
   return result as User;
+}
+
+export async function getGroupsByMember(userId: string): Promise<UserGroup[]> {
+  const result = await client.query("group.allByMember", { userId });
+  return result as UserGroup[];
 }
 
 export async function getRegistrationAvailability(
