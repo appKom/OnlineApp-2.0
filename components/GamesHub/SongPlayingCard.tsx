@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import type { Song } from "../../utils/songs";
 
@@ -27,23 +26,6 @@ function CardCorner({ song, flipped = false }: { song: Song; flipped?: boolean }
     <View style={[styles.corner, flipped && styles.cornerFlipped]}>
       <Text style={[styles.cornerRank, { color }]}>{song.rank}</Text>
       <Text style={[styles.cornerSuit, { color }]}>{song.suit}</Text>
-    </View>
-  );
-}
-
-export function OnlineCardMark({ size = 38 }: { size?: number }) {
-  return (
-    <View
-      style={[
-        styles.onlineMark,
-        { width: size, height: size, borderRadius: size / 2 },
-      ]}
-    >
-      <MaterialCommunityIcons
-        name="lightning-bolt"
-        size={size * 0.58}
-        color={CASINO_COLORS.goldLight}
-      />
     </View>
   );
 }
@@ -83,7 +65,6 @@ export function SongPlayingCard({
         >
           {song.shortTitle}
         </Text>
-        <OnlineCardMark size={compact ? 28 : 42} />
       </View>
     </View>
   );
@@ -200,20 +181,10 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: "800",
     textAlign: "center",
-    marginBottom: 16,
     zIndex: 2,
   },
   songTitleCompact: {
     fontSize: 18,
     lineHeight: 21,
-    marginBottom: 11,
-  },
-  onlineMark: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: CASINO_COLORS.navy,
-    borderWidth: 1.2,
-    borderColor: CASINO_COLORS.gold,
-    zIndex: 2,
   },
 });

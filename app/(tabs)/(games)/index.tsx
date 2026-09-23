@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -8,26 +8,27 @@ import {
   StyleSheet,
   Text,
   View,
+  type ViewInstance,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
   Circle,
-  Defs,
   G,
-  Line,
-  LinearGradient,
   Path,
-  Rect,
-  Stop,
 } from "react-native-svg";
 import * as Haptics from "expo-haptics";
-import { SongCardModal } from "../../../components/GamesHub/SongCardModal";
+import { StatusBar } from "expo-status-bar";
+import {
+  SongCardModal,
+  type CardRect,
+} from "../../../components/GamesHub/SongCardModal";
 import {
   CASINO_COLORS,
   SongPlayingCard,
 } from "../../../components/GamesHub/SongPlayingCard";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
-import { songs, type Song } from "../../../utils/songs";
+import { CasinoFeltBackground } from "../../../components/GamesHub/CasinoFeltBackground";
+import { songs } from "../../../utils/songs";
 import { useThemeMode } from "../../../utils/theme";
 
 const TABLE_GREEN_LIGHT = "#07523A";
@@ -88,50 +89,6 @@ async function triggerHaptic() {
   } catch {}
 }
 
-function CasinoFeltBackground({ darkMode }: { darkMode: boolean }) {
-  const top = darkMode ? "#064732" : "#0A6245";
-  const bottom = darkMode ? "#02271D" : "#043A2A";
-
-  return (
-    <Svg
-      pointerEvents="none"
-      width="100%"
-      height="100%"
-      style={StyleSheet.absoluteFill}
-    >
-      <Defs>
-        <LinearGradient id="feltGradient" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor={top} />
-          <Stop offset="0.52" stopColor={darkMode ? "#053C2B" : "#075039"} />
-          <Stop offset="1" stopColor={bottom} />
-        </LinearGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill="url(#feltGradient)" />
-      <G opacity={darkMode ? 0.045 : 0.06}>
-        {Array.from({ length: 24 }, (_, index) => (
-          <Line
-            key={`felt-line-${index}`}
-            x1={index * 26 - 150}
-            y1="0"
-            x2={index * 26 + 150}
-            y2="100%"
-            stroke="#F5E9C7"
-            strokeWidth="1"
-          />
-        ))}
-      </G>
-      <Rect
-        x="0"
-        y="0"
-        width="100%"
-        height="100%"
-        fill="none"
-        stroke="rgba(0,0,0,0.16)"
-        strokeWidth="18"
-      />
-    </Svg>
-  );
-}
 
 function PokerChip() {
   return (
@@ -277,27 +234,49 @@ export default function GamesAndSongsScreen() {
   const backgroundColor = darkMode ? TABLE_GREEN_DARK : TABLE_GREEN_LIGHT;
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const songCardRefs = useRef<Array<ViewInstance | null>>([]);
+  const [selectedCard, setSelectedCard] = useState<{
+    index: number;
+    origin: CardRect;
+  } | null>(null);
 
-  const openGame = async (game: Game) => {
-    await triggerHaptic();
+  const openGame = (game: Game) => {
+    void triggerHaptic();
     router.push(game.route as never);
   };
 
-  const openSong = async (song: Song) => {
-    await triggerHaptic();
-    setSelectedSong(song);
+  const openSong = (index: number) => {
+    const card = songCardRefs.current[index];
+    const measureCard = (attempt: number) => {
+      card?.measureInWindow((x, y, width, height) => {
+        if (width > 8 && height > 8 && Number.isFinite(x) && Number.isFinite(y)) {
+          setSelectedCard({ index, origin: { x, y, width, height } });
+        } else if (attempt < 2) {
+          requestAnimationFrame(() => measureCard(attempt + 1));
+        }
+      });
+    };
+    measureCard(0);
+    void triggerHaptic();
   };
 
   return (
-    <TabScreenContainer>
-      <View
-        style={[styles.container, { backgroundColor, paddingTop: insets.top }]}
-      >
+    <TabScreenContainer backgroundColor={backgroundColor}>
+      <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor }]}>
         <CasinoFeltBackground darkMode={darkMode} />
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + 16,
+              paddingBottom: Math.max(insets.bottom, 20) + 120,
+            },
+          ]}
+          contentInsetAdjustmentBehavior="never"
+          scrollIndicatorInsets={{ top: insets.top, bottom: insets.bottom }}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
@@ -364,9 +343,12 @@ export default function GamesAndSongsScreen() {
             {songs.map((song, index) => (
               <Pressable
                 key={song.id}
+                ref={(node) => {
+                  songCardRefs.current[index] = node;
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`Åpne sangkortet ${song.title}`}
-                onPress={() => openSong(song)}
+                onPress={() => openSong(index)}
                 style={({ pressed }) => [
                   styles.songCardButton,
                   index % 2 === 0 ? styles.songCardLeft : styles.songCardRight,
@@ -381,8 +363,10 @@ export default function GamesAndSongsScreen() {
       </View>
 
       <SongCardModal
-        song={selectedSong}
-        onClose={() => setSelectedSong(null)}
+        songs={songs}
+        songIndex={selectedCard?.index ?? null}
+        origin={selectedCard?.origin ?? null}
+        onClose={() => setSelectedCard(null)}
       />
     </TabScreenContainer>
   );
@@ -392,10 +376,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 140,
   },
   hero: {
     alignItems: "center",

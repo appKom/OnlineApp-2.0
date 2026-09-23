@@ -1,7 +1,15 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Text,
+  Platform,
+  useWindowDimensions,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
-import { useTheme, useThemeMode } from "../../../utils/theme";
+import { CasinoFeltBackground } from "../../../components/GamesHub/CasinoFeltBackground";
+import { useThemeMode } from "../../../utils/theme";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,14 +22,70 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
+import Svg, {
+  Line,
+  Path,
+} from "react-native-svg";
 
-const logoLight = require("../../../assets/Online_Logokit/svg/Online_bla_o.svg");
 const logoDark = require("../../../assets/Online_Logokit/svg/Online_hvit_o.svg");
+const GOLD = "#D9BF6A";
+const CREAM = "#F1E7D0";
 
 // Number of chevrons and max drag for charging
 const CHEVRON_COUNT = 3;
 const MAX_DRAG = 400;
+
+
+function PokerChip({
+  size,
+  children,
+}: {
+  size: number;
+  children: React.ReactNode;
+}) {
+  const center = size / 2;
+  return (
+    <View
+      style={[
+        styles.chip,
+        { width: size, height: size, borderRadius: center },
+      ]}
+    >
+      <Svg
+        pointerEvents="none"
+        width={size}
+        height={size}
+        style={styles.chipMarks}
+      >
+        {Array.from({ length: 24 }, (_, index) => (
+          <Line
+            key={index}
+            x1={center}
+            y1={12}
+            x2={center}
+            y2={30}
+            transform={`rotate(${index * 15} ${center} ${center})`}
+            stroke="#FBF7EE"
+            strokeWidth="6"
+            strokeLinecap="round"
+          />
+        ))}
+      </Svg>
+      <View
+        style={[
+          styles.chipInner,
+          {
+            width: size - 72,
+            height: size - 72,
+            borderRadius: (size - 72) / 2,
+          },
+        ]}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
 
 function Chevron({ fill }: { fill: string }) {
   return (
@@ -116,9 +180,11 @@ const InstructionText: React.FC<{ isSpinning: SharedValue<boolean>; textColor: s
 };
 
 const SpinLine: React.FC = () => {
-  const theme = useTheme();
   const { mode } = useThemeMode();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const chipSize = Math.min(width - 56, 330);
+  const backgroundColor = mode === "dark" ? "#043728" : "#07523A";
 
   // Animation values
   const rotation = useSharedValue(0);
@@ -229,26 +295,40 @@ const SpinLine: React.FC = () => {
   });
 
   return (
-    <TabScreenContainer>
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
-        <View style={styles.centerContainer}>
+    <TabScreenContainer backgroundColor={backgroundColor}>
+      <StatusBar style="light" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <CasinoFeltBackground darkMode={mode === "dark"} />
+        <View
+          style={[
+            styles.centerContainer,
+            {
+              paddingTop:
+                Math.max(insets.top, Platform.OS === "ios" ? 54 : 24) + 18,
+            },
+          ]}
+        >
+          <Text style={styles.title}>SPINLINE</Text>
+          <Text style={styles.subtitle}>Flasketuten peker på</Text>
           <GestureDetector gesture={panGesture}>
             <View style={styles.spinButton}>
-              <Animated.View style={animatedStyle}>
-                <Image
-                  source={mode === "light" ? logoLight : logoDark}
-                  style={{ width: 300, height: 300 }}
-                  contentFit="contain"
-                />
-              </Animated.View>
+              <PokerChip size={chipSize}>
+                <Animated.View style={animatedStyle}>
+                  <Image
+                    source={logoDark}
+                    style={{ width: chipSize * 0.54, height: chipSize * 0.54 }}
+                    contentFit="contain"
+                  />
+                </Animated.View>
+              </PokerChip>
             </View>
           </GestureDetector>
-          <InstructionText isSpinning={isAnimating} textColor={theme.onBackground} />
+          <InstructionText isSpinning={isAnimating} textColor={CREAM} />
           <ChevronIndicator
             dragValue={dragY}
             maxDrag={MAX_DRAG}
             isSpinning={isAnimating}
-            chevronColor={theme.onBackground}
+            chevronColor={CREAM}
           />
         </View>
       </View>
@@ -265,11 +345,48 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 110,
+  },
+  title: {
+    color: "#F3DE9B",
+    fontSize: 29,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  subtitle: {
+    color: CREAM,
+    fontSize: 14,
+    marginTop: 5,
+    marginBottom: 26,
+  },
+  chip: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: GOLD,
+    backgroundColor: "#11191B",
+    shadowColor: "#001810",
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
+  },
+  chipMarks: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+  },
+  chipInner: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#637471",
+    backgroundColor: "#111E25",
   },
   spinButton: {
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
   },
 });
 

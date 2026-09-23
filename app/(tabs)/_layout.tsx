@@ -1,9 +1,11 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { useTheme } from "../../utils/theme";
+import { useTheme, useThemeMode } from "../../utils/theme";
 import { Platform, DynamicColorIOS } from "react-native";
 
 export default function TabLayout() {
   const theme = useTheme();
+  const { mode } = useThemeMode();
+  const gamesBackground = mode === "dark" ? "#043728" : "#07523A";
 
   return (
     <NativeTabs
@@ -39,7 +41,8 @@ export default function TabLayout() {
 
       <NativeTabs.Trigger
         name="(games)"
-        contentStyle={{ backgroundColor: theme.background }}
+        disableAutomaticContentInsets
+        contentStyle={{ backgroundColor: gamesBackground }}
       >
         <NativeTabs.Trigger.Label>Spill</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="dice.fill" drawable="ic_dice" />
