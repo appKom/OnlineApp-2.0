@@ -12,11 +12,13 @@ import {
   View,
 } from "react-native";
 import {
+  ProfileDivider,
   ProfileInfoRow,
   ProfileSurface,
   QuickFact,
   SectionLabel,
   ThemeSelector,
+  useProfileChromeColors,
 } from "../../../components/Profile/ProfileSurface";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { EventAttendanceBundle } from "../../../types/event";
@@ -48,6 +50,7 @@ const emptyOverview: ProfileOverview = {
 
 export default function ProfileScreen() {
   const theme = useTheme();
+  const chrome = useProfileChromeColors();
   const { selectedMode, setMode } = useThemeMode();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -280,33 +283,51 @@ export default function ProfileScreen() {
           <ProfileLoadingCard />
         ) : (
           <>
-            <ProfileHero user={user} activeMembership={activeMembership} />
-
-            <View style={styles.quickFacts}>
-              <QuickFact
-                icon="account-group-outline"
-                value={
-                  isOverviewLoading
-                    ? "…"
-                    : overview.groupCount === null
-                      ? "–"
-                      : String(overview.groupCount)
-                }
-                label="Grupper"
-              />
-              <QuickFact
-                icon="calendar-check-outline"
-                value={
-                  isOverviewLoading
-                    ? "…"
-                    : overview.nextEvent
-                      ? formatNextEventDate(overview.nextEvent.event.start)
-                      : "Ingen"
-                }
-                label={overview.nextEvent?.event.title ?? "Neste arrangement"}
-              />
-              <QuickFact icon="clock-outline" value={formatAccountAge(user.createdAt)} label="I Online" />
-            </View>
+            <ProfileSurface>
+              <ProfileHero user={user} activeMembership={activeMembership} />
+              <ProfileDivider />
+              <View style={styles.quickFacts}>
+                <QuickFact
+                  icon="account-group-outline"
+                  value={
+                    isOverviewLoading
+                      ? "…"
+                      : overview.groupCount === null
+                        ? "–"
+                        : String(overview.groupCount)
+                  }
+                  label="Grupper"
+                />
+                <View
+                  style={[
+                    styles.quickFactSeparator,
+                    { backgroundColor: chrome.edge },
+                  ]}
+                />
+                <QuickFact
+                  icon="calendar-check-outline"
+                  value={
+                    isOverviewLoading
+                      ? "…"
+                      : overview.nextEvent
+                        ? formatNextEventDate(overview.nextEvent.event.start)
+                        : "Ingen"
+                  }
+                  label={overview.nextEvent?.event.title ?? "Neste arrangement"}
+                />
+                <View
+                  style={[
+                    styles.quickFactSeparator,
+                    { backgroundColor: chrome.edge },
+                  ]}
+                />
+                <QuickFact
+                  icon="clock-outline"
+                  value={formatAccountAge(user.createdAt)}
+                  label="I Online"
+                />
+              </View>
+            </ProfileSurface>
 
             <View>
               <SectionLabel>Medlemskap</SectionLabel>
@@ -368,6 +389,7 @@ export default function ProfileScreen() {
 
 function ProfileHero({ user, activeMembership }: { user: User; activeMembership: Membership | null }) {
   const theme = useTheme();
+  const chrome = useProfileChromeColors();
   const grade = activeMembership ? getGrade(activeMembership) : null;
   const membershipSummary = activeMembership
     ? [grade ? `${grade}. klasse` : null, getMembershipTypeName(activeMembership.type)]
@@ -376,7 +398,7 @@ function ProfileHero({ user, activeMembership }: { user: User; activeMembership:
     : "Ingen aktivt medlemskap";
 
   return (
-    <ProfileSurface style={styles.hero}>
+    <View style={styles.hero}>
       <View style={styles.heroMain}>
         {user.imageUrl ? (
           <Image
@@ -384,7 +406,11 @@ function ProfileHero({ user, activeMembership }: { user: User; activeMembership:
             source={{ uri: user.imageUrl }}
             style={[
               styles.avatar,
-              { borderColor: theme.surfaceBright, backgroundColor: theme.surfaceContainerHigh },
+              {
+                borderColor: chrome.edge,
+                borderTopColor: chrome.highlight,
+                backgroundColor: chrome.raised,
+              },
             ]}
           />
         ) : (
@@ -392,10 +418,14 @@ function ProfileHero({ user, activeMembership }: { user: User; activeMembership:
             style={[
               styles.avatar,
               styles.avatarPlaceholder,
-              { borderColor: theme.surfaceBright, backgroundColor: theme.primaryContainer },
+              {
+                borderColor: chrome.edge,
+                borderTopColor: chrome.highlight,
+                backgroundColor: chrome.raised,
+              },
             ]}
           >
-            <Text style={[styles.avatarInitials, { color: theme.onPrimaryContainer }]}>
+            <Text style={[styles.avatarInitials, { color: chrome.icon }]}>
               {getInitials(user.name ?? user.username)}
             </Text>
           </View>
@@ -408,15 +438,24 @@ function ProfileHero({ user, activeMembership }: { user: User; activeMembership:
           <Text numberOfLines={1} style={[styles.username, { color: theme.onSurfaceVariant }]}>
             @{user.username}
           </Text>
-          <View style={[styles.membershipPill, { backgroundColor: theme.secondaryContainer }]}>
+          <View
+            style={[
+              styles.membershipPill,
+              {
+                backgroundColor: chrome.raised,
+                borderColor: chrome.edge,
+                borderTopColor: chrome.highlight,
+              },
+            ]}
+          >
             <MaterialCommunityIcons
               name={activeMembership ? "badge-account-outline" : "account-alert-outline"}
               size={15}
-              color={theme.onSecondaryContainer}
+              color={chrome.icon}
             />
             <Text
               numberOfLines={1}
-              style={[styles.membershipPillText, { color: theme.onSecondaryContainer }]}
+              style={[styles.membershipPillText, { color: theme.onSurface }]}
             >
               {membershipSummary}
             </Text>
@@ -428,13 +467,13 @@ function ProfileHero({ user, activeMembership }: { user: User; activeMembership:
         <Text
           style={[
             styles.biography,
-            { color: theme.onSurfaceVariant, borderTopColor: theme.outlineVariant },
+            { color: theme.onSurfaceVariant, borderTopColor: chrome.edge },
           ]}
         >
           {user.biography}
         </Text>
       ) : null}
-    </ProfileSurface>
+    </View>
   );
 }
 
@@ -450,15 +489,25 @@ function MembershipCard({
   onToggleHistory: () => void;
 }) {
   const theme = useTheme();
+  const chrome = useProfileChromeColors();
 
   if (!membership) {
     return (
       <ProfileSurface style={styles.emptyMembershipCard}>
-        <View style={[styles.membershipIcon, { backgroundColor: theme.errorContainer }]}>
+        <View
+          style={[
+            styles.membershipIcon,
+            {
+              backgroundColor: chrome.raised,
+              borderColor: chrome.edge,
+              borderTopColor: chrome.highlight,
+            },
+          ]}
+        >
           <MaterialCommunityIcons
             name="card-account-details-outline"
             size={25}
-            color={theme.onErrorContainer}
+            color={chrome.icon}
           />
         </View>
         <View style={styles.membershipCopy}>
@@ -477,11 +526,20 @@ function MembershipCard({
   return (
     <ProfileSurface style={styles.membershipCard}>
       <View style={styles.membershipTopRow}>
-        <View style={[styles.membershipIcon, { backgroundColor: theme.secondaryContainer }]}>
+        <View
+          style={[
+            styles.membershipIcon,
+            {
+              backgroundColor: chrome.raised,
+              borderColor: chrome.edge,
+              borderTopColor: chrome.highlight,
+            },
+          ]}
+        >
           <MaterialCommunityIcons
             name="badge-account-outline"
             size={25}
-            color={theme.onSecondaryContainer}
+            color={chrome.icon}
           />
         </View>
         <View style={styles.membershipCopy}>
@@ -498,10 +556,14 @@ function MembershipCard({
       <View
         style={[
           styles.membershipValidity,
-          { backgroundColor: theme.surfaceContainerLowest, borderColor: theme.outlineVariant },
+          {
+            backgroundColor: chrome.recessed,
+            borderColor: chrome.edge,
+            borderBottomColor: chrome.highlight,
+          },
         ]}
       >
-        <MaterialCommunityIcons name="calendar-check-outline" size={17} color={theme.onSurfaceVariant} />
+        <MaterialCommunityIcons name="calendar-check-outline" size={17} color={chrome.icon} />
         <Text style={[styles.membershipValidityText, { color: theme.onSurfaceVariant }]}>
           {membership.end ? `Gyldig til ${formatDate(membership.end)}` : "Livstidsmedlemskap"}
         </Text>
@@ -516,7 +578,7 @@ function MembershipCard({
             onPress={onToggleHistory}
             style={styles.historyToggle}
           >
-            <Text style={[styles.historyToggleText, { color: theme.primary }]}>
+            <Text style={[styles.historyToggleText, { color: theme.onSurface }]}>
               {showHistory
                 ? "Skjul tidligere medlemskap"
                 : `Vis historikk (${previousMemberships.length})`}
@@ -524,12 +586,12 @@ function MembershipCard({
             <MaterialCommunityIcons
               name={showHistory ? "chevron-up" : "chevron-down"}
               size={20}
-              color={theme.primary}
+              color={chrome.icon}
             />
           </TouchableOpacity>
 
           {showHistory && (
-            <View style={[styles.historyList, { borderTopColor: theme.outlineVariant }]}>
+            <View style={[styles.historyList, { borderTopColor: chrome.edge }]}>
               {previousMemberships.map((item) => (
                 <View key={item.id} style={styles.historyRow}>
                   <View style={styles.historyCopy}>
@@ -697,6 +759,7 @@ const styles = StyleSheet.create({
     minHeight: 28,
     marginTop: 9,
     paddingHorizontal: 9,
+    borderWidth: 1,
     borderRadius: 9,
     alignSelf: "flex-start",
     flexDirection: "row",
@@ -711,13 +774,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
-  quickFacts: { flexDirection: "row", gap: 9 },
+  quickFacts: {
+    minHeight: 92,
+    paddingHorizontal: 5,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  quickFactSeparator: {
+    width: 1,
+    height: 54,
+  },
   membershipCard: { padding: 15 },
   membershipTopRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   membershipIcon: {
     width: 46,
     height: 46,
     borderRadius: 14,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },

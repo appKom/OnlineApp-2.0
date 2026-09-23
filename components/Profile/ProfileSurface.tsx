@@ -11,6 +11,21 @@ import { useTheme, useThemeMode } from "../../utils/theme";
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
+export function useProfileChromeColors() {
+  const theme = useTheme();
+  const { mode } = useThemeMode();
+
+  return {
+    surface: mode === "dark" ? "#202328" : theme.surfaceContainerLow,
+    raised: mode === "dark" ? "#2B323B" : theme.surfaceContainerHigh,
+    recessed: mode === "dark" ? "#12161A" : theme.surfaceContainerLowest,
+    edge: mode === "dark" ? "#14161B" : theme.surfaceDim,
+    highlight: mode === "dark" ? "#272A2F" : theme.surfaceContainerLowest,
+    icon: mode === "dark" ? "#F2F4F6" : theme.onSurface,
+    shadowOpacity: mode === "dark" ? 0.36 : 0.12,
+  };
+}
+
 export function ProfileSurface({
   children,
   style,
@@ -19,37 +34,36 @@ export function ProfileSurface({
   style?: StyleProp<ViewStyle>;
 }) {
   const theme = useTheme();
-  const { mode } = useThemeMode();
+  const chrome = useProfileChromeColors();
 
   return (
     <View
       style={[
         styles.surface,
         {
-          backgroundColor: theme.surfaceContainerLow,
-          borderColor: theme.outlineVariant,
-          borderTopColor: theme.surfaceBright,
-          borderBottomColor:
-            mode === "dark"
-              ? theme.surfaceContainerLowest
-              : theme.surfaceContainerHighest,
+          backgroundColor: chrome.surface,
+          borderColor: chrome.edge,
+          borderTopColor: chrome.highlight,
           shadowColor: theme.shadow,
-          shadowOpacity: mode === "dark" ? 0.42 : 0.14,
+          shadowOpacity: chrome.shadowOpacity,
         },
         style,
       ]}
     >
-      <View
-        pointerEvents="none"
-        style={[
-          styles.topHighlight,
-          {
-            backgroundColor: theme.surfaceBright,
-            opacity: mode === "dark" ? 0.14 : 0.9,
-          },
-        ]}
-      />
       {children}
+    </View>
+  );
+}
+
+export function ProfileDivider() {
+  const chrome = useProfileChromeColors();
+
+  return (
+    <View style={styles.divider}>
+      <View style={[styles.dividerLine, { backgroundColor: chrome.edge }]} />
+      <View
+        style={[styles.dividerLine, { backgroundColor: chrome.highlight }]}
+      />
     </View>
   );
 }
@@ -74,10 +88,11 @@ export function QuickFact({
   label: string;
 }) {
   const theme = useTheme();
+  const chrome = useProfileChromeColors();
 
   return (
-    <ProfileSurface style={styles.quickFact}>
-      <MaterialCommunityIcons name={icon} size={21} color={theme.primary} />
+    <View style={styles.quickFact}>
+      <MaterialCommunityIcons name={icon} size={21} color={chrome.icon} />
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -92,7 +107,7 @@ export function QuickFact({
       >
         {label}
       </Text>
-    </ProfileSurface>
+    </View>
   );
 }
 
@@ -108,6 +123,7 @@ export function ProfileInfoRow({
   isLast?: boolean;
 }) {
   const theme = useTheme();
+  const chrome = useProfileChromeColors();
 
   return (
     <View
@@ -115,20 +131,15 @@ export function ProfileInfoRow({
         styles.infoRow,
         !isLast && {
           borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: theme.outlineVariant,
+          borderBottomColor: chrome.edge,
         },
       ]}
     >
-      <View
-        style={[
-          styles.infoIcon,
-          { backgroundColor: theme.primaryContainer },
-        ]}
-      >
+      <View style={styles.infoIcon}>
         <MaterialCommunityIcons
           name={icon}
           size={18}
-          color={theme.onPrimaryContainer}
+          color={chrome.icon}
         />
       </View>
       <Text style={[styles.infoLabel, { color: theme.onSurfaceVariant }]}>
@@ -152,6 +163,7 @@ export function ThemeSelector({
   onChange: (mode: "light" | "dark" | "system") => void;
 }) {
   const theme = useTheme();
+  const chrome = useProfileChromeColors();
   const options = [
     { value: "dark" as const, label: "Mørk", icon: "weather-night" as const },
     { value: "system" as const, label: "System", icon: "cellphone" as const },
@@ -165,16 +177,11 @@ export function ThemeSelector({
   return (
     <ProfileSurface style={styles.themeCard}>
       <View style={styles.themeHeading}>
-        <View
-          style={[
-            styles.infoIcon,
-            { backgroundColor: theme.primaryContainer },
-          ]}
-        >
+        <View style={styles.infoIcon}>
           <MaterialCommunityIcons
             name="theme-light-dark"
             size={18}
-            color={theme.onPrimaryContainer}
+            color={chrome.icon}
           />
         </View>
         <View style={styles.themeCopy}>
@@ -191,10 +198,9 @@ export function ThemeSelector({
         style={[
           styles.themeTrack,
           {
-            backgroundColor: theme.surfaceContainerLowest,
-            borderColor: theme.outlineVariant,
-            borderTopColor: theme.shadow,
-            borderBottomColor: theme.surfaceBright,
+            backgroundColor: chrome.recessed,
+            borderColor: chrome.edge,
+            borderBottomColor: chrome.highlight,
           },
         ]}
       >
@@ -211,8 +217,9 @@ export function ThemeSelector({
               style={[
                 styles.themeOption,
                 selected && {
-                  backgroundColor: theme.surfaceContainerHigh,
-                  borderColor: theme.surfaceBright,
+                  backgroundColor: chrome.raised,
+                  borderColor: chrome.edge,
+                  borderTopColor: chrome.highlight,
                   shadowColor: theme.shadow,
                 },
               ]}
@@ -220,7 +227,7 @@ export function ThemeSelector({
               <MaterialCommunityIcons
                 name={option.icon}
                 size={16}
-                color={selected ? theme.secondary : theme.onSurfaceVariant}
+                color={selected ? chrome.icon : theme.onSurfaceVariant}
               />
               <Text
                 style={[
@@ -250,13 +257,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  topHighlight: {
-    position: "absolute",
-    top: 0,
-    left: 14,
-    right: 14,
-    height: StyleSheet.hairlineWidth,
-    borderRadius: 999,
+  divider: {
+    height: 2,
+  },
+  dividerLine: {
+    height: 1,
   },
   sectionLabel: {
     marginTop: 4,
@@ -269,7 +274,7 @@ const styles = StyleSheet.create({
   },
   quickFact: {
     flex: 1,
-    minHeight: 92,
+    minHeight: 88,
     paddingHorizontal: 8,
     paddingVertical: 12,
     alignItems: "center",
@@ -297,9 +302,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   infoIcon: {
-    width: 32,
+    width: 26,
     height: 32,
-    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
