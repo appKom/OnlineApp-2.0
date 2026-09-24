@@ -22,10 +22,11 @@ import { getAttendanceStatus } from "../../../types/attendanceStatus"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"
 import { getAttendee } from "../../../utils/attendance"
-import { scheduleRegistrationReminder, cancelRegistrationReminder, isRegistrationReminderScheduled } from "../../../utils/notifications"
+import { updateEventReminders } from "../../../utils/reminders"
+import { useBookmarks } from "../../../utils/bookmarks"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
-import { FieldLabel, IconAction, Panel, PanelDivider, PanelHeader, usePanelChromeColors } from "../../Panel"
+import { FieldLabel, Panel, PanelDivider, PanelHeader, usePanelChromeColors } from "../../Panel"
 
 interface AttendanceCardProps {
   user: User | null
@@ -46,7 +47,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const [attendance, setAttendance] = useState<Attendance>(initialAttendance)
   const [punishment, setPunishment] = useState<Punishment | null>(initialPunishment)
   const [attendanceStatus, setAttendanceStatus] = useState(() => getAttendanceStatus(initialAttendance))
-  const [notificationScheduled, setNotificationScheduled] = useState(false)
   const [showTurnstile, setShowTurnstile] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
   const [pendingTurnstileToken, setPendingTurnstileToken] = useState<string | null>(null)
@@ -64,21 +64,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
       setIsVerified(true)
     }
   }, [attendance, user])
-
-  // Check if a notification is already scheduled for this event
-  useEffect(() => {
-    let mounted = true
-    async function checkNotificationScheduled() {
-      const isScheduled = await isRegistrationReminderScheduled(event.id)
-      if (mounted) {
-        setNotificationScheduled(isScheduled)
-      }
-    }
-    void checkNotificationScheduled()
-    return () => {
-      mounted = false
-    }
-  }, [event.id])
 
   // Fetch server-computed punishment for the current user (mirrors RPC logic)
   useEffect(() => {
@@ -102,6 +87,15 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }, [user])
 
   const attendee = getAttendee(attendance, user)
+  const { isBookmarked } = useBookmarks()
+  const bookmarked = isBookmarked(event.id)
+
+  // Reminders follow sign-up state (registration opening while not signed up, start time once you have a spot).
+  useEffect(() => {
+    void updateEventReminders({ event, attendance }, user, bookmarked)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attendee?.id, attendee?.reserved, bookmarked, user?.id])
+
   const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
 
   // Fetch attendance from server
@@ -182,7 +176,12 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     // Register with the stored Turnstile token
     try {
       await trpc.registerForEvent(attendance.id ?? "", pendingTurnstileToken)
-      await fetchAttendance()
+      const bundle = await trpc.getEvent(event.id)
+      if (bundle?.attendance) {
+        setAttendance(bundle.attendance)
+        // Signing up is a good moment to ask for notification permission for the start reminder.
+        void updateEventReminders(bundle, user, bookmarked, { askPermission: true })
+      }
     } catch (e) {
       console.error("Registration error:", e)
       // Reset verification on error
@@ -228,16 +227,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
   const hasPunishment = Boolean(punishment && (punishment.delay > 0 || punishment.suspended))
 
-  const handleToggleNotification = async () => {
-    if (notificationScheduled) {
-      await cancelRegistrationReminder(event.id)
-      setNotificationScheduled(false)
-    } else {
-      const scheduled = await scheduleRegistrationReminder(event, attendance)
-      setNotificationScheduled(scheduled)
-    }
-  }
-
   const statusTag = {
     NotOpened: { label: "Ikke åpnet", color: chrome.textMuted },
     Open: { label: "Åpen", color: chrome.success },
@@ -249,19 +238,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   return (
     <Panel>
       <View style={styles.section}>
-        <PanelHeader
-          title="Påmelding"
-          tag={statusTag.label}
-          tagColor={statusTag.color}
-          right={
-            <IconAction
-              icon={notificationScheduled ? "bell-ring" : "bell-outline"}
-              active={notificationScheduled}
-              accessibilityLabel={notificationScheduled ? "Fjern påminnelse" : "Påminn meg når påmeldingen åpner"}
-              onPress={handleToggleNotification}
-            />
-          }
-        />
+        <PanelHeader title="Påmelding" tag={statusTag.label} tagColor={statusTag.color} />
       </View>
 
       <PanelDivider />
@@ -304,7 +281,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
         />
 
         <TurnstileBox
-          visible={showTurnstile}
+          visible={showTurnstile && Boolean(user)}
           onToken={handleTurnstileToken}
           siteKey={TURNSTILE_SITE_KEY}
         />

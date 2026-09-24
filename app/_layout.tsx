@@ -14,6 +14,7 @@ import Authenticator from "../utils/authenticator";
 import { ThemeProvider, useTheme, useThemeMode } from "../utils/theme";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { Platform } from "react-native";
+import { ToastHost } from "../components/ToastHost";
 
 SystemUI.setBackgroundColorAsync("#0F1417");
 
@@ -109,6 +110,7 @@ function RootLayoutInner() {
           >
             <Stack.Screen name="(tabs)" />
           </Stack>
+          <ToastHost />
           <StatusBar style={mode === "dark" ? "light" : "dark"} />
         </SafeAreaProvider>
       </GestureHandlerRootView>

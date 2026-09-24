@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { View, Modal, TouchableOpacity, StyleSheet, Animated } from "react-native"
+import { View, Modal, TouchableOpacity, StyleSheet, Animated, Easing } from "react-native"
 import { BlurView } from "@react-native-community/blur"
 
 interface ModalProps {
@@ -17,40 +17,43 @@ export const AnimatedModal: React.FC<ModalProps> = ({
   modalWidth = "90%",
   modalMaxWidth = 400,
 }) => {
-  const [scaleAnim] = useState(new Animated.Value(0))
+  const [scaleAnim] = useState(new Animated.Value(0.96))
   const [opacityAnim] = useState(new Animated.Value(0))
 
+  // Quick fade with a slight scale-up: present, not bouncy.
   useEffect(() => {
     if (visible) {
+      scaleAnim.setValue(0.96)
+      opacityAnim.setValue(0)
       Animated.parallel([
-        Animated.spring(scaleAnim, {
+        Animated.timing(scaleAnim, {
           toValue: 1,
-          friction: 5,
-          tension: 40,
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 300,
+          duration: 180,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start()
-    } else {
-      scaleAnim.setValue(0)
-      opacityAnim.setValue(0)
     }
   }, [visible, scaleAnim, opacityAnim])
 
   const handleClose = () => {
     Animated.parallel([
       Animated.timing(scaleAnim, {
-        toValue: 0,
-        duration: 300,
+        toValue: 0.98,
+        duration: 140,
+        easing: Easing.in(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 140,
+        easing: Easing.in(Easing.quad),
         useNativeDriver: true,
       }),
     ]).start(() => {

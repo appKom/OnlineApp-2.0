@@ -180,4 +180,5 @@ export interface EventFilterParams {
   };
   byType?: EventType[];
   byId?: string[];
+  excludingType?: EventType[];
 }

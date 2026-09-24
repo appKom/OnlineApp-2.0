@@ -2,44 +2,31 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { isPast, isWithinInterval } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from "react-native-gesture-handler/ReanimatedSwipeable";
 
-import { AnimatedModal } from "../../../components/AnimatedModal";
 import EventCard from "../../../components/EventCard";
-import {
-  ChoiceTrack,
-  Panel,
-  PanelDivider,
-  PanelHeader,
-  RaisedButton,
-  usePanelChromeColors,
-} from "../../../components/Panel";
+import { ChoiceTrack, PanelDivider, usePanelChromeColors } from "../../../components/Panel";
+import { SectionMenuHeader } from "../../../components/SectionMenuHeader";
 import type { EventAttendanceBundle, EventType } from "../../../types/event";
-import type { User } from "../../../types/user";
-import Authenticator from "../../../utils/authenticator";
-import { removeBookmarks, useBookmarks } from "../../../utils/bookmarks";
+import { removeBookmarks, toggleBookmarkWithUndo, useBookmarks } from "../../../utils/bookmarks";
+import { syncEventReminders } from "../../../utils/reminders";
 import { useTheme } from "../../../utils/theme";
 import {
   getEndedEvents,
   getEventsByIds,
+  getGroupsByMember,
   getMyEvents,
   getUpcomingEvents,
 } from "../../../utils/trpc";
+import { useCurrentUser } from "../../../utils/useCurrentUser";
 
 const PAGE_SIZE = 20;
 const MY_EVENTS_PAGE_SIZE = 50;
+
+type Period = "upcoming" | "past";
 
 const TYPE_OPTIONS: { value: EventType | null; label: string }[] = [
   { value: null, label: "Alle" },
@@ -50,80 +37,144 @@ const TYPE_OPTIONS: { value: EventType | null; label: string }[] = [
   { value: "GENERAL_ASSEMBLY", label: "Generalforsamling" },
   { value: "OTHER", label: "Annet" },
 ];
+const INTERNAL_OPTION = { value: "INTERNAL" as const, label: "Intern" };
+
+const PERIOD_OPTIONS: { value: Period; label: string }[] = [
+  { value: "upcoming", label: "Kommende" },
+  { value: "past", label: "Tidligere" },
+];
 
 type Paged = { items: EventAttendanceBundle[]; cursor?: string; done: boolean };
 const emptyPage: Paged = { items: [], cursor: undefined, done: false };
 
-type ListItem =
-  | { kind: "header"; key: string; title: string; icon?: "bookmark-outline" | "circle" }
-  | { kind: "event"; key: string; bundle: EventAttendanceBundle; ongoing?: boolean; swipeable: boolean }
-  | { kind: "message"; key: string; text: string };
+type SectionMenu = { value: Period; onChange: (value: Period) => void; titles: Record<Period, string> };
 
-function useCurrentUser() {
-  const [user, setUser] = useState<User | null>(Authenticator.user);
-  useEffect(
-    () => Authenticator.addLoginStateListener(() => setUser(Authenticator.user)),
-    [],
-  );
-  return user;
-}
+type ListItem =
+  | { kind: "header"; key: string; title: string; icon?: "bookmark-outline" | "circle"; menu?: SectionMenu }
+  | { kind: "event"; key: string; bundle: EventAttendanceBundle; ongoing?: boolean; swipeable: boolean }
+  | { kind: "message"; key: string; text: string }
+  | { kind: "more"; key: string; loading: boolean; onPress: () => void };
 
 const toPage = (result: { items?: EventAttendanceBundle[]; nextCursor?: string }, take: number): Paged => {
   const items = result.items ?? [];
   return { items, cursor: result.nextCursor, done: items.length < take || !result.nextCursor };
 };
 
+/** Committee members can see internal events (the API decides; this only controls the filter chip). */
+function useIsCommitteeMember(userId: string | undefined) {
+  const [isMember, setIsMember] = useState(false);
+  useEffect(() => {
+    setIsMember(false);
+    if (!userId) return;
+    let cancelled = false;
+    getGroupsByMember(userId)
+      .then((groups) => {
+        if (!cancelled) setIsMember(groups.some((group) => group.type === "COMMITTEE" || group.type === "NODE_COMMITTEE"));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+  return isMember;
+}
+
 const AllEvents: React.FC = () => {
   const router = useRouter();
   const theme = useTheme();
   const chrome = usePanelChromeColors();
   const user = useCurrentUser();
-  const { bookmarkIds, isBookmarked, toggleBookmark } = useBookmarks();
+  const isCommitteeMember = useIsCommitteeMember(user?.id);
+  const { bookmarkIds, ready: bookmarksReady, isBookmarked } = useBookmarks();
 
   const [type, setType] = useState<EventType | null>(null);
-  const [showPast, setShowPast] = useState(false);
-  const [onlyMine, setOnlyMine] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [period, setPeriod] = useState<Period>("upcoming");
+  const [myPeriod, setMyPeriod] = useState<Period>("upcoming");
 
-  const [myUpcoming, setMyUpcoming] = useState<EventAttendanceBundle[]>([]);
-  const [bookmarked, setBookmarked] = useState<EventAttendanceBundle[]>([]);
-  const [upcoming, setUpcoming] = useState<Paged>(emptyPage);
-  const [past, setPast] = useState<Paged>(emptyPage);
+  // All of the user's upcoming events regardless of type filter: drives "Pågår nå" and reminders.
+  const [myUpcoming, setMyUpcoming] = useState<EventAttendanceBundle[] | null>(null);
+  const [myPast, setMyPast] = useState<Paged>(emptyPage);
+  const [loadingMyPast, setLoadingMyPast] = useState(false);
+  const [bookmarked, setBookmarked] = useState<{ key: string; items: EventAttendanceBundle[] } | null>(null);
+  const [events, setEvents] = useState<Paged>(emptyPage);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Guards against responses from a previous filter arriving after a newer one.
+  // Guard against responses from a previous filter arriving after a newer one.
   const generation = useRef(0);
+  const myPastGeneration = useRef(0);
   const loadingMoreRef = useRef(false);
+
+  const typeOptions = isCommitteeMember ? [...TYPE_OPTIONS, INTERNAL_OPTION] : TYPE_OPTIONS;
+  useEffect(() => {
+    if (type === "INTERNAL" && !isCommitteeMember) setType(null);
+  }, [isCommitteeMember, type]);
+
+  const loadMyUpcoming = useCallback(async () => {
+    if (!user) {
+      setMyUpcoming([]);
+      return;
+    }
+    try {
+      const mine = await getMyEvents(user.id, null, false, undefined, MY_EVENTS_PAGE_SIZE);
+      setMyUpcoming(mine.items ?? []);
+    } catch (loadError) {
+      console.error("Failed to load own events:", loadError);
+    }
+  }, [user]);
 
   const loadFirstPage = useCallback(async () => {
     const current = ++generation.current;
     setError(null);
-    setPast(emptyPage);
-
     try {
-      const [mine, firstUpcoming] = await Promise.all([
-        user ? getMyEvents(user.id, type, false, undefined, MY_EVENTS_PAGE_SIZE)
-          : Promise.resolve({ items: [] as EventAttendanceBundle[] }),
-        onlyMine ? Promise.resolve(null) : getUpcomingEvents(type, undefined, PAGE_SIZE),
-      ]);
+      const result =
+        period === "upcoming"
+          ? await getUpcomingEvents(type, undefined, PAGE_SIZE)
+          : await getEndedEvents(type, undefined, PAGE_SIZE);
       if (current !== generation.current) return;
-
-      setMyUpcoming(mine.items ?? []);
-      setUpcoming(firstUpcoming ? toPage(firstUpcoming, PAGE_SIZE) : { items: [], done: true });
+      setEvents(toPage(result, PAGE_SIZE));
     } catch (loadError) {
       console.error("Failed to load events:", loadError);
       if (current === generation.current) setError("Kunne ikke laste arrangementer.");
     }
-  }, [onlyMine, type, user]);
+  }, [period, type]);
+
+  const loadMyPast = useCallback(
+    async (cursor?: string) => {
+      if (!user) return;
+      const current = cursor ? myPastGeneration.current : ++myPastGeneration.current;
+      setLoadingMyPast(true);
+      try {
+        const result = await getMyEvents(user.id, type, true, cursor, PAGE_SIZE);
+        if (current !== myPastGeneration.current) return;
+        const page = toPage(result, PAGE_SIZE);
+        setMyPast((prev) => (cursor ? { ...page, items: [...prev.items, ...page.items] } : page));
+      } catch (loadError) {
+        console.error("Failed to load own past events:", loadError);
+      } finally {
+        if (current === myPastGeneration.current) setLoadingMyPast(false);
+      }
+    },
+    [type, user],
+  );
+
+  useEffect(() => {
+    void loadMyUpcoming();
+  }, [loadMyUpcoming]);
 
   useEffect(() => {
     setLoading(true);
+    setEvents(emptyPage);
     void loadFirstPage().finally(() => setLoading(false));
   }, [loadFirstPage]);
+
+  useEffect(() => {
+    setMyPast(emptyPage);
+    if (myPeriod === "past") void loadMyPast();
+  }, [loadMyPast, myPeriod]);
 
   // Bookmarks are fetched on their own so toggling one doesn't reload the list.
   const bookmarkKey = bookmarkIds.join(",");
@@ -132,7 +183,7 @@ const AllEvents: React.FC = () => {
     getEventsByIds(bookmarkIds)
       .then((items) => {
         if (cancelled) return;
-        setBookmarked(items);
+        setBookmarked({ key: bookmarkKey, items });
         const ended = items.filter((bundle) => isPast(new Date(bundle.event.end))).map((b) => b.event.id);
         removeBookmarks(ended);
       })
@@ -143,119 +194,156 @@ const AllEvents: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookmarkKey]);
 
-  const loadMore = useCallback(async () => {
-    if (loading || loadingMoreRef.current) return;
+  // Keep scheduled reminders in line with what the user has signed up to or bookmarked,
+  // including changes made on the website.
+  const bookmarksCurrent = bookmarksReady && bookmarked?.key === bookmarkKey;
+  useEffect(() => {
+    if (!myUpcoming || !bookmarksCurrent || !bookmarked) return;
+    void syncEventReminders([...myUpcoming, ...bookmarked.items], user, isBookmarked);
+  }, [bookmarked, bookmarksCurrent, isBookmarked, myUpcoming, user]);
 
-    const upcomingPending = !onlyMine && !upcoming.done;
-    const pastPending = showPast && !past.done;
-    if (!upcomingPending && !pastPending) return;
-    if (!upcomingPending && onlyMine && !user) return;
+  const loadMore = useCallback(async () => {
+    if (loading || loadingMoreRef.current || events.done) return;
 
     loadingMoreRef.current = true;
     setLoadingMore(true);
     const current = generation.current;
 
     try {
-      if (upcomingPending) {
-        const result = await getUpcomingEvents(type, upcoming.cursor, PAGE_SIZE);
-        if (current !== generation.current) return;
-        const page = toPage(result, PAGE_SIZE);
-        setUpcoming((prev) => ({ ...page, items: [...prev.items, ...page.items] }));
-      } else {
-        const result = onlyMine
-          ? await getMyEvents(user!.id, type, true, past.cursor, PAGE_SIZE)
-          : await getEndedEvents(type, past.cursor, PAGE_SIZE);
-        if (current !== generation.current) return;
-        const page = toPage(result, PAGE_SIZE);
-        setPast((prev) => ({ ...page, items: [...prev.items, ...page.items] }));
-      }
+      const result =
+        period === "upcoming"
+          ? await getUpcomingEvents(type, events.cursor, PAGE_SIZE)
+          : await getEndedEvents(type, events.cursor, PAGE_SIZE);
+      if (current !== generation.current) return;
+      const page = toPage(result, PAGE_SIZE);
+      setEvents((prev) => ({ ...page, items: [...prev.items, ...page.items] }));
     } catch (moreError) {
       console.error("Failed to load more events:", moreError);
     } finally {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [loading, onlyMine, past, showPast, type, upcoming, user]);
-
-  // Past events come after all upcoming ones; start loading them once upcoming is exhausted.
-  useEffect(() => {
-    if (showPast && !loading && (onlyMine || upcoming.done) && past.items.length === 0 && !past.done) {
-      void loadMore();
-    }
-  }, [loadMore, loading, onlyMine, past.done, past.items.length, showPast, upcoming.done]);
+  }, [events, loading, period, type]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadFirstPage();
+    await Promise.all([
+      loadFirstPage(),
+      loadMyUpcoming(),
+      myPeriod === "past" ? loadMyPast() : Promise.resolve(),
+    ]);
     setRefreshing(false);
   };
 
   const items = useMemo<ListItem[]>(() => {
     const now = new Date();
     const matchesType = (bundle: EventAttendanceBundle) => !type || bundle.event.type === type;
+    const mineUpcoming = (myUpcoming ?? []).filter(matchesType);
 
-    const ongoing = myUpcoming.filter((bundle) =>
+    const ongoing = mineUpcoming.filter((bundle) =>
       isWithinInterval(now, { start: new Date(bundle.event.start), end: new Date(bundle.event.end) }),
     );
     const ongoingIds = new Set(ongoing.map((bundle) => bundle.event.id));
-    const registered = myUpcoming.filter((bundle) => !ongoingIds.has(bundle.event.id));
-    const mineIds = new Set(myUpcoming.map((bundle) => bundle.event.id));
+    const mine =
+      myPeriod === "upcoming"
+        ? mineUpcoming.filter((bundle) => !ongoingIds.has(bundle.event.id))
+        : myPast.items;
+    const mineIds = new Set((myUpcoming ?? []).map((bundle) => bundle.event.id));
 
-    const bookmarks = onlyMine
-      ? []
-      : bookmarked.filter(
-          (bundle) =>
-            isBookmarked(bundle.event.id) &&
-            !mineIds.has(bundle.event.id) &&
-            !isPast(new Date(bundle.event.end)) &&
-            matchesType(bundle),
-        );
-    const shownIds = new Set([...mineIds, ...bookmarks.map((bundle) => bundle.event.id)]);
-    const rest = upcoming.items.filter((bundle) => !shownIds.has(bundle.event.id));
+    const bookmarks = (bookmarked?.items ?? []).filter(
+      (bundle) =>
+        isBookmarked(bundle.event.id) &&
+        !mineIds.has(bundle.event.id) &&
+        !isPast(new Date(bundle.event.end)) &&
+        matchesType(bundle),
+    );
+
+    // Each event shows once: in the most specific section it belongs to.
+    const shownIds = new Set([
+      ...ongoingIds,
+      ...mine.map((bundle) => bundle.event.id),
+      ...bookmarks.map((bundle) => bundle.event.id),
+    ]);
+    const rest = events.items.filter((bundle) => !shownIds.has(bundle.event.id));
 
     const list: ListItem[] = [];
-    const addSection = (
-      key: string,
-      title: string,
-      bundles: EventAttendanceBundle[],
-      options: { ongoing?: boolean; swipeable?: boolean; icon?: "bookmark-outline" | "circle" } = {},
-    ) => {
-      if (bundles.length === 0) return;
-      list.push({ kind: "header", key: `header-${key}`, title, icon: options.icon });
+    const header = (key: string, title: string, extra: Partial<Extract<ListItem, { kind: "header" }>> = {}) =>
+      list.push({ kind: "header", key: `header-${key}`, title, ...extra });
+    const rows = (key: string, bundles: EventAttendanceBundle[], extra: { ongoing?: boolean; swipeable?: boolean } = {}) =>
       bundles.forEach((bundle) =>
         list.push({
           kind: "event",
           key: `${key}-${bundle.event.id}`,
           bundle,
-          ongoing: options.ongoing,
-          swipeable: options.swipeable ?? true,
+          ongoing: extra.ongoing,
+          swipeable: extra.swipeable ?? true,
         }),
       );
-    };
 
-    addSection("ongoing", "Pågår nå", ongoing, { ongoing: true, icon: "circle" });
-    addSection("registered", "Påmeldt", registered);
-    addSection("bookmarks", "Bokmerker", bookmarks, { icon: "bookmark-outline" });
-    addSection("upcoming", "Kommende", rest);
-    if (showPast) addSection("past", "Tidligere", past.items, { swipeable: false });
+    if (ongoing.length > 0) {
+      header("ongoing", "Pågår nå", { icon: "circle" });
+      rows("ongoing", ongoing, { ongoing: true });
+    }
 
-    if (onlyMine && !user) {
-      list.push({ kind: "message", key: "login", text: "Logg inn for å se arrangementene dine." });
-    } else if (list.length === 0 && !loading) {
-      list.push({
-        kind: "message",
-        key: "empty",
-        text: onlyMine ? "Du er ikke påmeldt noen kommende arrangementer." : "Ingen arrangementer.",
+    if (user) {
+      header("mine", "Mine", {
+        menu: {
+          value: myPeriod,
+          onChange: setMyPeriod,
+          titles: { upcoming: "Mine kommende", past: "Mine tidligere" },
+        },
       });
+      rows("mine", mine, { swipeable: myPeriod === "upcoming" });
+      const mineLoading = myPeriod === "upcoming" ? myUpcoming === null : loadingMyPast && mine.length === 0;
+      if (mine.length === 0 && !mineLoading) {
+        list.push({
+          kind: "message",
+          key: "mine-empty",
+          text: myPeriod === "upcoming" ? "Du er ikke påmeldt noen kommende arrangementer." : "Ingen tidligere arrangementer.",
+        });
+      }
+      if (myPeriod === "past" && (loadingMyPast || !myPast.done)) {
+        list.push({
+          kind: "more",
+          key: "mine-more",
+          loading: loadingMyPast,
+          onPress: () => void loadMyPast(myPast.cursor),
+        });
+      }
+    }
+
+    if (bookmarks.length > 0) {
+      header("bookmarks", "Bokmerker", { icon: "bookmark-outline" });
+      rows("bookmarks", bookmarks);
+    }
+
+    header("events", "Arrangementer", {
+      menu: { value: period, onChange: setPeriod, titles: { upcoming: "Kommende", past: "Tidligere" } },
+    });
+    rows("events", rest, { swipeable: period === "upcoming" });
+    if (rest.length === 0 && !loading) {
+      list.push({ kind: "message", key: "events-empty", text: error ?? "Ingen arrangementer." });
     }
 
     return list;
-  }, [bookmarked, isBookmarked, loading, myUpcoming, onlyMine, past.items, showPast, type, upcoming.items, user]);
+  }, [
+    bookmarked,
+    error,
+    events.items,
+    isBookmarked,
+    loadMyPast,
+    loading,
+    loadingMyPast,
+    myPast,
+    myPeriod,
+    myUpcoming,
+    period,
+    type,
+    user,
+  ]);
 
   const openEvent = (eventId: string) =>
     router.push({ pathname: "/event-details", params: { eventId } });
-
-  const activeFilterCount = Number(showPast) + Number(onlyMine);
 
   const renderItem = ({ item }: { item: ListItem }) => {
     if (item.kind === "header") {
@@ -266,7 +354,16 @@ const AllEvents: React.FC = () => {
             {item.icon === "bookmark-outline" && (
               <MaterialCommunityIcons name="bookmark-outline" size={14} color={chrome.textMuted} />
             )}
-            <Text style={[styles.sectionTitle, { color: chrome.textMuted }]}>{item.title}</Text>
+            {item.menu ? (
+              <SectionMenuHeader
+                title={item.menu.titles[item.menu.value]}
+                options={PERIOD_OPTIONS}
+                value={item.menu.value}
+                onChange={item.menu.onChange}
+              />
+            ) : (
+              <Text style={[styles.sectionTitle, { color: chrome.textMuted }]}>{item.title}</Text>
+            )}
           </View>
           <PanelDivider onBackground />
         </View>
@@ -275,6 +372,26 @@ const AllEvents: React.FC = () => {
 
     if (item.kind === "message") {
       return <Text style={[styles.message, { color: chrome.textMuted }]}>{item.text}</Text>;
+    }
+
+    if (item.kind === "more") {
+      return (
+        <View>
+          <Pressable
+            accessibilityRole="button"
+            disabled={item.loading}
+            onPress={item.onPress}
+            style={({ pressed }) => [styles.moreRow, pressed && { backgroundColor: theme.surfaceContainerLow }]}
+          >
+            {item.loading ? (
+              <ActivityIndicator color={chrome.textMuted} />
+            ) : (
+              <Text style={[styles.moreText, { color: chrome.accent }]}>Vis flere</Text>
+            )}
+          </Pressable>
+          <PanelDivider onBackground />
+        </View>
+      );
     }
 
     const card = (
@@ -287,10 +404,7 @@ const AllEvents: React.FC = () => {
     );
 
     return item.swipeable ? (
-      <BookmarkSwipe
-        bookmarked={isBookmarked(item.bundle.event.id)}
-        onToggle={() => toggleBookmark(item.bundle.event.id)}
-      >
+      <BookmarkSwipe bookmarked={isBookmarked(item.bundle.event.id)} onToggle={() => toggleBookmarkWithUndo(item.bundle)}>
         {card}
       </BookmarkSwipe>
     ) : (
@@ -300,25 +414,17 @@ const AllEvents: React.FC = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      <View style={styles.controls}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.typeScroll}
-          contentContainerStyle={styles.typeScrollContent}
-        >
-          <ChoiceTrack options={TYPE_OPTIONS} value={type} onChange={setType} style={styles.typeTrack} />
-        </ScrollView>
-        <RaisedButton
-          icon="tune-variant"
-          tone={activeFilterCount > 0 ? "accent" : "default"}
-          accessibilityLabel={`Filtre${activeFilterCount > 0 ? `, ${activeFilterCount} aktive` : ""}`}
-          onPress={() => setFiltersOpen(true)}
-        />
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.typeScroll}
+        contentContainerStyle={styles.typeScrollContent}
+      >
+        <ChoiceTrack options={typeOptions} value={type} onChange={setType} style={styles.typeTrack} />
+      </ScrollView>
 
       <FlatList
-        data={loading && !refreshing ? [] : items}
+        data={items}
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
         contentInsetAdjustmentBehavior="automatic"
@@ -327,31 +433,18 @@ const AllEvents: React.FC = () => {
         onRefresh={handleRefresh}
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
-        ListEmptyComponent={
-          <View style={styles.centered}>
-            {error ? (
-              <Text style={{ color: chrome.danger }}>{error}</Text>
-            ) : (
-              <ActivityIndicator color={chrome.textMuted} />
-            )}
+        ListFooterComponent={
+          <View style={styles.footer}>
+            {(loadingMore || (loading && !refreshing)) && <ActivityIndicator color={chrome.textMuted} />}
           </View>
         }
-        ListFooterComponent={
-          <View style={styles.footer}>{loadingMore && <ActivityIndicator color={chrome.textMuted} />}</View>
-        }
-      />
-
-      <FilterSheet
-        visible={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
-        showPast={showPast}
-        onShowPastChange={setShowPast}
-        onlyMine={onlyMine}
-        onOnlyMineChange={setOnlyMine}
       />
     </View>
   );
 };
+
+const BOOKMARK_ADD = "#1F8A4C";
+const BOOKMARK_REMOVE = "#C9343C";
 
 function BookmarkSwipe({
   bookmarked,
@@ -362,7 +455,6 @@ function BookmarkSwipe({
   onToggle: () => void;
   children: React.ReactNode;
 }) {
-  const chrome = usePanelChromeColors();
   const swipeable = useRef<SwipeableMethods>(null);
 
   return (
@@ -376,15 +468,13 @@ function BookmarkSwipe({
         swipeable.current?.close();
       }}
       renderRightActions={() => (
-        <View style={[styles.swipeAction, { backgroundColor: chrome.surface }]}>
+        <View style={[styles.swipeAction, { backgroundColor: bookmarked ? BOOKMARK_REMOVE : BOOKMARK_ADD }]}>
           <MaterialCommunityIcons
             name={bookmarked ? "bookmark-remove-outline" : "bookmark-plus-outline"}
             size={20}
-            color={chrome.accent}
+            color="#FFFFFF"
           />
-          <Text style={[styles.swipeLabel, { color: chrome.accent }]}>
-            {bookmarked ? "Fjern" : "Bokmerk"}
-          </Text>
+          <Text style={styles.swipeLabel}>{bookmarked ? "Fjern" : "Bokmerk"}</Text>
         </View>
       )}
     >
@@ -393,77 +483,15 @@ function BookmarkSwipe({
   );
 }
 
-function FilterSheet({
-  visible,
-  onClose,
-  showPast,
-  onShowPastChange,
-  onlyMine,
-  onOnlyMineChange,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  showPast: boolean;
-  onShowPastChange: (value: boolean) => void;
-  onlyMine: boolean;
-  onOnlyMineChange: (value: boolean) => void;
-}) {
-  const chrome = usePanelChromeColors();
-
-  const row = (label: string, description: string, value: boolean, onChange: (value: boolean) => void) => (
-    <Pressable
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
-      onPress={() => onChange(!value)}
-      style={styles.switchRow}
-    >
-      <View style={styles.switchCopy}>
-        <Text style={[styles.switchLabel, { color: chrome.text }]}>{label}</Text>
-        <Text style={[styles.switchDescription, { color: chrome.textMuted }]}>{description}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ true: chrome.accent, false: chrome.recessed }}
-        ios_backgroundColor={chrome.recessed}
-      />
-    </Pressable>
-  );
-
-  return (
-    <AnimatedModal visible={visible} onClose={onClose} modalWidth="92%" modalMaxWidth={380}>
-      {(closeModal) => (
-        <Panel style={styles.sheet}>
-          <PanelHeader title="Filtre" />
-          <View>
-            {row("Kun mine", "Arrangementer du er påmeldt eller står på venteliste til", onlyMine, onOnlyMineChange)}
-            <View style={[styles.sheetRule, { backgroundColor: chrome.edge }]} />
-            {row("Vis tidligere", "Legg til arrangementer som er ferdige nederst", showPast, onShowPastChange)}
-          </View>
-          <RaisedButton icon="check" label="Ferdig" tone="accent" onPress={closeModal} />
-        </Panel>
-      )}
-    </AnimatedModal>
-  );
-}
-
 const styles = StyleSheet.create({
-  controls: {
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingTop: 4,
-    paddingBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  typeScroll: { flex: 1 },
-  typeScrollContent: { flexGrow: 1 },
+  typeScroll: { flexGrow: 0 },
+  typeScrollContent: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 10 },
   typeTrack: { flexWrap: "nowrap" },
   sectionHeader: {
+    minHeight: 40,
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 9,
+    paddingTop: 12,
+    paddingBottom: 7,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -475,8 +503,9 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   liveDot: { width: 7, height: 7, borderRadius: 4 },
-  message: { paddingHorizontal: 16, paddingVertical: 24, fontSize: 14, textAlign: "center" },
-  centered: { minHeight: 200, alignItems: "center", justifyContent: "center" },
+  message: { paddingHorizontal: 16, paddingVertical: 20, fontSize: 14, textAlign: "center" },
+  moreRow: { minHeight: 48, alignItems: "center", justifyContent: "center" },
+  moreText: { fontSize: 14, fontWeight: "700" },
   footer: { height: 104, alignItems: "center", paddingTop: 16 },
   swipeAction: {
     width: 96,
@@ -484,13 +513,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 3,
   },
-  swipeLabel: { fontSize: 12, fontWeight: "600" },
-  sheet: { padding: 15, gap: 12 },
-  switchRow: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 12 },
-  switchCopy: { flex: 1 },
-  switchLabel: { fontSize: 14, fontWeight: "700" },
-  switchDescription: { marginTop: 2, fontSize: 12, lineHeight: 16 },
-  sheetRule: { height: StyleSheet.hairlineWidth },
+  swipeLabel: { color: "#FFFFFF", fontSize: 12, fontWeight: "600" },
 });
 
 export default AllEvents;

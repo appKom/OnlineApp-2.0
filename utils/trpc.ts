@@ -68,6 +68,9 @@ export async function getAllEvents(
       },
       byType: filter?.byType,
       byId: filter?.byId,
+      // The API defaults this to ["INTERNAL"]; send it explicitly so committee members get internal events.
+      // The server still excludes them for everyone else.
+      excludingType: filter?.excludingType ?? [],
       orderBy,
     },
   };
@@ -122,6 +125,7 @@ export async function getAllEventsByAttendingUserId(
         min: null,
       },
       byType: filter?.byType,
+      excludingType: filter?.excludingType ?? [],
       orderBy,
     },
   };

@@ -19,7 +19,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "@react-native-community/blur";
 import { getEvent, getExpiryDateForUser } from "utils/trpc";
 import type { Punishment } from "types/punishment";
-import Authenticator from "utils/authenticator";
 import { EventAttendanceBundle } from "types/event";
 import {
   isRegistrationEvent,
@@ -34,7 +33,8 @@ import {
   usePanelChromeColors,
 } from "components/Panel";
 import { useEventTypeStyle } from "components/EventCard";
-import { useBookmarks } from "utils/bookmarks";
+import { toggleBookmarkWithUndo, useBookmarks } from "utils/bookmarks";
+import { useCurrentUser } from "utils/useCurrentUser";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { EventRules } from "components/EventDetails/AttendanceCard/EventRules";
 import { PaymentExplanationDialog } from "components/EventDetails/AttendanceCard/PaymentExplanationDialog";
@@ -44,7 +44,7 @@ const EventDetails: React.FC = () => {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const screenWidth = Dimensions.get("window").width;
   const insets = useSafeAreaInsets();
-  const user = Authenticator.user;
+  const user = useCurrentUser();
   const theme = useTheme();
   const chrome = usePanelChromeColors();
   const { mode } = useThemeMode();
@@ -69,15 +69,15 @@ const EventDetails: React.FC = () => {
     </Pressable>
   );
 
-  const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { isBookmarked } = useBookmarks();
   const bookmarked = isBookmarked(eventId);
 
-  const renderBookmarkButton = () => (
+  const renderBookmarkButton = (bundle: EventAttendanceBundle) => (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={bookmarked ? "Fjern bokmerke" : "Bokmerk arrangement"}
       accessibilityState={{ selected: bookmarked }}
-      onPress={() => toggleBookmark(eventId)}
+      onPress={() => toggleBookmarkWithUndo(bundle)}
       style={[
         styles.backButton,
         styles.bookmarkButton,
@@ -165,7 +165,9 @@ const EventDetails: React.FC = () => {
         setError(error.message);
         setLoading(false);
       });
-  }, [eventId]);
+    // Refetch on login/logout so the attendance reflects the signed-in user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, user?.id]);
 
   if (loading) {
     return (
@@ -234,7 +236,7 @@ const EventDetails: React.FC = () => {
             resizeMode="contain"
           />
           {renderBackButton()}
-          {renderBookmarkButton()}
+          {renderBookmarkButton(event)}
         </View>
         <PanelDivider onBackground />
         <View style={styles.titleArea}>
@@ -260,6 +262,7 @@ const EventDetails: React.FC = () => {
 
         {isRegistration ? (
           <AttendanceCard
+            key={user?.id ?? "signed-out"}
             user={user}
             event={event.event}
             initialAttendance={event.attendance!}

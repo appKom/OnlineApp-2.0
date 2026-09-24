@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react"
 import {
+  Easing,
   View,
   Text,
   TouchableOpacity,
@@ -103,18 +104,12 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
     if (!isMounted) return
 
     Animated.parallel([
-      isOpen
-        ? Animated.spring(sheetAnim, {
-            toValue: 0,
-            friction: 8,
-            tension: 70,
-            useNativeDriver: true,
-          })
-        : Animated.timing(sheetAnim, {
-            toValue: SHEET_HEIGHT,
-            duration: 220,
-            useNativeDriver: true,
-          }),
+      Animated.timing(sheetAnim, {
+        toValue: isOpen ? 0 : SHEET_HEIGHT,
+        duration: isOpen ? 280 : 200,
+        easing: isOpen ? Easing.out(Easing.cubic) : Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
 
       Animated.timing(backdropOpacity, {
         toValue: isOpen ? 1 : 0,

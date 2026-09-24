@@ -10,6 +10,7 @@ import { getAttendee, getAttendablePool, getAttendanceStatus, getReservedAttende
 import { findActiveMembership } from "../../../utils/user-utils"
 import { DeregisterModal, type DeregisterReasonFormResult } from "../DeregisterModal"
 import { RaisedButton, usePanelChromeColors } from "../../Panel"
+import Authenticator from "../../../utils/authenticator"
 
 const getButtonVariant = (
   attendee: boolean,
@@ -150,6 +151,18 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
     if (disabled) return "lock-outline" as const
     if (attendee) return "account-minus-outline" as const
     return "account-plus-outline" as const
+  }
+
+  if (!user) {
+    // Login opens in a browser sheet on top of this screen; the event page refetches once signed in.
+    return (
+      <RaisedButton
+        icon="login"
+        label="Logg inn for å melde deg på"
+        tone="accent"
+        onPress={() => void Authenticator.login()}
+      />
+    )
   }
 
   return (
