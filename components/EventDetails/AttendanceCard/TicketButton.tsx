@@ -3,13 +3,15 @@ import { View, Text, StyleSheet, useWindowDimensions } from "react-native"
 import QRCode from "react-native-qrcode-svg"
 import type { Attendee } from "../../../types/event"
 import { AnimatedModal } from "../../AnimatedModal"
-import { Panel, PanelHeader, RaisedButton, usePanelChromeColors } from "../../Panel"
+import { IconAction, Panel, PanelHeader, RaisedButton, usePanelChromeColors } from "../../Panel"
 
 interface TicketButtonProps {
   attendee: Attendee,
+  /** Icon-only trigger, for use inside list rows. */
+  compact?: boolean,
 }
 
-export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
+export const TicketButton: React.FC<TicketButtonProps> = ({ attendee, compact = false }) => {
   const chrome = usePanelChromeColors()
   const { width } = useWindowDimensions()
   const qrSize = Math.min(240, width * 0.9 - 80)
@@ -17,7 +19,11 @@ export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
 
   return (
     <>
-      <RaisedButton flex icon="qrcode" label="Billett" onPress={() => setModalVisible(true)} />
+      {compact ? (
+        <IconAction icon="qrcode" accessibilityLabel="Vis billett" onPress={() => setModalVisible(true)} />
+      ) : (
+        <RaisedButton flex icon="qrcode" label="Billett" onPress={() => setModalVisible(true)} />
+      )}
 
       <AnimatedModal
         visible={modalVisible}

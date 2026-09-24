@@ -160,6 +160,15 @@ export type RegistrationAvailabilityResult =
   | RegistrationAvailabilityFailure;
 
 
+export type EventType =
+  | "GENERAL_ASSEMBLY"
+  | "COMPANY"
+  | "ACADEMIC"
+  | "SOCIAL"
+  | "INTERNAL"
+  | "OTHER"
+  | "WELCOME";
+
 export interface EventFilterParams {
   byStartDate?: {
     min?: string | null;
@@ -169,4 +178,6 @@ export interface EventFilterParams {
     min?: string | null;
     max?: string | null;
   };
+  byType?: EventType[];
+  byId?: string[];
 }

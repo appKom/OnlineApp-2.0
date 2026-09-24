@@ -34,6 +34,7 @@ import {
   usePanelChromeColors,
 } from "components/Panel";
 import { useEventTypeStyle } from "components/EventCard";
+import { useBookmarks } from "utils/bookmarks";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { EventRules } from "components/EventDetails/AttendanceCard/EventRules";
 import { PaymentExplanationDialog } from "components/EventDetails/AttendanceCard/PaymentExplanationDialog";
@@ -65,6 +66,34 @@ const EventDetails: React.FC = () => {
       ]}
     >
       <MaterialCommunityIcons name="arrow-left" size={20} color={chrome.icon} />
+    </Pressable>
+  );
+
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+  const bookmarked = isBookmarked(eventId);
+
+  const renderBookmarkButton = () => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={bookmarked ? "Fjern bokmerke" : "Bokmerk arrangement"}
+      accessibilityState={{ selected: bookmarked }}
+      onPress={() => toggleBookmark(eventId)}
+      style={[
+        styles.backButton,
+        styles.bookmarkButton,
+        {
+          top: insets.top + 8,
+          backgroundColor: chrome.raised,
+          borderColor: chrome.edge,
+          borderTopColor: chrome.highlight,
+        },
+      ]}
+    >
+      <MaterialCommunityIcons
+        name={bookmarked ? "bookmark" : "bookmark-outline"}
+        size={20}
+        color={bookmarked ? chrome.accent : chrome.icon}
+      />
     </Pressable>
   );
 
@@ -205,6 +234,7 @@ const EventDetails: React.FC = () => {
             resizeMode="contain"
           />
           {renderBackButton()}
+          {renderBookmarkButton()}
         </View>
         <PanelDivider onBackground />
         <View style={styles.titleArea}>
@@ -283,6 +313,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  bookmarkButton: { left: undefined, right: 16 },
   titleArea: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 14, gap: 4 },
   eventTitle: { fontSize: 24, lineHeight: 30, fontWeight: "700", letterSpacing: -0.2 },
   panels: { paddingHorizontal: 16, gap: 14 },

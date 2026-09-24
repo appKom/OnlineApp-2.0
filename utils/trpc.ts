@@ -9,7 +9,8 @@ import {
   RegistrationAvailabilityResult,
   EventAttendanceBundle,
   AttendanceSelectionResponse,
-  EventFilterParams
+  EventFilterParams,
+  EventType,
 } from "types/event";
 
 export const DEREGISTER_REASON_TYPES = [
@@ -65,6 +66,8 @@ export async function getAllEvents(
         max: null,
         min: null,
       },
+      byType: filter?.byType,
+      byId: filter?.byId,
       orderBy,
     },
   };
@@ -118,6 +121,7 @@ export async function getAllEventsByAttendingUserId(
         max: null,
         min: null,
       },
+      byType: filter?.byType,
       orderBy,
     },
   };
@@ -155,6 +159,54 @@ export async function getAllFutureEventsByAttendingUserId(
       max: null,
     },
   });
+}
+
+type EventPage = { items?: EventAttendanceBundle[]; nextCursor?: string };
+
+// "Upcoming" means not yet ended, so ongoing events are included (same as online.ntnu.no).
+const upcomingRange = () => ({ min: new Date().toISOString(), max: null });
+const endedRange = () => ({ min: null, max: new Date().toISOString() });
+
+export async function getUpcomingEvents(
+  type: EventType | null,
+  cursor?: string,
+  take: number = 20,
+): Promise<EventPage> {
+  return getAllEvents(take, cursor, "asc", {
+    byEndDate: upcomingRange(),
+    byType: type ? [type] : undefined,
+  });
+}
+
+export async function getEndedEvents(
+  type: EventType | null,
+  cursor?: string,
+  take: number = 20,
+): Promise<EventPage> {
+  return getAllEvents(take, cursor, "desc", {
+    byEndDate: endedRange(),
+    byType: type ? [type] : undefined,
+  });
+}
+
+export async function getMyEvents(
+  userId: string,
+  type: EventType | null,
+  ended: boolean,
+  cursor?: string,
+  take: number = 20,
+): Promise<EventPage> {
+  const result = await getAllEventsByAttendingUserId(userId, take, cursor, ended ? "desc" : "asc", {
+    byEndDate: ended ? endedRange() : upcomingRange(),
+    byType: type ? [type] : undefined,
+  });
+  return result ?? {};
+}
+
+export async function getEventsByIds(ids: string[]): Promise<EventAttendanceBundle[]> {
+  if (ids.length === 0) return [];
+  const result = await getAllEvents(ids.length, undefined, "asc", { byId: ids });
+  return result.items ?? [];
 }
 
 export async function getEvent(

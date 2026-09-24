@@ -1,12 +1,18 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { differenceInCalendarDays, format, isPast } from "date-fns";
+import { nb } from "date-fns/locale";
 import React from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { EventAttendanceBundle } from "../types/event";
+import { User } from "../types/user";
 import {
+  getAttendanceCapacity,
+  getAttendanceStatus,
+  getAttendee,
   getReservedAttendeeCount,
   getUnreservedAttendeeCount,
 } from "../utils/attendance";
 import { useTheme, useThemeMode } from "../utils/theme";
+import { TicketButton } from "./EventDetails/AttendanceCard/TicketButton";
 import { PanelDivider, Tag, usePanelChromeColors } from "./Panel";
 
 const EVENT_TYPES: Record<string, { label: string; dark: string; light: string }> = {
@@ -27,36 +33,35 @@ export function useEventTypeStyle(eventType: string | undefined) {
 
 interface EventCardProps {
   event: EventAttendanceBundle;
+  user: User | null;
   onPress: () => void;
+  /** Currently running event the user attends: shows the time span and a ticket shortcut. */
+  ongoing?: boolean;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
+const formatStart = (date: Date) => format(date, "EEE d. MMM · HH:mm", { locale: nb });
+
+const formatOpens = (date: Date) =>
+  differenceInCalendarDays(date, new Date()) < 6
+    ? format(date, "EEE HH:mm", { locale: nb })
+    : format(date, "d. MMM", { locale: nb });
+
+const EventCard: React.FC<EventCardProps> = ({ event: bundle, user, onPress, ongoing = false }) => {
   const theme = useTheme();
   const { mode } = useThemeMode();
   const chrome = usePanelChromeColors();
-  const type = useEventTypeStyle(event.event.type);
-  const primaryPool = event.attendance?.pools[0];
-  const reservedCount = event.attendance
-    ? getReservedAttendeeCount(event.attendance, primaryPool?.id ?? "")
-    : 0;
-  const waitlistCount = event.attendance
-    ? getUnreservedAttendeeCount(event.attendance, primaryPool?.id ?? "")
-    : 0;
+  const type = useEventTypeStyle(bundle.event.type);
+  const { event, attendance } = bundle;
+  const start = new Date(event.start);
+  const end = new Date(event.end);
+  const ended = isPast(end);
 
-  const getFallbackImage = () =>
+  const attendee = getAttendee(attendance, user);
+
+  const fallbackImage =
     mode === "dark"
       ? require("../assets/eventFallback/fallback_dark.png")
       : require("../assets/eventFallback/fallback_light.png");
-
-  const formatDate = (date: Date) =>
-    new Date(date).toLocaleDateString("no-NO", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
 
   return (
     <View style={{ backgroundColor: theme.background }}>
@@ -69,140 +74,161 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
         ]}
       >
         <Image
-          source={
-            event.event.imageUrl
-              ? { uri: event.event.imageUrl }
-              : getFallbackImage()
-          }
+          source={event.imageUrl ? { uri: event.imageUrl } : fallbackImage}
           style={[
             styles.image,
             {
               backgroundColor: chrome.recessed,
               borderColor: chrome.edge,
               borderTopColor: chrome.highlight,
+              opacity: ended ? 0.6 : 1,
             },
           ]}
           resizeMode="cover"
         />
 
         <View style={styles.content}>
-          <View style={styles.titleRow}>
-            <Text
-              numberOfLines={1}
-              style={[styles.title, { color: theme.onSurface }]}
-            >
-              {event.event.title ?? "Uten tittel"}
+          <Text
+            numberOfLines={2}
+            style={[styles.title, { color: ended ? chrome.textMuted : chrome.text }]}
+          >
+            {event.title ?? "Uten tittel"}
+          </Text>
+          <View style={styles.metaRow}>
+            <Text numberOfLines={1} style={[styles.date, { color: chrome.textMuted }]}>
+              {ongoing
+                ? `${format(start, "HH:mm")}–${format(end, "HH:mm")}`
+                : formatStart(start)}
+              {ongoing && event.locationTitle ? ` · ${event.locationTitle}` : ""}
             </Text>
-
-            {event.attendance && (
-              <View
-                style={[
-                  styles.attendancePill,
-                  {
-                    backgroundColor: chrome.recessed,
-                    borderColor: chrome.edge,
-                    borderBottomColor: chrome.highlight,
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="account-group-outline"
-                  size={14}
-                  color={chrome.icon}
-                />
-                <Text
-                  style={[styles.attendanceText, { color: theme.onSurface }]}
-                >
-                  {reservedCount}
-                  {(primaryPool?.capacity ?? 0) > 0 &&
-                    `/${primaryPool?.capacity}`}
-                  {waitlistCount > 0 && ` +${waitlistCount}`}
-                </Text>
-              </View>
-            )}
+            {!ongoing && <Tag label={type.label} color={type.color} style={styles.typeTag} />}
           </View>
-
-          <View style={styles.dateRow}>
-            <MaterialCommunityIcons
-              name="calendar-blank-outline"
-              size={15}
-              color={chrome.icon}
-            />
-            <Text
-              style={[styles.date, { color: theme.onSurfaceVariant }]}
-            >
-              {formatDate(event.event.start)}
-            </Text>
-          </View>
-
-          <Tag label={type.label} color={type.color} style={styles.typeTag} />
         </View>
 
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={20}
-          color={chrome.icon}
-        />
+        {ongoing && attendee?.reserved ? (
+          <TicketButton attendee={attendee} compact />
+        ) : (
+          attendance && (
+            <AttendanceSummary bundle={bundle} attendee={attendee} ended={ended} />
+          )
+        )}
       </Pressable>
       <PanelDivider onBackground />
     </View>
   );
 };
 
+function AttendanceSummary({
+  bundle,
+  attendee,
+  ended,
+}: {
+  bundle: EventAttendanceBundle;
+  attendee: ReturnType<typeof getAttendee>;
+  ended: boolean;
+}) {
+  const chrome = usePanelChromeColors();
+  const attendance = bundle.attendance!;
+  const capacity = getAttendanceCapacity(attendance);
+  const reserved = getReservedAttendeeCount(attendance);
+  const waitlist = getUnreservedAttendeeCount(attendance);
+  const isFull = capacity > 0 && reserved >= capacity;
+  const status = getAttendanceStatus(attendance);
+
+  const light = {
+    NotOpened: { color: chrome.warning, label: `Åpner ${formatOpens(new Date(attendance.registerStart))}` },
+    Open: { color: chrome.success, label: "Åpen" },
+    Closed: { color: chrome.danger, label: "Stengt" },
+  }[status];
+
+  return (
+    <View style={styles.summary}>
+      <Text style={styles.count}>
+        <Text style={{ color: ended ? chrome.textMuted : isFull ? chrome.danger : chrome.text }}>
+          {reserved}
+          {capacity > 0 && `/${capacity}`}
+        </Text>
+        {waitlist > 0 && !ended && <Text style={{ color: chrome.warning }}>{` +${waitlist}`}</Text>}
+      </Text>
+
+      {attendee ? (
+        <Tag
+          label={attendee.reserved ? "Påmeldt" : "Venteliste"}
+          color={attendee.reserved ? chrome.success : chrome.warning}
+        />
+      ) : (
+        !ended && (
+          <View style={styles.status}>
+            <View style={[styles.light, { backgroundColor: light.color }]} />
+            <Text numberOfLines={1} style={[styles.statusText, { color: chrome.textMuted }]}>
+              {light.label}
+            </Text>
+          </View>
+        )
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   row: {
-    minHeight: 98,
+    minHeight: 80,
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
   image: {
-    width: 100,
-    height: 70,
+    width: 72,
+    height: 52,
     borderWidth: 1,
     borderRadius: 9,
   },
   content: {
     minWidth: 0,
     flex: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
-  title: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  attendancePill: {
-    minHeight: 25,
-    paddingHorizontal: 7,
-    borderWidth: 1,
-    borderRadius: 7,
-    flexDirection: "row",
-    alignItems: "center",
     gap: 4,
   },
-  attendanceText: {
-    fontSize: 11,
+  title: {
+    fontSize: 15,
+    lineHeight: 19,
     fontWeight: "700",
   },
-  dateRow: {
-    marginTop: 7,
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  date: {
+    flexShrink: 1,
+    fontSize: 12,
+  },
+  typeTag: {
+    fontSize: 10,
+  },
+  summary: {
+    maxWidth: 118,
+    alignItems: "flex-end",
+    gap: 5,
+  },
+  count: {
+    fontSize: 13,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  status: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
   },
-  date: {
-    flex: 1,
-    fontSize: 13,
+  light: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
-  typeTag: {
-    marginTop: 8,
+  statusText: {
+    fontSize: 11,
   },
 });
 
