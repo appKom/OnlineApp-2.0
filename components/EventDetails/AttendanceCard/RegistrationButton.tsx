@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { isFuture, min } from "date-fns"
 import type { Attendance, Attendee, Event } from "../../../types/event"
@@ -8,24 +8,18 @@ import type { User } from "../../../types/user"
 import type { AttendanceStatus } from "../../../types/attendanceStatus"
 import { getAttendee, getAttendablePool, getAttendanceStatus, getReservedAttendeeCount } from "../../../utils/attendance"
 import { findActiveMembership } from "../../../utils/user-utils"
-import { useTheme } from "../../../utils/theme"
 import { DeregisterModal, type DeregisterReasonFormResult } from "../DeregisterModal"
-import { useEventChromeColors } from "../EventSurface"
+import { RaisedButton, usePanelChromeColors } from "../../Panel"
 
-const getButtonColor = (
-  theme: ReturnType<typeof useTheme>,
-  disabled: boolean,
+const getButtonVariant = (
   attendee: boolean,
   isPoolFull: boolean,
   hasPunishment: boolean,
   hasMergeDelay: boolean
 ) => {
-  if (disabled) return { backgroundColor: theme.surfaceVariant, color: theme.onSurfaceVariant }
-  if (attendee) return { backgroundColor: theme.deregisterButton, color: theme.onDeregisterButton }
-  if (isPoolFull || hasPunishment || hasMergeDelay)
-    return { backgroundColor: theme.registerForWaitlist, color: theme.onRegisterForWaitlist }
-
-  return { backgroundColor: theme.registerButton, color: theme.onRegisterButton }
+  if (attendee) return "danger" as const
+  if (isPoolFull || hasPunishment || hasMergeDelay) return "warning" as const
+  return "accent" as const
 }
 
 const getDisabledText = (
@@ -105,8 +99,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   chargeScheduleDate,
   isVerified,
 }) => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+  const chrome = usePanelChromeColors()
   const [deregisterModalOpen, setDeregisterModalOpen] = useState(false)
 
   const attendee = getAttendee(attendance, user)
@@ -151,46 +144,28 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   
   const finalDisabledText = needsVerification ? "Fullfør sikkerhetskontroll" : disabledText
 
-  const colors = getButtonColor(theme, disabled, Boolean(attendee), isPoolFull, hasPunishment, hasMergeDelay)
+  const variant = getButtonVariant(Boolean(attendee), isPoolFull, hasPunishment, hasMergeDelay)
 
   const getIconName = () => {
-    if (disabled) return "lock"
-    if (attendee) return "account-minus"
-    return "account-plus"
+    if (disabled) return "lock-outline" as const
+    if (attendee) return "account-minus-outline" as const
+    return "account-plus-outline" as const
   }
 
   return (
-    <View style={{ gap: 8 }}>
-      <TouchableOpacity
-        onPress={attendee ? () => setDeregisterModalOpen(true) : registerForAttendance}
+    <View style={styles.container}>
+      <RaisedButton
+        icon={getIconName()}
+        label={isLoading ? "Vent…" : buttonText}
+        tone={disabled ? "default" : variant}
         disabled={disabled || isLoading}
-        style={[
-          styles.button,
-          {
-            backgroundColor: colors.backgroundColor,
-            borderColor: chrome.edge,
-            borderTopColor: chrome.highlight,
-            opacity: disabled ? 0.6 : 1,
-            elevation: 4,
-            shadowColor: theme.shadow,
-            shadowOpacity: chrome.shadowOpacity,
-          },
-        ]}
-      >
-        {isLoading ? (
-          <ActivityIndicator color={colors.color} size="small" />
-        ) : (
-          <View style={styles.buttonContent}>
-            <MaterialCommunityIcons name={getIconName()} size={20} color={colors.color} />
-            <Text style={[styles.buttonText, { color: colors.color }]}>{buttonText}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+        onPress={attendee ? () => setDeregisterModalOpen(true) : registerForAttendance}
+      />
 
       {disabled && finalDisabledText && (
         <View style={styles.disabledTextContainer}>
-          <MaterialCommunityIcons name="alert-circle" size={16} color={theme.onSurfaceVariant} />
-          <Text style={[styles.disabledText, { color: theme.onSurfaceVariant }]}>{finalDisabledText}</Text>
+          <MaterialCommunityIcons name="information-outline" size={14} color={chrome.textMuted} />
+          <Text style={[styles.disabledText, { color: chrome.textMuted }]}>{finalDisabledText}</Text>
         </View>
       )}
 
@@ -210,32 +185,12 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
 export default RegistrationButton
 
 const styles = StyleSheet.create({
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: 48,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  container: { gap: 6 },
   disabledTextContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    gap: 6,
+    paddingHorizontal: 4,
   },
   disabledText: {
     fontSize: 13,

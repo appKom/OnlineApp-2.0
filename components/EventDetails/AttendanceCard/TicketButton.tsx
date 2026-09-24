@@ -1,56 +1,38 @@
 import React, { useState } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native"
 import QRCode from "react-native-qrcode-svg"
 import type { Attendee } from "../../../types/event"
-import { useTheme } from "../../../utils/theme"
 import { AnimatedModal } from "../../AnimatedModal"
-import { useEventChromeColors } from "../EventSurface"
-import { EventSurface } from "../EventSurface"
+import { Panel, PanelHeader, RaisedButton, usePanelChromeColors } from "../../Panel"
 
 interface TicketButtonProps {
   attendee: Attendee,
 }
 
 export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+  const chrome = usePanelChromeColors()
   const { width } = useWindowDimensions()
-  const qrSize = Math.min(250, width * 0.9 - 72)
+  const qrSize = Math.min(240, width * 0.9 - 80)
   const [modalVisible, setModalVisible] = useState(false)
 
   return (
     <>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => setModalVisible(true)}
-        style={[
-          styles.button,
-          {
-            backgroundColor: chrome.raised,
-            borderColor: chrome.edge,
-            borderTopColor: chrome.highlight,
-            shadowColor: theme.shadow,
-            shadowOpacity: chrome.shadowOpacity * 0.65,
-          }
-        ]}
-      >
-        <MaterialCommunityIcons name="qrcode" size={20} color={chrome.icon} />
-        <Text style={[styles.buttonText, { color: theme.onSurface }]}>Vis billett</Text>
-      </TouchableOpacity>
+      <RaisedButton flex icon="qrcode" label="Billett" onPress={() => setModalVisible(true)} />
 
       <AnimatedModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         modalWidth="90%"
-        modalMaxWidth={380}
+        modalMaxWidth={360}
       >
         {() => (
-          <EventSurface style={{ padding: 20, alignItems: "center" }}>
-            <View style={{ width: qrSize + 32, height: qrSize + 32, backgroundColor: "white", borderRadius: 12, justifyContent: "center", alignItems: "center" }}>
+          <Panel style={styles.modal}>
+            <PanelHeader title="Billett" />
+            <View style={[styles.qr, { width: qrSize + 32, height: qrSize + 32, borderColor: chrome.edge }]}>
               <QRCode value={attendee.id} size={qrSize} />
             </View>
-          </EventSurface>
+            <Text style={[styles.hint, { color: chrome.textMuted }]}>Vis koden ved innslipp</Text>
+          </Panel>
         )}
       </AnimatedModal>
     </>
@@ -58,22 +40,16 @@ export const TicketButton: React.FC<TicketButtonProps> = ({ attendee }) => {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  modal: { padding: 14, gap: 14, alignItems: "stretch" },
+  qr: {
+    alignSelf: "center",
+    backgroundColor: "white",
     borderWidth: 1,
-    borderRadius: 8,
-    elevation: 3,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  hint: { fontSize: 13, textAlign: "center" },
 })
 
 export default TicketButton

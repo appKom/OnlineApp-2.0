@@ -1,5 +1,5 @@
-import React from "react"
-import { View, Text, Animated } from "react-native"
+import React, { useState } from "react"
+import { View, Text, LayoutAnimation, StyleSheet } from "react-native"
 import type { Attendance, AttendancePool } from "../../../types/event"
 import {
   getAttendablePool,
@@ -8,15 +8,7 @@ import {
   getUnreservedAttendeeCount,
 } from "../../../utils/attendance"
 import type { User } from "../../../types/user"
-import { FontAwesome6, MaterialIcons } from "@expo/vector-icons"
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "../../Collapsible"
-import { useTheme, withAlpha, elevate } from "../../../utils/theme"
-import { useEventChromeColors } from "../EventSurface"
-import { EventInsetDivider } from "../EventSurface"
+import { DisclosureRow, Tag, usePanelChromeColors } from "../../Panel"
 
 interface NonAttendablePoolsBoxProps {
   attendance: Attendance
@@ -27,147 +19,72 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
   attendance,
   user,
 }) => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
-
-  if (!attendance.pools.length) {
-    return <Text>Ingen påmeldingsgrupper</Text>
-  }
-
+  const chrome = usePanelChromeColors()
   const hasAttendablePool = getAttendablePool(attendance, user) !== null
   const nonAttendablePools = getNonAttendablePools(attendance, user)
+  const [open, setOpen] = useState(!hasAttendablePool)
+
+  if (!attendance.pools.length) {
+    return <Text style={[styles.empty, { color: chrome.textMuted }]}>Ingen påmeldingsgrupper</Text>
+  }
 
   if (!nonAttendablePools.length) {
     return null
   }
 
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    setOpen((current) => !current)
+  }
+
   return (
-    <View style={{ paddingVertical: 8 }}>
-      <Collapsible defaultOpen={!hasAttendablePool}>
-        <CollapsibleTrigger>
-          {(isOpen, rotation) => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text
-                style={{
-                  color: theme.onSurface,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                {hasAttendablePool
-                  ? "Andre påmeldingsgrupper"
-                  : "Påmeldingsgrupper"}
-              </Text>
+    <View style={[styles.container, { borderTopColor: chrome.edge }]}>
+      <DisclosureRow
+        title={`${hasAttendablePool ? "Andre grupper" : "Påmeldingsgrupper"} (${nonAttendablePools.length})`}
+        open={open}
+        onPress={toggle}
+      />
 
-              <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-                <MaterialIcons
-                  name="keyboard-arrow-down"
-                  color={chrome.icon}
-                  size={30}
-                />
-              </Animated.View>
-            </View>
-          )}
-        </CollapsibleTrigger>
-
-        <CollapsibleContent>
-          <View>
-            {nonAttendablePools.map((pool, index) => (
-              <React.Fragment key={pool.id}>
-                {index > 0 && <EventInsetDivider />}
-                <AttendanceBoxPoolSmall pool={pool} attendance={attendance} />
-              </React.Fragment>
-            ))}
-          </View>
-        </CollapsibleContent>
-      </Collapsible>
+      {open &&
+        nonAttendablePools.map((pool) => (
+          <PoolRow key={pool.id} pool={pool} attendance={attendance} />
+        ))}
     </View>
   )
 }
 
-interface AttendanceBoxPoolSmallProps {
-  pool: AttendancePool
-  attendance: Attendance
-}
-
-const AttendanceBoxPoolSmall = ({
-  pool,
-  attendance,
-}: AttendanceBoxPoolSmallProps) => {
-  const theme = useTheme()
-
+const PoolRow = ({ pool, attendance }: { pool: AttendancePool; attendance: Attendance }) => {
+  const chrome = usePanelChromeColors()
   const reservedAttendeeCount = getReservedAttendeeCount(attendance, pool.id)
   const unreservedAttendeeCount = getUnreservedAttendeeCount(attendance, pool.id)
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 10,
-        minHeight: 44,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-        <Text style={{ color: theme.onSurface }}>
-          {pool.title}
-        </Text>
-
-        {pool.mergeDelayHours ? (
-          <DelayPill
-            mergeDelayHours={pool.mergeDelayHours}
-            color={theme.onSurface}
-            backgroundColor={elevate(theme.surfaceContainerHighest, 35)}
-          />
-        ) : null}
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: theme.onSurface }}>
-          {reservedAttendeeCount}
-          {pool.capacity > 0 && `/${pool.capacity}`}
-        </Text>
-
-        {unreservedAttendeeCount > 0 && (
-          <Text style={{ color: theme.onSurface }}>
-            +{unreservedAttendeeCount} i kø
-          </Text>
-        )}
-      </View>
-    </View>
-  )
-}
-
-interface DelayPillProps {
-  mergeDelayHours: number | null
-  color?: string
-  backgroundColor?: string
-}
-
-const DelayPill = ({
-  mergeDelayHours,
-  color,
-  backgroundColor,
-}: DelayPillProps) => {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 3,
-        paddingHorizontal: 7,
-        gap: 3,
-        backgroundColor,
-        borderRadius: 7,
-      }}
-    >
-      <FontAwesome6 name="clock" color={color} />
-      <Text style={{ color }}>
-        {mergeDelayHours ? `${mergeDelayHours}t` : "TBD"}
+    <View style={[styles.row, { borderTopColor: chrome.edge }]}>
+      <Text numberOfLines={1} style={[styles.title, { color: chrome.text }]}>
+        {pool.title}
+      </Text>
+      {pool.mergeDelayHours ? <Tag label={`+${pool.mergeDelayHours}t`} color={chrome.warning} /> : null}
+      <Text style={[styles.count, { color: chrome.textMuted }]}>
+        {reservedAttendeeCount}
+        {pool.capacity > 0 && `/${pool.capacity}`}
+        {unreservedAttendeeCount > 0 && ` +${unreservedAttendeeCount}`}
       </Text>
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  empty: { fontSize: 13 },
+  container: { borderTopWidth: StyleSheet.hairlineWidth },
+  row: {
+    minHeight: 44,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  title: { flex: 1, fontSize: 13 },
+  count: { fontSize: 12, fontVariant: ["tabular-nums"] },
+})
 
 export default NonAttendablePoolsBox

@@ -1,9 +1,8 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useTheme } from "utils/theme";
 import HTML from "react-native-render-html";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { EventSurface, useEventChromeColors } from "./EventSurface";
+import { Panel, PanelHeader, usePanelChromeColors } from "../Panel";
 
 interface DescriptionCardProps {
   description: string;
@@ -18,9 +17,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   descriptionExpanded,
   onToggleDescription,
 }) => {
-  // Use centralized theme tokens
-  const theme = useTheme();
-  const chrome = useEventChromeColors();
+  const chrome = usePanelChromeColors();
 
   // Strip HTML tags for length check
   const stripHtml = (html: string) => {
@@ -31,10 +28,8 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
   const shouldShowToggle = descriptionText.length > 256;
 
   return (
-    <EventSurface style={styles.card}>
-      <Text style={[styles.cardTitle, { color: theme.onSurface }]}>
-        Beskrivelse
-      </Text>
+    <Panel style={styles.card}>
+      <PanelHeader title="Beskrivelse" style={styles.header} />
 
       <View
         style={[
@@ -44,8 +39,9 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
       >
         <HTML
           source={{ html: description }}
-          contentWidth={screenWidth - 88}
-          baseStyle={{ ...styles.htmlBase, color: theme.onSurface }}
+          contentWidth={screenWidth - 62}
+          baseStyle={{ ...styles.htmlBase, color: chrome.text }}
+          tagsStyles={{ a: { color: chrome.accent } }}
         />
       </View>
 
@@ -56,7 +52,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
           onPress={onToggleDescription}
           style={styles.toggleButton}
         >
-          <Text style={[styles.toggleText, { color: chrome.icon }]}>
+          <Text style={[styles.toggleText, { color: chrome.text }]}>
             {descriptionExpanded ? "Vis mindre" : "Les mer"}
           </Text>
           <MaterialCommunityIcons
@@ -66,41 +62,35 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
           />
         </TouchableOpacity>
       )}
-    </EventSurface>
+    </Panel>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    borderRadius: 12,
-    padding: 20,
+    paddingHorizontal: 15,
+    paddingTop: 13,
+    paddingBottom: 5,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
+  header: { marginBottom: 6 },
   contentContainer: {
     // No constraints when expanded - content decides height
   },
   collapsedContent: {
-    maxHeight: 120, // Adjust this value as needed
+    maxHeight: 110, // five lines of htmlBase
     overflow: "hidden",
   },
   toggleButton: {
-    marginTop: 10,
-    minHeight: 38,
+    minHeight: 40,
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
   },
-  toggleText: { fontSize: 14, fontWeight: "700" },
+  toggleText: { fontSize: 13, fontWeight: "700" },
   htmlBase: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
   },
 });
 

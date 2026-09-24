@@ -24,9 +24,9 @@ import Authenticator from "utils/authenticator";
 import { useTheme } from "utils/theme";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import {
-  EventInsetDivider,
-  useEventChromeColors,
-} from "../../../components/EventDetails/EventSurface";
+  PanelDivider,
+  usePanelChromeColors,
+} from "../../../components/Panel";
 
 type TabType = "alle" | "mine";
 
@@ -66,7 +66,7 @@ const AllEvents: React.FC = () => {
 
   const router = useRouter();
   const theme = useTheme();
-  const chrome = useEventChromeColors();
+  const chrome = usePanelChromeColors();
 
   const currentTab: TabType = selectedIndex === 0 ? "alle" : "mine";
   const allEvents = [...futureEvents, ...pastEvents];
@@ -352,7 +352,7 @@ const AllEvents: React.FC = () => {
             minHeight: 200,
           }}
         >
-          <Text style={{ color: "red" }}>{error}</Text>
+          <Text style={{ color: theme.error }}>{error}</Text>
         </View>
       );
     }
@@ -407,7 +407,7 @@ const AllEvents: React.FC = () => {
                             Kommende arrangementer
                           </Text>
                         </View>
-                        <EventInsetDivider onBackground />
+                        <PanelDivider onBackground />
                       </View>
                     )}
                     {isCurrentPast && !isPrevPast && (
@@ -425,7 +425,7 @@ const AllEvents: React.FC = () => {
                             Tidligere arrangementer
                           </Text>
                         </View>
-                        <EventInsetDivider onBackground />
+                        <PanelDivider onBackground />
                       </View>
                     )}
                     <EventCard

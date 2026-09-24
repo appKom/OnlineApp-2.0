@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from "react"
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  TextInput,
-} from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useTheme, elevate } from "../../utils/theme"
+import { View, Text, StyleSheet, TextInput } from "react-native"
 import { AnimatedModal } from "../AnimatedModal"
+import { ChoiceTrack, FieldLabel, Panel, PanelHeader, RaisedButton, usePanelChromeColors } from "../Panel"
 import type { Attendee, Event } from "../../types/event"
 
 export const DeregisterReasonTypes = {
@@ -62,99 +54,63 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
   attendee,
   unregisterForAttendance,
 }) => {
-  const theme = useTheme()
+  const chrome = usePanelChromeColors()
   const [selectedReason, setSelectedReason] = useState<DeregisterReasonType | null>(null)
-  const [showDropdown, setShowDropdown] = useState(false)
   const [begrunnelse, setBegrunnelse] = useState("")
 
   useEffect(() => {
     if (!open) {
       setSelectedReason(null)
-      setShowDropdown(false)
+      setBegrunnelse("")
     }
   }, [open])
 
-  const handleSelectReason = (reason: DeregisterReasonType) => {
-    setSelectedReason(reason)
-    setShowDropdown(false)
-  }
-
   return (
-    <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={330} modalMaxWidth={350}>
-      {() => (
-        <View style={{ backgroundColor: theme.surfaceContainer, padding: 15, borderRadius: 12, gap: 5 }}>
-          <Text style={{ color: theme.onSurface, fontSize: 17 }}>Er du sikker?</Text>
+    <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth="92%" modalMaxWidth={380}>
+      {(closeModal) => (
+        <Panel style={styles.modal}>
+          <PanelHeader title="Meld av" />
+          <Text style={[styles.intro, { color: chrome.textMuted }]}>
+            Er du sikker? Plassen din går videre til neste på ventelisten.
+          </Text>
 
-          <TouchableOpacity
-            style={ { backgroundColor: theme.surfaceContainerHigh, padding: 7, borderRadius: 15 }}
-            onPress={() => setShowDropdown(!showDropdown)}
-          >
-            <View style={{ backgroundColor: selectedReason ? theme.primaryContainer : theme.surfaceContainerHighest, flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}>
-              <Text style={{ color: selectedReason ? theme.onPrimaryContainer : theme.onSurface }} >
-                {selectedReason ? mapDeregisterReasonTypeToLabel(selectedReason) : "Velg avmeldingsgrunn"}
-              </Text>
-              <MaterialCommunityIcons
-                name={showDropdown ? "chevron-up" : "chevron-down"}
-                size={20}
-                color={selectedReason ? theme.onPrimaryContainer : theme.onSurface}
-              />
-            </View>
-          </TouchableOpacity>
-
-          {showDropdown && (
-            <View style={{ position: "absolute", top: 90, left: 15, right: 15, backgroundColor: theme.surfaceContainerHigh, padding: 7, borderRadius: 15, zIndex: 1000 }} >
-              <FlatList
-                data={DEREGISTER_REASON_TYPE_OPTIONS}
-                scrollEnabled={false}
-                nestedScrollEnabled={false}
-                contentContainerStyle={{ gap: 4 }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={{ backgroundColor: selectedReason === item.value ? theme.primaryContainer : theme.surfaceContainerHighest, flexDirection: "row", alignItems: "center", padding: 5, paddingHorizontal: 10, borderRadius: 8 }}
-                    onPress={() => handleSelectReason(item.value)}
-                  >
-                    <Text
-                      style={{ color: selectedReason === item.value ? theme.onPrimaryContainer : theme.onSurface,  height: 20, }}
-                    >
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                keyExtractor={(item) => item.value}
-              />
-            </View>
-          )}
-
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ color: theme.onSurface, fontSize: 14, marginBottom: 8 }}>Begrunnelse</Text>
-            <TextInput
-              placeholder="Skriv inn begrunnelse..."
-              placeholderTextColor={theme.onSurface}
-              multiline
-              numberOfLines={4}
-              value={begrunnelse}
-              onChangeText={setBegrunnelse}
-              style={{
-                backgroundColor: theme.surfaceContainerHigh,
-                color: theme.onSurface,
-                padding: 10,
-                borderRadius: 8,
-                fontFamily: 'System',
-                fontSize: 14,
-              }}
+          <View style={styles.group}>
+            <FieldLabel>Grunn</FieldLabel>
+            <ChoiceTrack
+              options={DEREGISTER_REASON_TYPE_OPTIONS}
+              value={selectedReason}
+              onChange={setSelectedReason}
             />
           </View>
 
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 5 }}>
-            <TouchableOpacity
-              style={{ backgroundColor: theme.surfaceContainerHighest, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
-              onPress={() => setOpen(false)}
-            >
-              <Text style={[styles.buttonText, { color: theme.onSurface }]}>Avbryt</Text>
-            </TouchableOpacity>
+          <View style={styles.group}>
+            <FieldLabel>Begrunnelse (valgfritt)</FieldLabel>
+            <TextInput
+              placeholder="Skriv en kort begrunnelse…"
+              placeholderTextColor={chrome.textMuted}
+              multiline
+              numberOfLines={3}
+              value={begrunnelse}
+              onChangeText={setBegrunnelse}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: chrome.recessed,
+                  borderColor: chrome.edge,
+                  borderBottomColor: chrome.highlight,
+                  color: chrome.text,
+                },
+              ]}
+            />
+          </View>
 
-            <TouchableOpacity
-              style={{ backgroundColor: selectedReason ? theme.deregisterButton : theme.surfaceVariant, flex: 1, borderRadius: 5, padding: 5, alignItems: "center" }}
+          <View style={styles.buttons}>
+            <RaisedButton flex label="Avbryt" onPress={closeModal} />
+            <RaisedButton
+              flex
+              icon="account-minus-outline"
+              label="Meld meg av"
+              tone="danger"
               disabled={!selectedReason}
               onPress={() => {
                 if (selectedReason) {
@@ -165,11 +121,9 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
                   setOpen(false)
                 }
               }}
-            >
-              <Text style={[styles.buttonText, { color: selectedReason ? theme.onDeregisterButton : theme.onSurfaceVariant }]}>Meld meg av</Text>
-            </TouchableOpacity>
+            />
           </View>
-        </View>
+        </Panel>
       )}
     </AnimatedModal>
   )
@@ -178,14 +132,16 @@ export const DeregisterModal: React.FC<DeregisterModalProps> = ({
 export default DeregisterModal
 
 const styles = StyleSheet.create({
-  modalContent: {},
-  title: {},
-  selectTrigger: {},
-  selectValue: {},
-  dropdown: {},
-  dropdownItem: {},
-  dropdownItemText: {},
-  buttonContainer: {},
-  button: {},
-  buttonText: {},
+  modal: { padding: 15, gap: 14 },
+  intro: { fontSize: 13, lineHeight: 18, marginTop: -6 },
+  group: { gap: 8 },
+  buttons: { flexDirection: "row", gap: 8 },
+  input: {
+    minHeight: 76,
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+    fontSize: 14,
+    textAlignVertical: "top",
+  },
 })

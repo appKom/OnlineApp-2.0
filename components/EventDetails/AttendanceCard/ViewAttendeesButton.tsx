@@ -13,12 +13,10 @@ import {
   ScrollView,
 } from "react-native"
 import { BlurView } from "@react-native-community/blur"
-import { MaterialIcons } from "@expo/vector-icons"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import type { Attendance, Attendee } from "../../../types/event"
 import type { User } from "../../../types/user"
-import { useTheme } from "../../../utils/theme"
-import { useEventChromeColors } from "../EventSurface"
-import { EventInsetDivider } from "../EventSurface"
+import { ChoiceTrack, PanelDivider, RaisedButton, usePanelChromeColors } from "../../Panel"
 
 interface ViewAttendeesButtonProps {
   attendance: Attendance
@@ -38,8 +36,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   attendance,
   user,
 }) => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+  const chrome = usePanelChromeColors()
 
   const [isMounted, setIsMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -163,30 +160,13 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
 
   return (
     <>
-      <TouchableOpacity
+      <RaisedButton
+        flex
+        icon="account-multiple-outline"
+        label="Påmeldte"
         disabled={!user}
         onPress={openModal}
-        style={[
-          styles.button,
-          { backgroundColor: chrome.raised,
-            borderColor: chrome.edge,
-            borderTopColor: chrome.highlight,
-            opacity: !user ? 0.5 : 1,
-            elevation: 3,
-            shadowColor: theme.shadow,
-            shadowOpacity: chrome.shadowOpacity * 0.65,
-          },
-        ]}
-      >
-        <MaterialIcons
-          name="people"
-          size={20}
-          color={chrome.icon}
-        />
-        <Text style={[styles.buttonText, { color: theme.onSurface }]}>
-          Vis påmeldte
-        </Text>
-      </TouchableOpacity>
+      />
 
       {isMounted && (
         <Modal transparent animationType="none" onRequestClose={closeModal}>
@@ -208,6 +188,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                 styles.bottomSheet,
                 {
                   backgroundColor: chrome.surface,
+                  borderColor: chrome.edge,
                   borderTopColor: chrome.highlight,
                   transform: [{ translateY: sheetAnim }],
                 },
@@ -217,44 +198,28 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                 <View
                   style={[
                     styles.handle,
-                    { backgroundColor: theme.onSurfaceVariant },
+                    { backgroundColor: chrome.textMuted },
                   ]}
                 />
-                <Text style={[styles.modalTitle, { color: theme.onSurface }]}>
+                <Text style={[styles.modalTitle, { color: chrome.text }]}>
                   Påmeldingsliste
                 </Text>
               </View>
 
               <View style={styles.filterArea}>
-                <Text style={[styles.filterLabel, { color: theme.onSurfaceVariant }]}>KLASSE</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterOptions}>
-                  {[null, ...grades].map(grade => {
-                    const selected = selectedGrade === grade
-                    return (
-                      <TouchableOpacity
-                        key={grade ?? "all"}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
-                        onPress={() => setSelectedGrade(grade)}
-                        style={[
-                          styles.filterOption,
-                          {
-                            backgroundColor: selected ? chrome.raised : chrome.recessed,
-                            borderColor: chrome.edge,
-                            borderTopColor: selected ? chrome.highlight : chrome.edge,
-                            borderBottomColor: selected ? chrome.edge : chrome.highlight,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.filterText, { color: selected ? theme.onSurface : theme.onSurfaceVariant }]}>
-                          {grade === null ? "Alle" : `${grade}. klasse`}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  })}
+                  <ChoiceTrack
+                    options={[null, ...grades].map(grade => ({
+                      value: grade,
+                      label: grade === null ? "Alle" : `${grade}. klasse`,
+                    }))}
+                    value={selectedGrade}
+                    onChange={setSelectedGrade}
+                    style={styles.filterTrack}
+                  />
                 </ScrollView>
               </View>
-              <EventInsetDivider />
+              <PanelDivider />
 
               <FlatList
                 data={listData}
@@ -264,21 +229,15 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                 windowSize={5}
                 removeClippedSubviews
                 ListEmptyComponent={
-                  <Text style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>
+                  <Text style={[styles.emptyText, { color: chrome.textMuted }]}>
                     Ingen påmeldte i denne klassen.
                   </Text>
                 }
                 renderItem={({ item }) =>
                   item.type === "header" ? (
-                    <View style={styles.sectionHeader}>
-                      <Text style={[styles.sectionTitle, { color: theme.onSurfaceVariant }]}>{item.title}</Text>
-                      <EventInsetDivider />
-                    </View>
+                    <Text style={[styles.sectionTitle, { color: chrome.textMuted }]}>{item.title}</Text>
                   ) : (
-                    <View>
-                      <AttendeeRow attendee={item.attendee} user={user!} />
-                      <EventInsetDivider />
-                    </View>
+                    <AttendeeRow attendee={item.attendee} user={user!} />
                   )
                 }
               />
@@ -291,29 +250,29 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
 }
 
 const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+  const chrome = usePanelChromeColors()
   const isUser = attendee.userId === user.id
 
   return (
     <View
       style={[
         styles.attendeeRow,
-        { backgroundColor: isUser ? chrome.raised : "transparent" },
+        { borderTopColor: chrome.edge },
+        isUser && { backgroundColor: chrome.raised },
       ]}
     >
       {attendee.user.imageUrl ? (
-        <Image source={{ uri: attendee.user.imageUrl }} style={styles.avatar} />
+        <Image source={{ uri: attendee.user.imageUrl }} style={[styles.avatar, { borderColor: chrome.edge }]} />
       ) : (
         <View style={[styles.avatar, styles.avatarFallback, { backgroundColor: chrome.recessed, borderColor: chrome.edge }]}>
-          <MaterialIcons name="person-outline" size={21} color={chrome.icon} />
+          <MaterialCommunityIcons name="account-outline" size={18} color={chrome.icon} />
         </View>
       )}
-      <View>
-        <Text style={[styles.userName, { color: theme.onSurface }]}>
+      <View style={styles.userCopy}>
+        <Text numberOfLines={1} style={[styles.userName, { color: chrome.text }]}>
           {attendee.user.name}
         </Text>
-        <Text style={[styles.userGrade, { color: theme.onSurfaceVariant }]}>
+        <Text style={[styles.userGrade, { color: chrome.textMuted }]}>
           {attendee.userGrade
             ? `${attendee.userGrade}. klasse`
             : "Ingen klasse"}
@@ -324,55 +283,55 @@ const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => 
 }
 
 const styles = StyleSheet.create({
-  button: {
-    flex: 1,
-    flexDirection: "row",
-    gap: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: { fontSize: 16, fontWeight: "600" },
   bottomSheet: {
     position: "absolute",
     bottom: 0,
     width: "100%",
     height: SHEET_HEIGHT,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: 1,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    borderBottomWidth: 0,
     overflow: "hidden",
   },
   dragHeader: {
     alignItems: "center",
-    paddingVertical: 12,
-    gap: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 10,
   },
-  filterArea: { paddingVertical: 12 },
-  filterLabel: { marginHorizontal: 16, marginBottom: 7, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
-  filterOptions: { paddingHorizontal: 16, gap: 8 },
-  filterOption: { minHeight: 34, paddingHorizontal: 11, borderWidth: 1, borderRadius: 8, justifyContent: "center" },
-  filterText: { fontSize: 12, fontWeight: "700" },
+  filterArea: { paddingVertical: 10 },
+  filterOptions: { paddingHorizontal: 16 },
+  filterTrack: { flexWrap: "nowrap" },
   emptyText: { padding: 20, textAlign: "center", fontSize: 14 },
   handle: {
-    width: 40,
-    height: 6,
+    width: 36,
+    height: 5,
     borderRadius: 3,
   },
-  modalTitle: { fontSize: 20, fontWeight: "600" },
-  sectionHeader: { paddingTop: 12 },
-  sectionTitle: { paddingHorizontal: 16, paddingVertical: 9, fontWeight: "700", fontSize: 12, letterSpacing: 0.7, textTransform: "uppercase" },
-  attendeeRow: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 12,
-    paddingHorizontal: 16,
+  modalTitle: { fontSize: 17, fontWeight: "700" },
+  sectionTitle: {
+    paddingHorizontal: 19,
+    paddingTop: 16,
+    paddingBottom: 8,
+    fontWeight: "700",
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1 },
-  userName: { fontWeight: "600" },
+  attendeeRow: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  avatar: { width: 34, height: 34, borderRadius: 17, borderWidth: 1 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  userCopy: { flex: 1 },
+  userName: { fontSize: 14, fontWeight: "600" },
   userGrade: { fontSize: 12 },
 })
 

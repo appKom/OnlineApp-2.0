@@ -6,11 +6,24 @@ import {
   getReservedAttendeeCount,
   getUnreservedAttendeeCount,
 } from "../utils/attendance";
-import { elevate, useTheme, useThemeMode } from "../utils/theme";
-import {
-  EventInsetDivider,
-  useEventChromeColors,
-} from "./EventDetails/EventSurface";
+import { useTheme, useThemeMode } from "../utils/theme";
+import { PanelDivider, Tag, usePanelChromeColors } from "./Panel";
+
+const EVENT_TYPES: Record<string, { label: string; dark: string; light: string }> = {
+  SOCIAL: { label: "Sosialt", dark: "#74D69C", light: "#1B7A48" },
+  ACADEMIC: { label: "Kurs", dark: "#86BCF7", light: "#1F5FA8" },
+  COMPANY: { label: "Bedpres", dark: "#F2878A", light: "#B3323A" },
+  GENERAL_ASSEMBLY: { label: "Generalforsamling", dark: "#F5BC6F", light: "#8F5A00" },
+  INTERNAL: { label: "Intern", dark: "#C4A9FF", light: "#6A4FB0" },
+  WELCOME: { label: "Fadderuke", dark: "#F5BC6F", light: "#8F5A00" },
+  OTHER: { label: "Annet", dark: "#A9B1B9", light: "#5B636B" },
+};
+
+export function useEventTypeStyle(eventType: string | undefined) {
+  const { mode } = useThemeMode();
+  const type = EVENT_TYPES[eventType?.toUpperCase() ?? ""] ?? EVENT_TYPES.OTHER;
+  return { label: type.label, color: mode === "dark" ? type.dark : type.light };
+}
 
 interface EventCardProps {
   event: EventAttendanceBundle;
@@ -20,7 +33,8 @@ interface EventCardProps {
 const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
   const theme = useTheme();
   const { mode } = useThemeMode();
-  const chrome = useEventChromeColors();
+  const chrome = usePanelChromeColors();
+  const type = useEventTypeStyle(event.event.type);
   const primaryPool = event.attendance?.pools[0];
   const reservedCount = event.attendance
     ? getReservedAttendeeCount(event.attendance, primaryPool?.id ?? "")
@@ -34,44 +48,6 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
       ? require("../assets/eventFallback/fallback_dark.png")
       : require("../assets/eventFallback/fallback_light.png");
 
-  const getBadgeColor = (eventType: string | undefined): string => {
-    switch (eventType?.toUpperCase()) {
-      case "SOCIAL":
-        return theme.socialBadge;
-      case "ACADEMIC":
-        return theme.academicBadbe;
-      case "COMPANY":
-        return theme.companyBadge;
-      case "GENERAL_ASSEMBLY":
-        return theme.generalAssemblyBadge;
-      case "INTERNAL":
-        return theme.internalBadge;
-      case "WELCOME":
-        return theme.welcomeBadge;
-      default:
-        return theme.otherBadge;
-    }
-  };
-
-  const getEventTypeLabel = (eventType: string | undefined): string => {
-    switch (eventType?.toUpperCase()) {
-      case "SOCIAL":
-        return "Sosialt";
-      case "ACADEMIC":
-        return "Kurs";
-      case "COMPANY":
-        return "Bedpres";
-      case "GENERAL_ASSEMBLY":
-        return "Generalforsamling";
-      case "INTERNAL":
-        return "Intern";
-      case "WELCOME":
-        return "Fadderuke";
-      default:
-        return "Annet";
-    }
-  };
-
   const formatDate = (date: Date) =>
     new Date(date).toLocaleDateString("no-NO", {
       weekday: "short",
@@ -81,7 +57,6 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
       minute: "2-digit",
     });
 
-  const badgeColor = getBadgeColor(event.event.type);
 
   return (
     <View style={{ backgroundColor: theme.background }}>
@@ -150,7 +125,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
           <View style={styles.dateRow}>
             <MaterialCommunityIcons
               name="calendar-blank-outline"
-              size={16}
+              size={15}
               color={chrome.icon}
             />
             <Text
@@ -160,25 +135,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
             </Text>
           </View>
 
-          <View
-            style={[
-              styles.typeBadge,
-              {
-                backgroundColor: badgeColor,
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.typeText,
-                { color: elevate(badgeColor, 150) },
-              ]}
-            >
-              {getEventTypeLabel(event.event.type)}
-            </Text>
-          </View>
+          <Tag label={type.label} color={type.color} style={styles.typeTag} />
         </View>
 
         <MaterialCommunityIcons
@@ -187,7 +144,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress }) => {
           color={chrome.icon}
         />
       </Pressable>
-      <EventInsetDivider onBackground />
+      <PanelDivider onBackground />
     </View>
   );
 };
@@ -244,17 +201,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
   },
-  typeBadge: {
-    marginTop: 7,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  typeText: {
-    fontSize: 11,
-    fontWeight: "600",
+  typeTag: {
+    marginTop: 8,
   },
 });
 

@@ -1,64 +1,54 @@
 import React, { useState } from "react"
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native"
-import { Octicons } from "@expo/vector-icons"
-import { useTheme } from "../../../utils/theme"
+import { Text, ScrollView, StyleSheet } from "react-native"
 import { AnimatedModal } from "../../AnimatedModal"
 import { PenaltyRules } from "../../../utils/penalty-rules"
-import { EventSurface, useEventChromeColors } from "../EventSurface"
+import { Panel, PanelHeader, RaisedButton, usePanelChromeColors } from "../../Panel"
 
-interface EventRulesProps {
-  className?: string
-}
-
-export const EventRules: React.FC<EventRulesProps> = () => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+export const EventRules: React.FC = () => {
+  const chrome = usePanelChromeColors()
   const [open, setOpen] = useState(false)
 
   return (
     <>
-      <TouchableOpacity accessibilityRole="button" onPress={() => setOpen(true)} style={{ minHeight: 32, justifyContent: "center" }}>
-        <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
-          <Octicons name="book" size={17} color={chrome.icon} />
-          <Text style={{ fontSize: 14, fontWeight: "600", color: theme.onSurface }}>Arrangementregler</Text>
-        </View>
-      </TouchableOpacity>
+      <RaisedButton
+        flex
+        icon="book-open-outline"
+        label="Regler"
+        accessibilityLabel="Arrangementregler"
+        onPress={() => setOpen(true)}
+      />
 
-      <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={340} modalMaxWidth={380}>
+      <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth="92%" modalMaxWidth={400}>
         {(closeModal) => (
-          <EventSurface style={{ padding: 20 }}>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: theme.onSurface, marginBottom: 8 }}>
-              Arrangementregler
-            </Text>
-            <Text style={{ fontSize: 14, color: theme.onSurfaceVariant, marginBottom: 16 }}>
-              Ved påmelding av dette arrangementet godtar du å følge Onlines arrangementregler beskrevet under.
+          <Panel style={styles.modal}>
+            <PanelHeader title="Arrangementregler" />
+            <Text style={[styles.intro, { color: chrome.textMuted }]}>
+              Ved påmelding godtar du å følge Onlines arrangementregler.
             </Text>
 
-            <ScrollView style={{ maxHeight: 400, marginBottom: 16 }}>
+            <ScrollView
+              style={[
+                styles.scroll,
+                { backgroundColor: chrome.recessed, borderColor: chrome.edge, borderBottomColor: chrome.highlight },
+              ]}
+              contentContainerStyle={styles.scrollContent}
+            >
               <PenaltyRules />
             </ScrollView>
 
-            <TouchableOpacity
-              onPress={closeModal}
-              style={{
-                backgroundColor: theme.primary,
-                padding: 12,
-                borderRadius: 8,
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-              }}
-            >
-              <Text style={{ color: theme.onPrimary, fontWeight: "600" }}>
-                Jeg er inneforstått med reglene
-              </Text>
-            </TouchableOpacity>
-          </EventSurface>
+            <RaisedButton icon="check" label="Jeg har forstått reglene" tone="accent" onPress={closeModal} />
+          </Panel>
         )}
       </AnimatedModal>
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  modal: { padding: 14, gap: 12 },
+  intro: { fontSize: 13, lineHeight: 18 },
+  scroll: { maxHeight: 420, borderWidth: 1, borderRadius: 10 },
+  scrollContent: { padding: 12 },
+})
 
 export default EventRules

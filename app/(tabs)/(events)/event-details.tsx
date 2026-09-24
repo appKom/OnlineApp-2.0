@@ -27,10 +27,13 @@ import {
 } from "utils/event-utils";
 import { useTheme, useThemeMode } from "utils/theme";
 import {
-  EventInsetDivider,
-  EventSurface,
-  useEventChromeColors,
-} from "components/EventDetails/EventSurface";
+  Panel,
+  PanelDivider,
+  RaisedButton,
+  Tag,
+  usePanelChromeColors,
+} from "components/Panel";
+import { useEventTypeStyle } from "components/EventCard";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { EventRules } from "components/EventDetails/AttendanceCard/EventRules";
 import { PaymentExplanationDialog } from "components/EventDetails/AttendanceCard/PaymentExplanationDialog";
@@ -42,7 +45,7 @@ const EventDetails: React.FC = () => {
   const insets = useSafeAreaInsets();
   const user = Authenticator.user;
   const theme = useTheme();
-  const chrome = useEventChromeColors();
+  const chrome = usePanelChromeColors();
   const { mode } = useThemeMode();
   const router = useRouter();
 
@@ -55,13 +58,13 @@ const EventDetails: React.FC = () => {
         styles.backButton,
         {
           top: insets.top + 8,
-          backgroundColor: chrome.recessed,
+          backgroundColor: chrome.raised,
           borderColor: chrome.edge,
           borderTopColor: chrome.highlight,
         },
       ]}
     >
-      <MaterialCommunityIcons name="arrow-left" size={22} color={chrome.icon} />
+      <MaterialCommunityIcons name="arrow-left" size={20} color={chrome.icon} />
     </Pressable>
   );
 
@@ -79,6 +82,7 @@ const EventDetails: React.FC = () => {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const isRegistration = isRegistrationEvent(event);
+  const eventType = useEventTypeStyle(event?.event.type);
 
   // Use shared theme tokens for colors
   const colors = {
@@ -202,12 +206,15 @@ const EventDetails: React.FC = () => {
           />
           {renderBackButton()}
         </View>
-        <EventInsetDivider onBackground />
+        <PanelDivider onBackground />
         <View style={styles.titleArea}>
-          <Text style={[styles.eventTitle, { color: theme.onSurface }]}>
+          <Tag label={eventType.label} color={eventType.color} />
+          <Text style={[styles.eventTitle, { color: chrome.text }]}>
             {event.event.title}
           </Text>
         </View>
+
+        <View style={styles.panels}>
 
         <TimeLocationCard
           event={event}
@@ -231,31 +238,25 @@ const EventDetails: React.FC = () => {
             parentAttendance={event.parentAttendance ?? null}
           />
         ) : (
-          <EventSurface style={styles.noRegistrationContainer}>
-            <Text
-              style={[
-                styles.noRegistrationText,
-                { color: theme.onSurfaceVariant },
-              ]}
-            >
-              Dette er ikke et påmeldingsarrangement.
+          <Panel style={styles.noRegistrationContainer}>
+            <MaterialCommunityIcons name="information-outline" size={16} color={chrome.textMuted} />
+            <Text style={[styles.noRegistrationText, { color: chrome.textMuted }]}>
+              Dette arrangementet har ikke påmelding.
             </Text>
-          </EventSurface>
+          </Panel>
         )}
-        <View style={styles.relatedLinks}>
-          <EventInsetDivider onBackground />
-          <View style={styles.relatedLinksRow}>
-            <EventRules />
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")}
-              style={styles.relatedLink}
-            >
-              <MaterialCommunityIcons name="food-apple-outline" size={18} color={chrome.icon} />
-              <Text style={[styles.relatedLinkText, { color: theme.onSurface }]}>Matallergier</Text>
-            </Pressable>
-            {isRegistration && Boolean(event.attendance?.attendancePrice) && <PaymentExplanationDialog />}
-          </View>
+
+        <View style={styles.links}>
+          <EventRules />
+          <RaisedButton
+            flex
+            icon="food-apple-outline"
+            label="Allergier"
+            accessibilityLabel="Oppdater matallergier på online.ntnu.no"
+            onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")}
+          />
+          {isRegistration && Boolean(event.attendance?.attendancePrice) && <PaymentExplanationDialog />}
+        </View>
         </View>
         {/*ikke fjern, navbar på ios blokker bunnen av siden uten denne :p  */}
         <View style={{ height: 104 }} />
@@ -275,19 +276,17 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     left: 16,
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderWidth: 1,
-    borderRadius: 11,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  titleArea: { paddingHorizontal: 24, paddingTop: 17, paddingBottom: 2 },
-  eventTitle: { fontSize: 23, lineHeight: 29, fontWeight: "700" },
-  relatedLinks: { marginHorizontal: 24, marginTop: 4 },
-  relatedLinksRow: { flexDirection: "row", flexWrap: "wrap", gap: 18, paddingVertical: 17 },
-  relatedLink: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 32 },
-  relatedLinkText: { fontSize: 14, fontWeight: "600" },
+  titleArea: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 14, gap: 4 },
+  eventTitle: { fontSize: 24, lineHeight: 30, fontWeight: "700", letterSpacing: -0.2 },
+  panels: { paddingHorizontal: 16, gap: 14 },
+  links: { flexDirection: "row", gap: 8 },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -299,15 +298,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   noRegistrationContainer: {
-    marginHorizontal: 24,
-    marginTop: 16,
-    marginBottom: 16,
-    padding: 16,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   noRegistrationText: {
-    fontSize: 16,
-    textAlign: "center",
-    fontStyle: "italic",
+    flex: 1,
+    fontSize: 14,
   },
 });
 

@@ -1,82 +1,70 @@
 import React, { useState } from "react"
-import { View, Text, TouchableOpacity, ScrollView } from "react-native"
-import { Octicons } from "@expo/vector-icons"
-import { useTheme } from "../../../utils/theme"
+import { View, Text, ScrollView, StyleSheet } from "react-native"
 import { AnimatedModal } from "../../AnimatedModal"
-import { EventSurface, useEventChromeColors } from "../EventSurface"
+import { Panel, PanelHeader, RaisedButton, usePanelChromeColors } from "../../Panel"
 
 export const PaymentExplanationDialog: React.FC = () => {
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+  const chrome = usePanelChromeColors()
   const [open, setOpen] = useState(false)
 
   return (
     <>
-      <TouchableOpacity accessibilityRole="button" onPress={() => setOpen(true)} style={{ minHeight: 32, justifyContent: "center" }}>
-        <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
-          <Octicons name="info" size={17} color={chrome.icon} />
-          <Text style={{ fontSize: 14, fontWeight: "600", color: theme.onSurface }}>Hvordan fungerer betaling?</Text>
-        </View>
-      </TouchableOpacity>
+      <RaisedButton
+        flex
+        icon="credit-card-outline"
+        label="Betaling"
+        accessibilityLabel="Hvordan fungerer betaling?"
+        onPress={() => setOpen(true)}
+      />
 
-      <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth={340} modalMaxWidth={380}>
+      <AnimatedModal visible={open} onClose={() => setOpen(false)} modalWidth="92%" modalMaxWidth={400}>
         {(closeModal) => (
-          <EventSurface style={{ padding: 20 }}>
-            <View style={{ flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 8 }}>
-              <Octicons name="info" size={20} color={chrome.icon} />
-              <Text style={{ fontSize: 18, fontWeight: "700", color: theme.onSurface }}>
-                Betalingsinformasjon
+          <Panel style={styles.modal}>
+            <PanelHeader title="Betaling" />
+
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+              <Text style={[styles.text, { color: chrome.text }]}>
+                Når du melder deg på et arrangement med betaling, aktiveres betalingsknappen. Den viser en nedtelling
+                for hvor lenge du har på deg til å reservere betalingen.
               </Text>
-            </View>
 
-            <ScrollView style={{ maxHeight: 400, marginBottom: 16 }}>
-              <View style={{ gap: 12 }}>
-                <Text style={{ fontSize: 14, color: theme.onSurfaceVariant, lineHeight: 20 }}>
-                  Når du melder deg på et arrangement med betaling, aktiveres betalingsknappen. Den viser så en nedtelling
-                  som indikerer hvor lenge du har på deg til å reservere en betaling.
-                </Text>
-
-                <View style={{ borderLeftWidth: 2, borderLeftColor: theme.primary, paddingLeft: 12, gap: 4 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: theme.onSurfaceVariant }}>
-                    Reservert betaling:
-                  </Text>
-                  <Text style={{ fontSize: 14, color: theme.onSurfaceVariant, lineHeight: 20 }}>
-                    Beløpet holdes av på kontoen din og trekkes senest på den femte dagen, eller før dersom
-                    avmeldingsfristen inntrer tidligere.
-                  </Text>
-                </View>
-
-                <Text style={{ fontSize: 14, color: theme.onSurfaceVariant, lineHeight: 20 }}>
-                  Dersom ingen betaling er reservert innen nedtellingen er ferdig, vil du automatisk bli avmeldt
-                  arrangementet.
-                </Text>
-
-                <Text style={{ fontSize: 14, color: theme.onSurfaceVariant, lineHeight: 20 }}>
-                  Du kan selv melde deg av når som helst før avmeldingsfristen. Da blir betalingsreservasjonen automatisk
-                  kansellert i banken din.
+              <View
+                style={[
+                  styles.callout,
+                  { backgroundColor: chrome.recessed, borderColor: chrome.edge, borderBottomColor: chrome.highlight },
+                ]}
+              >
+                <Text style={[styles.calloutTitle, { color: chrome.accent }]}>Reservert betaling</Text>
+                <Text style={[styles.text, { color: chrome.text }]}>
+                  Beløpet holdes av på kontoen din og trekkes senest på den femte dagen, eller tidligere dersom
+                  avmeldingsfristen inntreffer før.
                 </Text>
               </View>
+
+              <Text style={[styles.text, { color: chrome.textMuted }]}>
+                Reserverer du ikke betalingen før nedtellingen er ferdig, blir du automatisk meldt av.
+              </Text>
+              <Text style={[styles.text, { color: chrome.textMuted }]}>
+                Du kan melde deg av når som helst før avmeldingsfristen. Da kanselleres reservasjonen automatisk i
+                banken din.
+              </Text>
             </ScrollView>
 
-            <TouchableOpacity
-              onPress={closeModal}
-              style={{
-                backgroundColor: theme.primary,
-                padding: 12,
-                borderRadius: 8,
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-              }}
-            >
-              <Text style={{ color: theme.onPrimary, fontWeight: "600" }}>Jeg forstår</Text>
-            </TouchableOpacity>
-          </EventSurface>
+            <RaisedButton icon="check" label="Jeg forstår" tone="accent" onPress={closeModal} />
+          </Panel>
         )}
       </AnimatedModal>
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  modal: { padding: 14, gap: 12 },
+  scroll: { maxHeight: 420 },
+  scrollContent: { gap: 12 },
+  text: { fontSize: 14, lineHeight: 20 },
+  callout: { padding: 12, borderWidth: 1, borderRadius: 10, gap: 4 },
+  calloutTitle: { fontSize: 11, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" },
+})
 
 export default PaymentExplanationDialog

@@ -4,8 +4,7 @@ import type { Attendance, Attendee } from "../../../types/event"
 import { hasAttendeePaid } from "utils/attendance"
 import { format as formatDate, isEqual, isPast, isThisYear, min } from "date-fns"
 import { nb } from "date-fns/locale"
-import { useTheme } from "utils/theme"
-import { useEventChromeColors } from "../EventSurface"
+import { usePanelChromeColors } from "../../Panel"
 
 interface AttendanceDateInfoProps {
   attendance: Attendance
@@ -28,109 +27,58 @@ export const AttendanceDateInfo: React.FC<AttendanceDateInfoProps> = ({
   const showDeregisterDeadlineNotice =
     hasPaid && !isEqual(actualDeregisterDeadline, deregisterDeadline)
 
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
-
-  const makeDateElement = (
-    label: string,
-    date: Date,
-    time: string,
-    showNotice?: boolean,
-  ) => {
-    const shortDateStr = formatDate(
-      date,
-      isThisYear(date) ? "dd. MMM" : "dd.MM.yy",
-      { locale: nb },
-    )
-    const textColor = showNotice ? theme.error : theme.onSurface
-
-    return (
-      <View style={styles.dateContent}>
-        <Text
-          numberOfLines={1}
-          style={{ color: textColor, fontWeight: "800", fontSize: 11, marginBottom: 4 }}
-        >
-          {label}
-        </Text>
-        <Text numberOfLines={1} style={{ color: textColor, fontSize: 12 }}>
-          {shortDateStr}
-        </Text>
-        <Text numberOfLines={1} style={{ color: textColor, fontSize: 12 }}>
-          {`kl. ${time}`}
-        </Text>
-      </View>
-    )
-  }
+  const chrome = usePanelChromeColors()
 
   const dateBlocks = [
     {
       key: "registerStart",
+      label: isPast(registerStart) ? "Åpnet" : "Åpner",
       date: registerStart,
-      element: makeDateElement(
-        isPast(registerStart) ? "Åpnet" : "Åpner",
-        registerStart,
-        formatDate(registerStart, "HH:mm", { locale: nb }),
-      ),
+      notice: false,
     },
     {
       key: "registerEnd",
+      label: isPast(registerEnd) ? "Lukket" : "Lukker",
       date: registerEnd,
-      element: makeDateElement(
-        isPast(registerEnd) ? "Lukket" : "Lukker",
-        registerEnd,
-        formatDate(registerEnd, "HH:mm", { locale: nb }),
-      ),
+      notice: false,
     },
     {
       key: "deregisterDeadline",
+      label: "Avmeldingsfrist",
       date: actualDeregisterDeadline,
-      element: makeDateElement(
-        "Avmeldingsfrist",
-        actualDeregisterDeadline,
-        formatDate(actualDeregisterDeadline, "HH:mm", { locale: nb }),
-        showDeregisterDeadlineNotice,
-      ),
+      notice: showDeregisterDeadlineNotice,
     },
-  ]
-
-  const sortedElements = dateBlocks
-    .slice()
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-
-  const content = (
-    <View style={styles.dateBlocks}>
-      {sortedElements.map(({ element, key }, index) => (
-        <React.Fragment key={key}>
-          {index > 0 && (
-            <View style={styles.verticalDivider}>
-              <View style={{ flex: 1, backgroundColor: chrome.edge }} />
-              <View style={{ flex: 1, backgroundColor: chrome.highlight }} />
-            </View>
-          )}
-          <View
-            style={[
-              styles.dateBlock,
-              key === "deregisterDeadline" && showDeregisterDeadlineNotice && {
-                borderLeftWidth: 2,
-                borderLeftColor: theme.error,
-              },
-            ]}
-          >
-            {element}
-          </View>
-        </React.Fragment>
-      ))}
-    </View>
-  )
-
-  if (!showDeregisterDeadlineNotice) return content
+  ].sort((a, b) => a.date.getTime() - b.date.getTime())
 
   return (
     <View>
-      {content}
-      <Text style={{ color: theme.error, marginTop: 8 }}>
-        Avmeldingsfrist er endret grunnet betaling.
-      </Text>
+      <View style={styles.dateBlocks}>
+        {dateBlocks.map(({ key, label, date, notice }, index) => (
+          <React.Fragment key={key}>
+            {index > 0 && <View style={[styles.separator, { backgroundColor: chrome.edge }]} />}
+            <View style={styles.dateBlock}>
+              <Text
+                numberOfLines={1}
+                style={[styles.date, { color: notice ? chrome.danger : isPast(date) ? chrome.textMuted : chrome.text }]}
+              >
+                {formatDate(date, isThisYear(date) ? "d. MMM" : "dd.MM.yy", { locale: nb })}
+              </Text>
+              <Text numberOfLines={1} style={[styles.time, { color: chrome.textMuted }]}>
+                kl. {formatDate(date, "HH:mm", { locale: nb })}
+              </Text>
+              <Text numberOfLines={1} style={[styles.label, { color: notice ? chrome.danger : chrome.textMuted }]}>
+                {label}
+              </Text>
+            </View>
+          </React.Fragment>
+        ))}
+      </View>
+
+      {showDeregisterDeadlineNotice && (
+        <Text style={[styles.notice, { color: chrome.danger }]}>
+          Avmeldingsfristen er endret grunnet betaling.
+        </Text>
+      )}
     </View>
   )
 }
@@ -139,17 +87,21 @@ export default AttendanceDateInfo
 
 const styles = StyleSheet.create({
   dateBlocks: {
+    minHeight: 84,
+    paddingHorizontal: 5,
     flexDirection: "row",
-    alignItems: "stretch",
-    width: "100%",
+    alignItems: "center",
   },
   dateBlock: {
     flex: 1,
     minWidth: 0,
-    paddingHorizontal: 4,
-    paddingVertical: 9,
+    paddingHorizontal: 6,
+    paddingVertical: 12,
     alignItems: "center",
   },
-  dateContent: { alignItems: "center" },
-  verticalDivider: { width: 2, flexDirection: "row", alignSelf: "stretch", marginVertical: 7 },
+  separator: { width: 1, height: 48 },
+  date: { fontSize: 15, fontWeight: "700" },
+  time: { marginTop: 1, fontSize: 12 },
+  label: { marginTop: 3, fontSize: 11 },
+  notice: { paddingHorizontal: 15, paddingBottom: 10, fontSize: 12 },
 })

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react"
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { MaterialIcons } from "@expo/vector-icons"
+import { View, StyleSheet } from "react-native"
 import type {
   Attendance,
   Event as EventType,
@@ -20,15 +19,13 @@ import { ViewAttendeesButton } from "./ViewAttendeesButton"
 import { TurnstileBox } from "../../TurnstileModal"
 
 import { getAttendanceStatus } from "../../../types/attendanceStatus"
-import { useTheme } from "../../../utils/theme"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"
 import { getAttendee } from "../../../utils/attendance"
 import { scheduleRegistrationReminder, cancelRegistrationReminder, isRegistrationReminderScheduled } from "../../../utils/notifications"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
-import { useEventChromeColors } from "../EventSurface"
-import { EventInsetDivider } from "../EventSurface"
+import { FieldLabel, IconAction, Panel, PanelDivider, PanelHeader, usePanelChromeColors } from "../../Panel"
 
 interface AttendanceCardProps {
   user: User | null
@@ -53,8 +50,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const [showTurnstile, setShowTurnstile] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
   const [pendingTurnstileToken, setPendingTurnstileToken] = useState<string | null>(null)
-  const theme = useTheme()
-  const chrome = useEventChromeColors()
+  const chrome = usePanelChromeColors()
 
   useEffect(() => {
     setAttendanceStatus(getAttendanceStatus(attendance))
@@ -242,86 +238,85 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     }
   }
 
+  const statusTag = {
+    NotOpened: { label: "Ikke åpnet", color: chrome.textMuted },
+    Open: { label: "Åpen", color: chrome.success },
+    Closed: { label: "Stengt", color: chrome.textMuted },
+  }[attendanceStatus]
+
+  const hasSelections = Boolean(attendee?.reserved && (attendance.selections?.length ?? 0) > 0)
+
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        {
-          backgroundColor: chrome.surface,
-          borderColor: chrome.edge,
-          borderTopColor: chrome.highlight,
-          shadowColor: theme.shadow,
-          shadowOpacity: chrome.shadowOpacity,
-        },
-      ]}
-    >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ color: theme.onSurface, fontSize: 20, fontWeight: "700" }}>{"Påmelding"}</Text>
-        <TouchableOpacity onPress={handleToggleNotification} style={{ padding: 8 }}>
-          <View style={{ alignItems: "center" }}>
-            <MaterialIcons name={notificationScheduled ? "notifications-active" : "notifications"} size={24} color={chrome.icon} />
-            {/* <Text style={{ fontSize: 12, color: theme.primary, fontWeight: "600" }}>{notificationScheduled ? "Avbryt" : "Påminnelse"}</Text> */}
-          </View>
-        </TouchableOpacity>
+    <Panel>
+      <View style={styles.section}>
+        <PanelHeader
+          title="Påmelding"
+          tag={statusTag.label}
+          tagColor={statusTag.color}
+          right={
+            <IconAction
+              icon={notificationScheduled ? "bell-ring" : "bell-outline"}
+              active={notificationScheduled}
+              accessibilityLabel={notificationScheduled ? "Fjern påminnelse" : "Påminn meg når påmeldingen åpner"}
+              onPress={handleToggleNotification}
+            />
+          }
+        />
       </View>
 
+      <PanelDivider />
       <AttendanceDateInfo attendance={attendance} attendee={attendee} chargeScheduleDate={null} />
-      <EventInsetDivider />
+      <PanelDivider />
 
-      {punishment && hasPunishment && !attendee && <PunishmentBox punishment={punishment} />}
+      <View style={styles.section}>
+        {punishment && hasPunishment && !attendee && <PunishmentBox punishment={punishment} />}
 
-      <MainPoolCard attendance={attendance} user={user} authorizeUrl={undefined} chargeScheduleDate={null} />
-      <EventInsetDivider />
-
-      <View style={{ gap: 8 }}> 
-        {attendee?.reserved && (attendance.selections?.length ?? 0) > 0 && (
-          <SelectionsForm attendance={attendance} attendee={attendee} onSubmit={handleSelectionChange} disabled={attendanceStatus === "Closed"} />
-        )}
-
+        <MainPoolCard attendance={attendance} user={user} authorizeUrl={undefined} chargeScheduleDate={null} />
         <NonAttendablePoolsBox attendance={attendance} user={user} />
 
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        {hasSelections && attendee && (
+          <View style={styles.group}>
+            <FieldLabel>Valg</FieldLabel>
+            <SelectionsForm attendance={attendance} attendee={attendee} onSubmit={handleSelectionChange} disabled={attendanceStatus === "Closed"} />
+          </View>
+        )}
+      </View>
+
+      <PanelDivider />
+
+      <View style={styles.section}>
+        <View style={styles.buttonRow}>
           {attendee?.reserved && <TicketButton attendee={attendee} />}
           <ViewAttendeesButton attendance={attendance} user={user} />
         </View>
+
+        <RegistrationButton
+          registerForAttendance={registerForAttendance}
+          unregisterForAttendance={deregisterForAttendance}
+          attendance={attendance}
+          parentAttendance={parentAttendance}
+          punishment={punishment}
+          user={user}
+          event={event}
+          isLoading={false}
+          chargeScheduleDate={null}
+          isVerified={isVerified}
+        />
+
+        <TurnstileBox
+          visible={showTurnstile}
+          onToken={handleTurnstileToken}
+          siteKey={TURNSTILE_SITE_KEY}
+        />
       </View>
-      <EventInsetDivider />
-
-      <RegistrationButton
-        registerForAttendance={registerForAttendance}
-        unregisterForAttendance={deregisterForAttendance}
-        attendance={attendance}
-        parentAttendance={parentAttendance}
-        punishment={punishment}
-        user={user}
-        event={event}
-        isLoading={false}
-        chargeScheduleDate={null}
-        isVerified={isVerified}
-      />
-
-      <TurnstileBox
-        visible={showTurnstile}
-        onToken={handleTurnstileToken}
-        siteKey={TURNSTILE_SITE_KEY}
-      />
-
-    </ScrollView>
+    </Panel>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 20,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 5,
-    gap: 12,
-  },
+  section: { padding: 15, gap: 12 },
+  group: { gap: 8 },
+  buttonRow: { flexDirection: "row", gap: 8 },
 })
 
 export default AttendanceCard

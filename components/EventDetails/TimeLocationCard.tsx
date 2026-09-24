@@ -4,13 +4,11 @@ import {
   Text,
   View,
   Linking,
-  TouchableOpacity,
 } from "react-native";
 import * as Calendar from "expo-calendar";
-import { useTheme } from "utils/theme";
 import { EventAttendanceBundle } from "types/event";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { EventInsetDivider, EventSurface, useEventChromeColors } from "./EventSurface";
+import { IconAction, Panel, PanelHeader, usePanelChromeColors } from "../Panel";
 
 interface TimeLocationCardProps {
   event: EventAttendanceBundle;
@@ -21,8 +19,7 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
   event,
   formatNorwegianDate,
 }) => {
-  const theme = useTheme();
-  const chrome = useEventChromeColors();
+  const chrome = usePanelChromeColors();
 
   // Smart date formatting function
   const formatDateRange = (startDate: Date, endDate: Date) => {
@@ -73,119 +70,83 @@ const TimeLocationCard: React.FC<TimeLocationCardProps> = ({
     }
   };
 
-  return (
-    <EventSurface style={styles.card}>
-      <Text style={[styles.cardTitle, { color: theme.onSurface }]}>
-        Oppmøte
-      </Text>
+  const { date, time } = formatDateRange(event.event.start, event.event.end);
+  const hasLocation = Boolean(event.event.locationTitle || event.event.locationAddress);
 
-      {/* Date and time with icon */}
+  return (
+    <Panel style={styles.card}>
+      <PanelHeader title="Oppmøte" />
+
       <View style={styles.detailRow}>
-        <MaterialCommunityIcons
-          name="clock-outline"
-          size={24}
-          color={chrome.icon}
-          style={styles.icon}
-        />
+        <MaterialCommunityIcons name="clock-outline" size={18} color={chrome.icon} />
         <View style={styles.textContainer}>
-          <Text style={[styles.detailValue, { color: theme.onSurface }]}>
-            {formatDateRange(event.event.start, event.event.end).date}
-          </Text>
-          <Text style={[styles.detailValue, { color: theme.onSurfaceVariant }]}>
-            {formatDateRange(event.event.start, event.event.end).time}
-          </Text>
+          <Text style={[styles.primary, { color: chrome.text }]}>{date}</Text>
+          <Text style={[styles.secondary, { color: chrome.textMuted }]}>{time}</Text>
         </View>
-        <TouchableOpacity
-          accessibilityRole="button"
+        <IconAction
+          icon="calendar-plus"
           accessibilityLabel="Legg til i kalender"
           onPress={handleAddToCalendar}
-          style={styles.actionButton}
-        >
-          <MaterialCommunityIcons
-            name="calendar-plus"
-            size={21}
-            color={chrome.icon}
-            style={styles.externalIcon}
-          />
-        </TouchableOpacity>
+        />
       </View>
 
-      {/* Location with icon */}
-      {(event.event.locationTitle || event.event.locationAddress) && (
+      {hasLocation && (
         <>
-          <EventInsetDivider />
+          <View style={[styles.rule, { backgroundColor: chrome.edge }]} />
           <View style={styles.detailRow}>
-            <MaterialCommunityIcons
-              name="map-marker-outline"
-              size={24}
-              color={chrome.icon}
-              style={styles.icon}
-            />
+            <MaterialCommunityIcons name="map-marker-outline" size={18} color={chrome.icon} />
             <View style={styles.textContainer}>
               {event.event.locationTitle && (
-                <Text style={[styles.detailValue, { color: theme.onSurface }]}>
+                <Text style={[styles.primary, { color: chrome.text }]}>
                   {event.event.locationTitle}
                 </Text>
               )}
               {event.event.locationAddress && (
-                <Text style={[styles.detailValue, { color: theme.onSurfaceVariant }]}>
+                <Text style={[styles.secondary, { color: chrome.textMuted }]}>
                   {event.event.locationAddress}
                 </Text>
               )}
             </View>
             {event.event.locationLink && (
-              <TouchableOpacity
-                accessibilityRole="link"
+              <IconAction
+                icon="map-outline"
                 accessibilityLabel="Åpne sted i kart"
                 onPress={() => Linking.openURL(event.event.locationLink!)}
-                style={styles.actionButton}
-              >
-                <MaterialCommunityIcons name="open-in-new" size={21} color={chrome.icon} />
-              </TouchableOpacity>
+              />
             )}
           </View>
         </>
       )}
-    </EventSurface>
+    </Panel>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 24,
-    marginTop: 20,
-    marginBottom: 16,
-    borderRadius: 12,
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 4,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 4,
+    paddingHorizontal: 15,
+    paddingTop: 13,
+    paddingBottom: 3,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 13,
-    paddingVertical: 13,
-    minHeight: 67,
-  },
-  icon: {
-    marginTop: 0,
+    gap: 12,
+    paddingVertical: 10,
+    minHeight: 56,
   },
   textContainer: {
     flex: 1,
+    gap: 1,
   },
-  detailValue: {
+  primary: {
     fontSize: 15,
-    lineHeight: 21,
+    fontWeight: "600",
   },
-  actionButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  externalIcon: {
-    marginTop: 0,
+  secondary: {
+    fontSize: 13,
+    lineHeight: 18,
   },
+  rule: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
 });
 
 export default TimeLocationCard;

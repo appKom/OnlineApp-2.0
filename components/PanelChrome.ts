@@ -14,5 +14,14 @@ export function usePanelChromeColors() {
     listHighlight: mode === "dark" ? "#1C2024" : theme.surfaceContainerLowest,
     icon: mode === "dark" ? "#F2F4F6" : theme.onSurface,
     shadowOpacity: mode === "dark" ? 0.36 : 0.12,
+
+    // Text and accent colours for coloured buttons, tags and status lines.
+    text: theme.onSurface,
+    textMuted: theme.onSurfaceVariant,
+    raisedPressed: mode === "dark" ? "#333B45" : theme.surfaceContainerHighest,
+    accent: theme.primary,
+    danger: theme.error,
+    warning: theme.secondary,
+    success: mode === "dark" ? "#74D69C" : "#1B7A48",
   };
 }
