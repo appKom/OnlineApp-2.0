@@ -161,16 +161,17 @@ class Authenticator {
       console.log("🗑️ Clearing stored credentials...");
       await this.auth0.credentialsManager.clearCredentials();
 
+      // Clear the user before notifying so listeners never see a stale user without credentials.
       this.credentials = null;
-      this.setLoggedIn(false);
       this.user = null;
+      this.setLoggedIn(false);
 
       console.log("✅ Logout successful!");
     } catch (error) {
       // Clear local state even if logout fails
       this.credentials = null;
-      this.setLoggedIn(false);
       this.user = null;
+      this.setLoggedIn(false);
 
       console.log("❌ Logout error:", error);
     }

@@ -5,7 +5,6 @@ import { getAttendee, hasAttendeePaid, getAttendeeQueuePosition } from "../../..
 import { useCountdown } from "../../../utils/use-countdown"
 import { User } from "../../../types/user"
 import { Attendee } from "../../../types/event"
-import Authenticator from "../../../utils/authenticator"
 import { findActiveMembership } from "../../../utils/user-utils"
 import {getAttendablePool, 
   getReservedAttendeeCount, 
@@ -22,7 +21,7 @@ import {
 } from "date-fns"
 import { nb } from "date-fns/locale"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { MeterBar, RaisedButton, Tag, usePanelChromeColors } from "../../Panel"
+import { MeterBar, Tag, usePanelChromeColors } from "../../Panel"
 import type { IconName } from "../../Panel"
 
 interface MainPoolCardProps {
@@ -56,7 +55,6 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
       <View style={styles.plainStatus}>
         <StatusLine icon="account-lock-outline" text="Logg inn for å melde deg på" />
         <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} />
-        <RaisedButton icon="login" label="Logg inn" tone="accent" onPress={() => Authenticator.login()} />
       </View>
     )
   }

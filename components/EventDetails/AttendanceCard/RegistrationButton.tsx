@@ -158,7 +158,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
     return (
       <RaisedButton
         icon="login"
-        label="Logg inn for å melde deg på"
+        label="Logg inn"
         tone="accent"
         onPress={() => void Authenticator.login()}
       />

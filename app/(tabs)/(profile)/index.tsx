@@ -20,6 +20,7 @@ import {
   ThemeSelector,
   useProfileChromeColors,
 } from "../../../components/Profile/ProfileSurface";
+import { RaisedButton } from "../../../components/Panel";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { EventAttendanceBundle } from "../../../types/event";
 import { Membership, User } from "../../../types/user";
@@ -42,6 +43,13 @@ type ProfileOverview = {
   groupCount: number | null;
   nextEvent: EventAttendanceBundle | null;
 };
+
+const LOGGED_OUT_FEATURES = [
+  { icon: "calendar-check-outline", label: "Meld deg på og av arrangementer" },
+  { icon: "ticket-outline", label: "Billetter og plass på ventelisten" },
+  { icon: "bell-outline", label: "Påminnelser før arrangementer du skal på" },
+  { icon: "card-account-details-outline", label: "Medlemskap, grupper og profil" },
+] as const;
 
 const emptyOverview: ProfileOverview = {
   groupCount: null,
@@ -197,57 +205,52 @@ export default function ProfileScreen() {
       <TabScreenContainer>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.loggedOutContent}
-          style={{ backgroundColor: theme.background }}
+          style={[styles.container, { backgroundColor: theme.background }]}
+          contentContainerStyle={styles.content}
         >
-          <ProfileSurface style={styles.loginCard}>
-            <View
-              style={[
-                styles.loginIcon,
-                { backgroundColor: theme.primaryContainer },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="account-circle-outline"
-                size={42}
-                color={theme.onPrimaryContainer}
+          <ProfileSurface>
+            <View style={styles.loggedOutHero}>
+              <MaterialCommunityIcons name="account-circle-outline" size={44} color={chrome.icon} />
+              <View style={styles.identity}>
+                <Text style={[styles.name, { color: theme.onSurface }]}>Du er ikke logget inn</Text>
+                <Text style={[styles.loggedOutDescription, { color: theme.onSurfaceVariant }]}>
+                  Logg inn med Online-brukeren din for å melde deg på arrangementer.
+                </Text>
+              </View>
+            </View>
+            <ProfileDivider />
+            {LOGGED_OUT_FEATURES.map((feature, index) => (
+              <View
+                key={feature.label}
+                style={[
+                  styles.featureRow,
+                  index < LOGGED_OUT_FEATURES.length - 1 && {
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderBottomColor: chrome.edge,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons name={feature.icon} size={18} color={chrome.icon} />
+                <Text style={[styles.featureText, { color: theme.onSurface }]}>{feature.label}</Text>
+              </View>
+            ))}
+            <ProfileDivider />
+            <View style={styles.loginAction}>
+              {error && <Text style={[styles.inlineError, { color: theme.error }]}>{error}</Text>}
+              <RaisedButton
+                icon="login"
+                label={isLoading ? "Logger inn…" : "Logg inn"}
+                tone="accent"
+                disabled={isLoading}
+                onPress={handleLogin}
               />
             </View>
-            <Text style={[styles.loginTitle, { color: theme.onSurface }]}>Velkommen til Online</Text>
-            <Text
-              style={[
-                styles.loginDescription,
-                { color: theme.onSurfaceVariant },
-              ]}
-            >
-              Logg inn for å se medlemskapet, gruppene og profilen din.
-            </Text>
-            {error && (
-              <Text style={[styles.inlineError, { color: theme.error }]}>{error}</Text>
-            )}
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={0.84}
-              disabled={isLoading}
-              onPress={handleLogin}
-              style={[
-                styles.primaryButton,
-                {
-                  backgroundColor: theme.primary,
-                  opacity: isLoading ? 0.65 : 1,
-                },
-              ]}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.onPrimary} />
-              ) : (
-                <>
-                  <MaterialCommunityIcons name="login" size={20} color={theme.onPrimary} />
-                  <Text style={[styles.primaryButtonText, { color: theme.onPrimary }]}>Logg inn</Text>
-                </>
-              )}
-            </TouchableOpacity>
           </ProfileSurface>
+
+          <View>
+            <SectionLabel>Utseende</SectionLabel>
+            <ThemeSelector selectedMode={selectedMode} onChange={setMode} />
+          </View>
         </ScrollView>
       </TabScreenContainer>
     );
@@ -699,41 +702,12 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     gap: 16,
   },
-  loggedOutContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-  loginCard: { padding: 24, alignItems: "center" },
-  loginIcon: {
-    width: 72,
-    height: 72,
-    marginBottom: 18,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loginTitle: { fontSize: 24, fontWeight: "700", textAlign: "center" },
-  loginDescription: {
-    maxWidth: 300,
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: "center",
-  },
-  inlineError: { marginTop: 12, fontSize: 13, textAlign: "center" },
-  primaryButton: {
-    minWidth: 180,
-    minHeight: 50,
-    marginTop: 22,
-    paddingHorizontal: 22,
-    borderRadius: 13,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 9,
-  },
-  primaryButtonText: { fontSize: 15, fontWeight: "700" },
+  loggedOutHero: { padding: 18, flexDirection: "row", alignItems: "center", gap: 14 },
+  loggedOutDescription: { marginTop: 4, fontSize: 13, lineHeight: 18 },
+  featureRow: { minHeight: 50, marginHorizontal: 15, flexDirection: "row", alignItems: "center", gap: 12 },
+  featureText: { flex: 1, fontSize: 13, fontWeight: "500" },
+  loginAction: { padding: 15, gap: 10 },
+  inlineError: { fontSize: 13, textAlign: "center" },
   errorBanner: {
     minHeight: 52,
     paddingHorizontal: 13,
