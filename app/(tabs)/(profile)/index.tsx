@@ -1,9 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
+  Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -20,16 +24,29 @@ import {
   ThemeSelector,
   useProfileChromeColors,
 } from "../../../components/Profile/ProfileSurface";
+import { MarksCard } from "../../../components/Profile/MarksCard";
+import { ProfileHero, formatAccountAge } from "../../../components/Profile/ProfileHero";
+import {
+  EditProfileFieldModal,
+  type EditableField,
+} from "../../../components/Profile/EditProfileFieldModal";
 import { RaisedButton } from "../../../components/Panel";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
 import { EventAttendanceBundle } from "../../../types/event";
+import type { VisiblePersonalMark } from "../../../types/mark";
+import type { Punishment } from "../../../types/punishment";
 import { Membership, User } from "../../../types/user";
 import Authenticator from "../../../utils/authenticator";
+import { AvatarPermissionError, pickAvatar, uploadAvatar } from "../../../utils/avatar";
+import { syncPendingEmailChange } from "../../../utils/email-change";
 import { useTheme, useThemeMode } from "../../../utils/theme";
 import {
   getAllFutureEventsByAttendingUserId,
+  getExpiryDateForUser,
   getGroupsByMember,
   getUser,
+  getVisibleMarks,
+  updateUser,
 } from "../../../utils/trpc";
 import {
   findActiveMembership,
@@ -42,6 +59,9 @@ import {
 type ProfileOverview = {
   groupCount: number | null;
   nextEvent: EventAttendanceBundle | null;
+  /** Null until loaded, or if the marks couldn't be fetched. */
+  marks: VisiblePersonalMark[] | null;
+  punishment: Punishment | null;
 };
 
 const LOGGED_OUT_FEATURES = [
@@ -54,6 +74,8 @@ const LOGGED_OUT_FEATURES = [
 const emptyOverview: ProfileOverview = {
   groupCount: null,
   nextEvent: null,
+  marks: null,
+  punishment: null,
 };
 
 export default function ProfileScreen() {
@@ -70,12 +92,22 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [overview, setOverview] = useState<ProfileOverview>(emptyOverview);
   const [error, setError] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<EditableField | null>(null);
+  /** The stored login couldn't be read or refreshed, so the API can't tell who we are. */
+  const [sessionLost, setSessionLost] = useState(false);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+
+  // Edits made in dialogs (here or on an event page) replace the signed-in user.
+  useEffect(
+    () =>
+      Authenticator.addUserListener((updated) => {
+        if (updated) setUser(updated);
+      }),
+    [],
+  );
 
   useEffect(() => {
-    Authenticator.initialize(
-      "auth.online.ntnu.no",
-      "EniGfQ4MlcVuS2FWbUMmCjaFB65EqjzZ",
-    );
+    Authenticator.initialize();
 
     const removeListener = Authenticator.addLoginStateListener((loggedIn) => {
       setIsLoggedIn(loggedIn);
@@ -111,12 +143,22 @@ export default function ProfileScreen() {
 
   const loadUserProfile = async () => {
     setError(null);
+    setSessionLost(false);
     setIsProfileLoading(user === null);
 
     try {
-      const userProfile = await getUser();
+      // Picks up an email change once its verification link has been clicked.
+      await syncPendingEmailChange().catch(() => null);
+
+      // One quiet retry covers brief API restarts and a token refresh racing another request.
+      let userProfile = await getUser().catch(() => null);
       if (!userProfile) {
-        throw new Error("Authenticated user was not returned by the API");
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        userProfile = await getUser();
+      }
+      if (!userProfile) {
+        setSessionLost(true);
+        throw new Error("No credentials to load the user with");
       }
 
       Authenticator.user = userProfile;
@@ -124,9 +166,11 @@ export default function ProfileScreen() {
       setIsProfileLoading(false);
       setIsOverviewLoading(true);
 
-      const [groupsResult, eventsResult] = await Promise.allSettled([
+      const [groupsResult, eventsResult, marksResult, punishmentResult] = await Promise.allSettled([
         getGroupsByMember(userProfile.id),
         getAllFutureEventsByAttendingUserId(userProfile.id, 1, undefined, "asc"),
+        getVisibleMarks(userProfile.id),
+        getExpiryDateForUser(userProfile.id),
       ]);
 
       setOverview({
@@ -138,9 +182,15 @@ export default function ProfileScreen() {
           eventsResult.status === "fulfilled"
             ? eventsResult.value?.items?.[0] ?? null
             : null,
+        marks: marksResult.status === "fulfilled" ? marksResult.value : null,
+        punishment:
+          punishmentResult.status === "fulfilled"
+            ? ((punishmentResult.value as Punishment | null) ?? null)
+            : null,
       });
     } catch (profileError) {
-      console.error("Error loading user profile:", profileError);
+      // warn, not error: this is an expected state with its own UI, not a crash.
+      console.warn("Could not load user profile:", profileError);
       setError("Kunne ikke laste profilen din.");
     } finally {
       setIsProfileLoading(false);
@@ -163,6 +213,11 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleRelogin = async () => {
+    await handleLogin();
+    if (Authenticator.loggedIn) await loadUserProfile();
+  };
+
   const handleLogout = async () => {
     setIsLoading(true);
     try {
@@ -179,6 +234,82 @@ export default function ProfileScreen() {
     setIsRefreshing(true);
     await loadUserProfile();
     setIsRefreshing(false);
+  };
+
+  const setAvatar = async (source: "camera" | "library") => {
+    if (!user) return;
+    try {
+      const uri = await pickAvatar(source);
+      if (!uri) return;
+      setIsAvatarUploading(true);
+      const imageUrl = await uploadAvatar(uri);
+      const updated = await updateUser(user.id, { imageUrl });
+      Authenticator.setUser({ ...user, ...updated });
+    } catch (avatarError) {
+      if (avatarError instanceof AvatarPermissionError) {
+        Alert.alert("Mangler tilgang", "Gi Online tilgang til kameraet i Innstillinger for å ta et profilbilde.", [
+          { text: "Avbryt", style: "cancel" },
+          { text: "Åpne Innstillinger", onPress: () => void Linking.openSettings() },
+        ]);
+      } else {
+        console.error("Avatar upload failed:", avatarError);
+        Alert.alert("Kunne ikke oppdatere profilbildet", "Prøv igjen, eller velg et annet bilde.");
+      }
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
+
+  const removeAvatar = () => {
+    if (!user) return;
+    Alert.alert("Fjerne profilbildet?", undefined, [
+      { text: "Avbryt", style: "cancel" },
+      {
+        text: "Fjern",
+        style: "destructive",
+        onPress: async () => {
+          setIsAvatarUploading(true);
+          try {
+            const updated = await updateUser(user.id, { imageUrl: null });
+            Authenticator.setUser({ ...user, ...updated });
+          } catch {
+            Alert.alert("Kunne ikke fjerne profilbildet", "Prøv igjen om litt.");
+          } finally {
+            setIsAvatarUploading(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  const openAvatarMenu = () => {
+    if (!user || isAvatarUploading) return;
+    const actions: { label: string; run: () => void; destructive?: boolean }[] = [
+      { label: "Ta bilde", run: () => void setAvatar("camera") },
+      { label: "Velg fra biblioteket", run: () => void setAvatar("library") },
+      ...(user.imageUrl ? [{ label: "Fjern bilde", run: removeAvatar, destructive: true }] : []),
+    ];
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: "Profilbilde",
+          options: [...actions.map((action) => action.label), "Avbryt"],
+          cancelButtonIndex: actions.length,
+          destructiveButtonIndex: actions.findIndex((action) => action.destructive),
+        },
+        (index) => actions[index]?.run(),
+      );
+    } else {
+      Alert.alert("Profilbilde", undefined, [
+        ...actions.map((action) => ({
+          text: action.label,
+          style: action.destructive ? ("destructive" as const) : ("default" as const),
+          onPress: action.run,
+        })),
+        { text: "Avbryt", style: "cancel" as const },
+      ]);
+    }
   };
 
   const activeMembership = useMemo(
@@ -266,7 +397,7 @@ export default function ProfileScreen() {
         style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.content}
       >
-        {error && (
+        {error && user && (
           <View
             accessibilityRole="alert"
             style={[
@@ -282,12 +413,24 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {isProfileLoading || !user ? (
+        {!user && error && !isProfileLoading ? (
+          <ProfileLoadErrorCard
+            sessionLost={sessionLost}
+            isBusy={isLoading || isRefreshing}
+            onRetry={loadUserProfile}
+            onRelogin={handleRelogin}
+          />
+        ) : isProfileLoading || !user ? (
           <ProfileLoadingCard />
         ) : (
           <>
             <ProfileSurface>
-              <ProfileHero user={user} activeMembership={activeMembership} />
+              <ProfileHero
+                user={user}
+                activeMembership={activeMembership}
+                onAvatarPress={openAvatarMenu}
+                isAvatarUploading={isAvatarUploading}
+              />
               <ProfileDivider />
               <View style={styles.quickFacts}>
                 <QuickFact
@@ -332,6 +475,13 @@ export default function ProfileScreen() {
               </View>
             </ProfileSurface>
 
+            {overview.marks && (
+              <View>
+                <SectionLabel>Prikker</SectionLabel>
+                <MarksCard marks={overview.marks} punishment={overview.punishment} userId={user.id} />
+              </View>
+            )}
+
             <View>
               <SectionLabel>Medlemskap</SectionLabel>
               <MembershipCard
@@ -343,24 +493,52 @@ export default function ProfileScreen() {
             </View>
 
             <View>
+              <SectionLabel>Om meg</SectionLabel>
+              <BiographyCard biography={user.biography} onPress={() => setEditingField("biography")} />
+            </View>
+
+            <View>
               <SectionLabel>Din informasjon</SectionLabel>
               <ProfileSurface>
-                <ProfileInfoRow icon="email-outline" label="E-post" value={user.email || "Ikke oppgitt"} />
-                <ProfileInfoRow icon="phone-outline" label="Telefon" value={user.phone || "Ikke oppgitt"} />
+                <ProfileInfoRow
+                  icon="email-outline"
+                  label="E-post"
+                  value={user.email || "Ikke oppgitt"}
+                  muted={!user.email}
+                  onPress={() => setEditingField("email")}
+                />
+                <ProfileInfoRow
+                  icon="phone-outline"
+                  label="Telefon"
+                  value={user.phone || "Ikke oppgitt"}
+                  muted={!user.phone}
+                  onPress={() => setEditingField("phone")}
+                />
                 <ProfileInfoRow
                   icon="school-outline"
                   label="NTNU-bruker"
                   value={user.ntnuUsername || "Ikke oppgitt"}
+                  muted={!user.ntnuUsername}
                 />
-                <ProfileInfoRow icon="account-outline" label="Kjønn" value={getGenderName(user.gender)} />
+                <ProfileInfoRow
+                  icon="account-outline"
+                  label="Kjønn"
+                  value={getGenderName(user.gender)}
+                  muted={user.gender === "UNKNOWN"}
+                  onPress={() => setEditingField("gender")}
+                />
                 <ProfileInfoRow
                   icon="food-apple-outline"
                   label="Kosthold"
                   value={user.dietaryRestrictions || "Ingen kostholdsrestriksjoner"}
+                  muted={!user.dietaryRestrictions}
+                  onPress={() => setEditingField("dietaryRestrictions")}
                   isLast
                 />
               </ProfileSurface>
             </View>
+
+            <EditProfileFieldModal field={editingField} user={user} onClose={() => setEditingField(null)} />
 
             <View>
               <SectionLabel>Utseende</SectionLabel>
@@ -390,93 +568,34 @@ export default function ProfileScreen() {
   );
 }
 
-function ProfileHero({ user, activeMembership }: { user: User; activeMembership: Membership | null }) {
+function BiographyCard({ biography, onPress }: { biography: string | null; onPress: () => void }) {
   const theme = useTheme();
   const chrome = useProfileChromeColors();
-  const grade = activeMembership ? getGrade(activeMembership) : null;
-  const membershipSummary = activeMembership
-    ? [grade ? `${grade}. klasse` : null, getMembershipTypeName(activeMembership.type)]
-        .filter(Boolean)
-        .join(" · ")
-    : "Ingen aktivt medlemskap";
 
   return (
-    <View style={styles.hero}>
-      <View style={styles.heroMain}>
-        {user.imageUrl ? (
-          <Image
-            accessibilityLabel={`Profilbilde av ${user.name ?? user.username}`}
-            source={{ uri: user.imageUrl }}
-            style={[
-              styles.avatar,
-              {
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-                backgroundColor: chrome.raised,
-              },
-            ]}
-          />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={biography ? "Om meg" : "Skriv om deg selv"}
+      accessibilityHint="Endre"
+      onPress={onPress}
+      style={({ pressed }) => pressed && { opacity: 0.75 }}
+    >
+      <ProfileSurface style={styles.bioCard}>
+        {biography ? (
+          <Text style={[styles.bioText, { color: theme.onSurface }]}>{biography}</Text>
         ) : (
-          <View
-            style={[
-              styles.avatar,
-              styles.avatarPlaceholder,
-              {
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-                backgroundColor: chrome.raised,
-              },
-            ]}
-          >
-            <Text style={[styles.avatarInitials, { color: chrome.icon }]}>
-              {getInitials(user.name ?? user.username)}
-            </Text>
-          </View>
+          <Text style={[styles.bioText, { color: theme.onSurfaceVariant }]}>
+            Skriv litt om deg selv, så ser andre det på profilen din.
+          </Text>
         )}
-
-        <View style={styles.identity}>
-          <Text numberOfLines={2} style={[styles.name, { color: theme.onSurface }]}>
-            {user.name || "Ukjent bruker"}
-          </Text>
-          <Text numberOfLines={1} style={[styles.username, { color: theme.onSurfaceVariant }]}>
-            @{user.username}
-          </Text>
-          <View
-            style={[
-              styles.membershipPill,
-              {
-                backgroundColor: chrome.raised,
-                borderColor: chrome.edge,
-                borderTopColor: chrome.highlight,
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={activeMembership ? "badge-account-outline" : "account-alert-outline"}
-              size={15}
-              color={chrome.icon}
-            />
-            <Text
-              numberOfLines={1}
-              style={[styles.membershipPillText, { color: theme.onSurface }]}
-            >
-              {membershipSummary}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {user.biography ? (
-        <Text
-          style={[
-            styles.biography,
-            { color: theme.onSurfaceVariant, borderTopColor: chrome.edge },
-          ]}
-        >
-          {user.biography}
-        </Text>
-      ) : null}
-    </View>
+        <MaterialCommunityIcons
+          name={biography ? "pencil-outline" : "plus"}
+          size={18}
+          color={chrome.icon}
+          style={styles.bioIcon}
+        />
+      </ProfileSurface>
+    </Pressable>
   );
 }
 
@@ -632,6 +751,42 @@ function ProfileLoadingState() {
   );
 }
 
+function ProfileLoadErrorCard({
+  sessionLost,
+  isBusy,
+  onRetry,
+  onRelogin,
+}: {
+  sessionLost: boolean;
+  isBusy: boolean;
+  onRetry: () => void;
+  onRelogin: () => void;
+}) {
+  const theme = useTheme();
+  const chrome = useProfileChromeColors();
+  return (
+    <ProfileSurface style={styles.loadErrorCard}>
+      <MaterialCommunityIcons
+        name={sessionLost ? "account-alert-outline" : "cloud-alert-outline"}
+        size={36}
+        color={chrome.icon}
+      />
+      <Text style={[styles.loadErrorTitle, { color: theme.onSurface }]}>Kunne ikke laste profilen din</Text>
+      <Text style={[styles.loadErrorText, { color: theme.onSurfaceVariant }]}>
+        {sessionLost
+          ? "Innloggingen din kunne ikke fornyes. Prøv igjen, eller logg inn på nytt."
+          : "Fikk ikke kontakt med Online. Prøv igjen om litt."}
+      </Text>
+      <View style={styles.loadErrorActions}>
+        <RaisedButton flex icon="refresh" label="Prøv igjen" disabled={isBusy} onPress={onRetry} />
+        {sessionLost && (
+          <RaisedButton flex icon="login" label="Logg inn" tone="accent" disabled={isBusy} onPress={onRelogin} />
+        )}
+      </View>
+    </ProfileSurface>
+  );
+}
+
 function ProfileLoadingCard() {
   const theme = useTheme();
   return (
@@ -642,14 +797,6 @@ function ProfileLoadingCard() {
   );
 }
 
-function getInitials(value: string): string {
-  return value
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
 
 function formatNextEventDate(date: Date): string {
   const value = new Date(date);
@@ -658,19 +805,6 @@ function formatNextEventDate(date: Date): string {
   return `${weekday} ${time}`;
 }
 
-function formatAccountAge(createdAt: Date): string {
-  const created = new Date(createdAt);
-  const now = new Date();
-  let months =
-    (now.getFullYear() - created.getFullYear()) * 12 +
-    now.getMonth() -
-    created.getMonth();
-  if (now.getDate() < created.getDate()) months -= 1;
-
-  if (months >= 12) return `${Math.floor(months / 12)} år`;
-  if (months >= 1) return `${months} mnd.`;
-  return "Ny";
-}
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("nb-NO", {
@@ -703,6 +837,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loggedOutHero: { padding: 18, flexDirection: "row", alignItems: "center", gap: 14 },
+  identity: { minWidth: 0, flex: 1 },
+  name: { fontSize: 22, lineHeight: 27, fontWeight: "700" },
   loggedOutDescription: { marginTop: 4, fontSize: 13, lineHeight: 18 },
   featureRow: { minHeight: 50, marginHorizontal: 15, flexDirection: "row", alignItems: "center", gap: 12 },
   featureText: { flex: 1, fontSize: 13, fontWeight: "500" },
@@ -720,34 +856,9 @@ const styles = StyleSheet.create({
   },
   errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
   retryText: { fontSize: 13, fontWeight: "700" },
-  hero: { padding: 18 },
-  heroMain: { flexDirection: "row", alignItems: "center", gap: 14 },
-  avatar: { width: 82, height: 82, borderWidth: 1, borderRadius: 41 },
-  avatarPlaceholder: { alignItems: "center", justifyContent: "center" },
-  avatarInitials: { fontSize: 27, fontWeight: "700" },
-  identity: { minWidth: 0, flex: 1 },
-  name: { fontSize: 22, lineHeight: 27, fontWeight: "700" },
-  username: { marginTop: 2, fontSize: 13 },
-  membershipPill: {
-    maxWidth: "100%",
-    minHeight: 28,
-    marginTop: 9,
-    paddingHorizontal: 9,
-    borderWidth: 1,
-    borderRadius: 9,
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  membershipPillText: { flexShrink: 1, fontSize: 11, fontWeight: "700" },
-  biography: {
-    marginTop: 16,
-    paddingTop: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    fontSize: 14,
-    lineHeight: 21,
-  },
+  bioCard: { padding: 15, flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  bioText: { flex: 1, fontSize: 14, lineHeight: 21 },
+  bioIcon: { marginTop: 1 },
   quickFacts: {
     minHeight: 92,
     paddingHorizontal: 5,
@@ -812,6 +923,10 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontSize: 14, fontWeight: "700" },
   centeredState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  loadErrorCard: { padding: 20, alignItems: "center", gap: 8 },
+  loadErrorTitle: { marginTop: 4, fontSize: 16, fontWeight: "700", textAlign: "center" },
+  loadErrorText: { fontSize: 13, lineHeight: 19, textAlign: "center" },
+  loadErrorActions: { alignSelf: "stretch", marginTop: 8, flexDirection: "row", gap: 8 },
   loadingCard: { minHeight: 180, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { fontSize: 14 },
 });

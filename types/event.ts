@@ -10,6 +10,7 @@ export interface EventAttendanceBundle {
 export interface Event {
   status?: string;
   type?: string;
+  visibility?: EventVisibility;
   id: string;
   title: string;
   start: Date;
@@ -165,9 +166,11 @@ export type EventType =
   | "COMPANY"
   | "ACADEMIC"
   | "SOCIAL"
-  | "INTERNAL"
   | "OTHER"
   | "WELCOME";
+
+/** Who can see an event. The API hides AUTHENTICATED events when signed out and COMMITTEE_ONLY ones from non-committee members. */
+export type EventVisibility = "PUBLIC" | "AUTHENTICATED" | "COMMITTEE_ONLY";
 
 export interface EventFilterParams {
   byStartDate?: {
@@ -181,4 +184,6 @@ export interface EventFilterParams {
   byType?: EventType[];
   byId?: string[];
   excludingType?: EventType[];
+  byVisibility?: EventVisibility[];
+  excludingVisibility?: EventVisibility[];
 }

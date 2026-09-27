@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps, ReactNode } from "react";
 import {
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -104,25 +105,23 @@ export function ProfileInfoRow({
   label,
   value,
   isLast = false,
+  onPress,
+  muted = false,
 }: {
   icon: IconName;
   label: string;
   value: string;
   isLast?: boolean;
+  /** Makes the row editable: tappable with a trailing chevron. */
+  onPress?: () => void;
+  /** Placeholder values such as "Ikke oppgitt". */
+  muted?: boolean;
 }) {
   const theme = useTheme();
   const chrome = useProfileChromeColors();
 
-  return (
-    <View
-      style={[
-        styles.infoRow,
-        !isLast && {
-          borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: chrome.edge,
-        },
-      ]}
-    >
+  const content = (
+    <>
       <View style={styles.infoIcon}>
         <MaterialCommunityIcons
           name={icon}
@@ -134,12 +133,37 @@ export function ProfileInfoRow({
         {label}
       </Text>
       <Text
-        selectable
-        style={[styles.infoValue, { color: theme.onSurface }]}
+        selectable={!onPress}
+        style={[styles.infoValue, { color: muted ? theme.onSurfaceVariant : theme.onSurface }]}
       >
         {value}
       </Text>
-    </View>
+      {onPress && (
+        <MaterialCommunityIcons name="chevron-right" size={18} color={theme.onSurfaceVariant} />
+      )}
+    </>
+  );
+
+  const rowStyle = [
+    styles.infoRow,
+    !isLast && {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: chrome.edge,
+    },
+  ];
+
+  if (!onPress) return <View style={rowStyle}>{content}</View>;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityHint="Endre"
+      onPress={onPress}
+      style={({ pressed }) => [rowStyle, pressed && { opacity: 0.6 }]}
+    >
+      {content}
+    </Pressable>
   );
 }
 

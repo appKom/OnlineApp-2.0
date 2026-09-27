@@ -54,6 +54,7 @@
           "customScheme": "ntnu.online.app"
         }
       ],
+      "./withAuth0SceneLinking",
       [
         "expo-build-properties",
         {
@@ -84,7 +85,15 @@
       "./withCustomDrawables",
       "expo-image",
       "expo-tracking-transparency",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Online trenger tilgang til bildene dine for å endre profilbildet ditt.",
+          "cameraPermission": "Online trenger tilgang til kameraet for å ta et nytt profilbilde.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

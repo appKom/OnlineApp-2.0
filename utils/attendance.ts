@@ -104,4 +104,15 @@ export const hasAttendeePaid = (
   return Boolean(attendee.paymentChargedAt || hasReserved || (attendee.paymentRefundedAt && !attendee.paymentDeadline))
 }
 
+/** The deadline of a payment the attendee still has to make, or null once paid or past due. */
+export const getPendingPaymentDeadline = (
+  attendance: Attendance,
+  attendee: Attendee | null,
+  now = new Date()
+): Date | null => {
+  if (!attendee?.paymentDeadline || hasAttendeePaid(attendance, attendee) !== false) return null
+  const deadline = new Date(attendee.paymentDeadline)
+  return deadline > now ? deadline : null
+}
+
 export default {}

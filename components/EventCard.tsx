@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, format, isPast } from "date-fns";
 import { nb } from "date-fns/locale";
-import React from "react";
+import React, { useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { EventAttendanceBundle } from "../types/event";
 import { User } from "../types/user";
@@ -8,10 +8,12 @@ import {
   getAttendanceCapacity,
   getAttendanceStatus,
   getAttendee,
+  getPendingPaymentDeadline,
   getReservedAttendeeCount,
   getUnreservedAttendeeCount,
 } from "../utils/attendance";
 import { useTheme, useThemeMode } from "../utils/theme";
+import { formatTimeLeft, useCountdown, type CountdownFormatterData } from "../utils/use-countdown";
 import { TicketButton } from "./EventDetails/AttendanceCard/TicketButton";
 import { PanelDivider, Tag, usePanelChromeColors } from "./Panel";
 
@@ -20,15 +22,22 @@ const EVENT_TYPES: Record<string, { label: string; dark: string; light: string }
   ACADEMIC: { label: "Kurs", dark: "#86BCF7", light: "#1F5FA8" },
   COMPANY: { label: "Bedpres", dark: "#F2878A", light: "#B3323A" },
   GENERAL_ASSEMBLY: { label: "Generalforsamling", dark: "#F5BC6F", light: "#8F5A00" },
-  INTERNAL: { label: "Intern", dark: "#C4A9FF", light: "#6A4FB0" },
   WELCOME: { label: "Fadderuke", dark: "#F5BC6F", light: "#8F5A00" },
   OTHER: { label: "Annet", dark: "#A9B1B9", light: "#5B636B" },
 };
+
+const INTERNAL = { label: "Intern", dark: "#C4A9FF", light: "#6A4FB0" };
 
 export function useEventTypeStyle(eventType: string | undefined) {
   const { mode } = useThemeMode();
   const type = EVENT_TYPES[eventType?.toUpperCase() ?? ""] ?? EVENT_TYPES.OTHER;
   return { label: type.label, color: mode === "dark" ? type.dark : type.light };
+}
+
+/** Tag for committee-only events, which used to be their own "Intern" type. */
+export function useInternalTagStyle() {
+  const { mode } = useThemeMode();
+  return { label: INTERNAL.label, color: mode === "dark" ? INTERNAL.dark : INTERNAL.light };
 }
 
 interface EventCardProps {
@@ -50,13 +59,17 @@ const EventCard: React.FC<EventCardProps> = ({ event: bundle, user, onPress, ong
   const theme = useTheme();
   const { mode } = useThemeMode();
   const chrome = usePanelChromeColors();
-  const type = useEventTypeStyle(bundle.event.type);
+  const typeStyle = useEventTypeStyle(bundle.event.type);
+  const internalStyle = useInternalTagStyle();
+  const type = bundle.event.visibility === "COMMITTEE_ONLY" ? internalStyle : typeStyle;
   const { event, attendance } = bundle;
   const start = new Date(event.start);
   const end = new Date(event.end);
   const ended = isPast(end);
 
   const attendee = getAttendee(attendance, user);
+  // An unpaid spot is lost at the deadline, so the countdown beats the ticket shortcut.
+  const paymentDeadline = attendance ? getPendingPaymentDeadline(attendance, attendee) : null;
 
   const fallbackImage =
     mode === "dark"
@@ -105,11 +118,11 @@ const EventCard: React.FC<EventCardProps> = ({ event: bundle, user, onPress, ong
           </View>
         </View>
 
-        {ongoing && attendee?.reserved ? (
+        {ongoing && attendee?.reserved && !paymentDeadline ? (
           <TicketButton attendee={attendee} compact />
         ) : (
           attendance && (
-            <AttendanceSummary bundle={bundle} attendee={attendee} ended={ended} />
+            <AttendanceSummary bundle={bundle} attendee={attendee} paymentDeadline={paymentDeadline} ended={ended} />
           )
         )}
       </Pressable>
@@ -121,10 +134,12 @@ const EventCard: React.FC<EventCardProps> = ({ event: bundle, user, onPress, ong
 function AttendanceSummary({
   bundle,
   attendee,
+  paymentDeadline,
   ended,
 }: {
   bundle: EventAttendanceBundle;
   attendee: ReturnType<typeof getAttendee>;
+  paymentDeadline: Date | null;
   ended: boolean;
 }) {
   const chrome = usePanelChromeColors();
@@ -151,7 +166,9 @@ function AttendanceSummary({
         {waitlist > 0 && !ended && <Text style={{ color: chrome.warning }}>{` +${waitlist}`}</Text>}
       </Text>
 
-      {attendee ? (
+      {paymentDeadline ? (
+        <PaymentCountdownTag deadline={paymentDeadline} />
+      ) : attendee ? (
         <Tag
           label={attendee.reserved ? "Påmeldt" : "Venteliste"}
           color={attendee.reserved ? chrome.success : chrome.warning}
@@ -167,6 +184,24 @@ function AttendanceSummary({
         )
       )}
     </View>
+  );
+}
+
+// Module level so useCountdown's interval isn't reset on every render.
+const formatPaymentCountdown = (countdown: CountdownFormatterData) =>
+  countdown === "NOW" ? null : formatTimeLeft(countdown);
+
+/** Replaces "Påmeldt" while the spot is held waiting for payment. */
+function PaymentCountdownTag({ deadline }: { deadline: Date }) {
+  const chrome = usePanelChromeColors();
+  const time = deadline.getTime();
+  const stableDeadline = useMemo(() => new Date(time), [time]);
+  const countdown = useCountdown(stableDeadline, formatPaymentCountdown);
+
+  return countdown ? (
+    <Tag label={`Betal ${countdown}`} color={chrome.warning} style={styles.countdownTag} />
+  ) : (
+    <Tag label="Frist ute" color={chrome.danger} />
   );
 }
 
@@ -229,6 +264,9 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
+  },
+  countdownTag: {
+    fontVariant: ["tabular-nums"],
   },
 });
 

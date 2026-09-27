@@ -9,7 +9,8 @@ export default function HomeLayout() {
 
   return (
     <>
-      {current !== "event-details" && <Header title="Arrangementer" />}
+      {/* Detail screens draw their own back button instead of the big title. */}
+      {current !== "event-details" && current !== "user-profile" && <Header title="Arrangementer" />}
       <Stack
         screenOptions={{
           headerShown: false,
@@ -20,6 +21,7 @@ export default function HomeLayout() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="event-details" />
+        <Stack.Screen name="user-profile" />
       </Stack>
     </>
   );

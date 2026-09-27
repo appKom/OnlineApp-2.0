@@ -7,7 +7,12 @@ export function useCurrentUser() {
   const [user, setUser] = useState<User | null>(Authenticator.user);
   useEffect(() => {
     setUser(Authenticator.user);
-    return Authenticator.addLoginStateListener((loggedIn) => setUser(loggedIn ? Authenticator.user : null));
+    const removeLogin = Authenticator.addLoginStateListener((loggedIn) => setUser(loggedIn ? Authenticator.user : null));
+    const removeUser = Authenticator.addUserListener(setUser);
+    return () => {
+      removeLogin();
+      removeUser();
+    };
   }, []);
   return user;
 }

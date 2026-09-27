@@ -21,7 +21,7 @@ import { TurnstileBox } from "../../TurnstileModal"
 import { getAttendanceStatus } from "../../../types/attendanceStatus"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"
-import { getAttendee } from "../../../utils/attendance"
+import { getAttendee, hasAttendeePaid } from "../../../utils/attendance"
 import { updateEventReminders } from "../../../utils/reminders"
 import { useBookmarks } from "../../../utils/bookmarks"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
@@ -51,6 +51,11 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const [isVerified, setIsVerified] = useState(false)
   const [pendingTurnstileToken, setPendingTurnstileToken] = useState<string | null>(null)
   const chrome = usePanelChromeColors()
+
+  // Pull-to-refresh on the event page hands us a fresh attendance.
+  useEffect(() => {
+    setAttendance(initialAttendance)
+  }, [initialAttendance])
 
   useEffect(() => {
     setAttendanceStatus(getAttendanceStatus(attendance))
@@ -226,6 +231,12 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }
 
   const hasPunishment = Boolean(punishment && (punishment.delay > 0 || punishment.suspended))
+  // Missing the payment deadline after the deregistration deadline suspends you but keeps your spot.
+  const suspendedForThisEvent = Boolean(
+    punishment?.suspended && attendee && hasAttendeePaid(attendance, attendee) === false
+  )
+  // A delay only matters before you sign up; a suspension matters either way.
+  const showPunishment = hasPunishment && (!attendee || Boolean(punishment?.suspended))
 
   const statusTag = {
     NotOpened: { label: "Ikke åpnet", color: chrome.textMuted },
@@ -246,7 +257,16 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
       <PanelDivider />
 
       <View style={styles.section}>
-        {punishment && hasPunishment && !attendee && <PunishmentBox punishment={punishment} />}
+        {punishment && showPunishment && (
+          <PunishmentBox
+            punishment={punishment}
+            reason={
+              suspendedForThisEvent
+                ? "Betalingen for dette arrangementet kom ikke inn i tide. Kontakt arrangøren for å betale, så fjernes suspensjonen."
+                : undefined
+            }
+          />
+        )}
 
         <MainPoolCard attendance={attendance} user={user} authorizeUrl={undefined} chargeScheduleDate={null} />
         <NonAttendablePoolsBox attendance={attendance} user={user} />

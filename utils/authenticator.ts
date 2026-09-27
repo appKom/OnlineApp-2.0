@@ -3,14 +3,32 @@ import { Platform } from "react-native";
 import { User } from "types/user";
 import { getUser } from "./trpc";
 
+const AUTH0_DOMAIN = "auth.online.ntnu.no";
+const AUTH0_CLIENT_ID = "EniGfQ4MlcVuS2FWbUMmCjaFB65EqjzZ";
+
 type StateListener = (isLoggedIn: boolean) => void;
+type UserListener = (user: User | null) => void;
 
 class Authenticator {
   private static auth0: Auth0 | null = null;
   private static credentials: Credentials | null = null;
   private static _loggedIn: boolean = false;
   private static listeners: StateListener[] = [];
+  private static userListeners: UserListener[] = [];
   public static user: User | null = null;
+
+  /** Replace the signed-in user after an edit, so every screen shows the new values. */
+  static setUser(user: User | null) {
+    this.user = user;
+    this.userListeners.forEach((listener) => listener(user));
+  }
+
+  static addUserListener(listener: UserListener) {
+    this.userListeners.push(listener);
+    return () => {
+      this.userListeners = this.userListeners.filter((l) => l !== listener);
+    };
+  }
 
   static get loggedIn(): boolean {
     return this._loggedIn;
@@ -26,13 +44,23 @@ class Authenticator {
     }
   }
 
-  static initialize(domain: string, clientId: string) {
-    console.log("🚀 Initializing Auth0...");
-    this.auth0 = new Auth0({
-      domain,
-      clientId,
-    });
-    console.log(`✅ Auth0 initialized`);
+  /**
+   * The one Auth0 client, created on first use. A second client would get its own credentials manager, and
+   * two managers refreshing at once can present the same single-use refresh token, ending the session.
+   * Creating it lazily also survives this module being re-evaluated (Fast Refresh), which resets the statics
+   * while the screen that used to call initialize() stays mounted.
+   */
+  private static get client(): Auth0 {
+    if (!this.auth0) {
+      console.log("🚀 Initializing Auth0...");
+      this.auth0 = new Auth0({ domain: AUTH0_DOMAIN, clientId: AUTH0_CLIENT_ID });
+    }
+    return this.auth0;
+  }
+
+  /** Kept for existing callers; the client is created on demand anyway. */
+  static initialize(_domain?: string, _clientId?: string) {
+    void this.client;
   }
 
   /**
@@ -42,22 +70,23 @@ class Authenticator {
   static async fetchStoredCredentials(): Promise<Credentials | null> {
     console.log("🔍 Checking for stored credentials...");
 
-    if (!this.auth0) {
-      throw new Error("Auth0 has not been initialized!");
-    }
 
     try {
       // Checks if we have valid, non-expired credentials
       const hasValidCredentials =
-        await this.auth0.credentialsManager.hasValidCredentials();
+        await this.client.credentialsManager.hasValidCredentials();
       console.log(`📋 Has valid credentials: ${hasValidCredentials}`);
 
       if (hasValidCredentials) {
         try {
           // Automatically refreshes the token if needed
           this.credentials =
-            await this.auth0.credentialsManager.getCredentials();
-          this.user = await getUser();
+            await this.client.credentialsManager.getCredentials();
+          // An API outage must not end the session: screens load the user again when they need it.
+          this.user = await getUser().catch((userError) => {
+            console.log("⚠️ Could not load user, keeping the session:", userError);
+            return null;
+          });
           this.setLoggedIn(true);
 
           console.log("✅ Retrieved stored credentials");
@@ -71,7 +100,7 @@ class Authenticator {
         } catch (error) {
           console.log("❌ Error retrieving credentials:", error);
 
-          await this.auth0.credentialsManager.clearCredentials();
+          await this.client.credentialsManager.clearCredentials();
           this.user = null;
           this.setLoggedIn(false);
 
@@ -92,9 +121,6 @@ class Authenticator {
   static async login(): Promise<Credentials | null> {
     console.log("🔑 Starting login process...");
 
-    if (!this.auth0) {
-      throw new Error("Auth0 has not been initialized!");
-    }
 
     try {
       console.log("🌐 Opening web authentication...");
@@ -104,7 +130,7 @@ class Authenticator {
           ? "ntnu.online.app://auth.online.ntnu.no/ios/ntnu.online.app/callback"
           : "ntnu.online.app://auth.online.ntnu.no/android/ntnu.online.app/callback";
 
-      const response = await this.auth0.webAuth.authorize({
+      const response = await this.client.webAuth.authorize({
         scope: "openid profile email offline_access", // offline_access is crucial for refresh tokens!
         // audience: "https://rpc.online.ntnu.no/api/trpc", // TODO: This is new. If it breaks anything, remove it
         redirectUrl,
@@ -116,7 +142,7 @@ class Authenticator {
 
       console.log("💾 Storing credentials securely...");
       // This stores credentials in iOS Keychain / Android Keystore
-      await this.auth0.credentialsManager.saveCredentials(response);
+      await this.client.credentialsManager.saveCredentials(response);
 
       this.credentials = response;
       this.user = await getUser();
@@ -142,9 +168,6 @@ class Authenticator {
   static async logout(): Promise<void> {
     console.log("🚪 Starting logout process...");
 
-    if (!this.auth0) {
-      throw new Error("Auth0 has not been initialized!");
-    }
 
     try {
       console.log("🌐 Clearing web session...");
@@ -154,12 +177,12 @@ class Authenticator {
           ? "ntnu.online.app://auth.online.ntnu.no/ios/ntnu.online.app/callback"
           : "ntnu.online.app://auth.online.ntnu.no/android/ntnu.online.app/callback";
 
-      await this.auth0.webAuth.clearSession({
+      await this.client.webAuth.clearSession({
         returnToUrl,
       });
 
       console.log("🗑️ Clearing stored credentials...");
-      await this.auth0.credentialsManager.clearCredentials();
+      await this.client.credentialsManager.clearCredentials();
 
       // Clear the user before notifying so listeners never see a stale user without credentials.
       this.credentials = null;
@@ -181,11 +204,9 @@ class Authenticator {
    * Get current access token (automatically refreshed if needed)
    */
   static async getAccessToken(): Promise<string | null> {
-    if (!this.auth0) return null;
-
     try {
       // This will automatically refresh the token if it's expired!
-      const credentials = await this.auth0.credentialsManager.getCredentials();
+      const credentials = await this.client.credentialsManager.getCredentials();
       return credentials.accessToken;
     } catch (error) {
       console.log("❌ Error getting access token:", error);
@@ -197,12 +218,10 @@ class Authenticator {
    * Get current credentials (automatically refreshed if needed)
    */
   static async getCurrentCredentials(): Promise<Credentials | null> {
-    if (!this.auth0) return null;
-
     try {
       const credentials =
         this.credentials ??
-        (await this.auth0.credentialsManager.getCredentials());
+        (await this.client.credentialsManager.getCredentials());
       this.credentials = credentials;
       return credentials;
     } catch (error) {

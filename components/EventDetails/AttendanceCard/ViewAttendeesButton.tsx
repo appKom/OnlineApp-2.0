@@ -12,9 +12,11 @@ import {
   Animated,
   PanResponder,
   ScrollView,
+  Pressable,
 } from "react-native"
 import { BlurView } from "@react-native-community/blur"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { useRouter } from "expo-router"
 import type { Attendance, Attendee } from "../../../types/event"
 import type { User } from "../../../types/user"
 import { ChoiceTrack, PanelDivider, RaisedButton, usePanelChromeColors } from "../../Panel"
@@ -38,6 +40,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   user,
 }) => {
   const chrome = usePanelChromeColors()
+  const router = useRouter()
 
   const [isMounted, setIsMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -130,6 +133,15 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
 
   const closeModal = () => {
     setIsOpen(false)
+  }
+
+  // Let the sheet slide away before the next screen pushes in.
+  const openProfile = (attendee: Attendee) => {
+    closeModal()
+    setTimeout(() => {
+      if (attendee.userId === user?.id) router.navigate("/(tabs)/(profile)")
+      else router.push({ pathname: "/user-profile", params: { userId: attendee.userId } })
+    }, 220)
   }
 
   const panResponder = useRef(
@@ -232,7 +244,7 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
                   item.type === "header" ? (
                     <Text style={[styles.sectionTitle, { color: chrome.textMuted }]}>{item.title}</Text>
                   ) : (
-                    <AttendeeRow attendee={item.attendee} user={user!} />
+                    <AttendeeRow attendee={item.attendee} user={user!} onPress={() => openProfile(item.attendee)} />
                   )
                 }
               />
@@ -244,16 +256,20 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
   )
 }
 
-const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => {
+const AttendeeRow = ({ attendee, user, onPress }: { attendee: Attendee; user: User; onPress: () => void }) => {
   const chrome = usePanelChromeColors()
   const isUser = attendee.userId === user.id
 
   return (
-    <View
-      style={[
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Åpner profilen"
+      onPress={onPress}
+      style={({ pressed }) => [
         styles.attendeeRow,
         { borderTopColor: chrome.edge },
         isUser && { backgroundColor: chrome.raised },
+        pressed && { opacity: 0.6 },
       ]}
     >
       {attendee.user.imageUrl ? (
@@ -273,7 +289,8 @@ const AttendeeRow = ({ attendee, user }: { attendee: Attendee; user: User }) => 
             : "Ingen klasse"}
         </Text>
       </View>
-    </View>
+      <MaterialCommunityIcons name="chevron-right" size={18} color={chrome.textMuted} />
+    </Pressable>
   )
 }
 

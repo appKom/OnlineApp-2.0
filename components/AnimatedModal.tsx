@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { View, Modal, TouchableOpacity, StyleSheet, Animated, Easing } from "react-native"
+import { View, Modal, TouchableOpacity, StyleSheet, Animated, Easing, KeyboardAvoidingView, Platform } from "react-native"
 import { BlurView } from "@react-native-community/blur"
 
 interface ModalProps {
@@ -73,7 +73,12 @@ export const AnimatedModal: React.FC<ModalProps> = ({
             onPress={handleClose}
           />
 
-          <View style={styles.centered}>
+          {/* Lifts dialogs with text fields above the keyboard. */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.centered}
+            pointerEvents="box-none"
+          >
             <Animated.View
               style={[
                 styles.modal,
@@ -87,7 +92,7 @@ export const AnimatedModal: React.FC<ModalProps> = ({
             >
               {typeof children === "function" ? children(handleClose) : children}
             </Animated.View>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Animated.View>
     </Modal>

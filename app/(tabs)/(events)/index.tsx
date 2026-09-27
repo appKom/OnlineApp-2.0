@@ -20,6 +20,7 @@ import {
   getGroupsByMember,
   getMyEvents,
   getUpcomingEvents,
+  type EventListFilter,
 } from "../../../utils/trpc";
 import { useCurrentUser } from "../../../utils/useCurrentUser";
 
@@ -28,7 +29,10 @@ const MY_EVENTS_PAGE_SIZE = 50;
 
 type Period = "upcoming" | "past";
 
-const TYPE_OPTIONS: { value: EventType | null; label: string }[] = [
+/** Internal events aren't a type any more but a visibility (COMMITTEE_ONLY); the chip still sits with the types. */
+type TypeFilter = EventType | "INTERNAL" | null;
+
+const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: null, label: "Alle" },
   { value: "COMPANY", label: "Bedpres" },
   { value: "SOCIAL", label: "Sosialt" },
@@ -38,6 +42,17 @@ const TYPE_OPTIONS: { value: EventType | null; label: string }[] = [
   { value: "OTHER", label: "Annet" },
 ];
 const INTERNAL_OPTION = { value: "INTERNAL" as const, label: "Intern" };
+
+const toListFilter = (type: TypeFilter): EventListFilter => {
+  if (type === "INTERNAL") return { byVisibility: ["COMMITTEE_ONLY"] };
+  return type ? { byType: [type] } : {};
+};
+
+const matchesTypeFilter = (bundle: EventAttendanceBundle, type: TypeFilter) => {
+  if (!type) return true;
+  if (type === "INTERNAL") return bundle.event.visibility === "COMMITTEE_ONLY";
+  return bundle.event.type === type;
+};
 
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "upcoming", label: "Kommende" },
@@ -87,7 +102,8 @@ const AllEvents: React.FC = () => {
   const isCommitteeMember = useIsCommitteeMember(user?.id);
   const { bookmarkIds, ready: bookmarksReady, isBookmarked } = useBookmarks();
 
-  const [type, setType] = useState<EventType | null>(null);
+  const [type, setType] = useState<TypeFilter>(null);
+  const listFilter = useMemo(() => toListFilter(type), [type]);
   const [period, setPeriod] = useState<Period>("upcoming");
   const [myPeriod, setMyPeriod] = useState<Period>("upcoming");
 
@@ -119,7 +135,7 @@ const AllEvents: React.FC = () => {
       return;
     }
     try {
-      const mine = await getMyEvents(user.id, null, false, undefined, MY_EVENTS_PAGE_SIZE);
+      const mine = await getMyEvents(user.id, {}, false, undefined, MY_EVENTS_PAGE_SIZE);
       setMyUpcoming(mine.items ?? []);
     } catch (loadError) {
       console.error("Failed to load own events:", loadError);
@@ -132,15 +148,15 @@ const AllEvents: React.FC = () => {
     try {
       const result =
         period === "upcoming"
-          ? await getUpcomingEvents(type, undefined, PAGE_SIZE)
-          : await getEndedEvents(type, undefined, PAGE_SIZE);
+          ? await getUpcomingEvents(listFilter, undefined, PAGE_SIZE)
+          : await getEndedEvents(listFilter, undefined, PAGE_SIZE);
       if (current !== generation.current) return;
       setEvents(toPage(result, PAGE_SIZE));
     } catch (loadError) {
       console.error("Failed to load events:", loadError);
       if (current === generation.current) setError("Kunne ikke laste arrangementer.");
     }
-  }, [period, type]);
+  }, [listFilter, period]);
 
   const loadMyPast = useCallback(
     async (cursor?: string) => {
@@ -148,7 +164,7 @@ const AllEvents: React.FC = () => {
       const current = cursor ? myPastGeneration.current : ++myPastGeneration.current;
       setLoadingMyPast(true);
       try {
-        const result = await getMyEvents(user.id, type, true, cursor, PAGE_SIZE);
+        const result = await getMyEvents(user.id, listFilter, true, cursor, PAGE_SIZE);
         if (current !== myPastGeneration.current) return;
         const page = toPage(result, PAGE_SIZE);
         setMyPast((prev) => (cursor ? { ...page, items: [...prev.items, ...page.items] } : page));
@@ -158,7 +174,7 @@ const AllEvents: React.FC = () => {
         if (current === myPastGeneration.current) setLoadingMyPast(false);
       }
     },
-    [type, user],
+    [listFilter, user],
   );
 
   useEffect(() => {
@@ -212,8 +228,8 @@ const AllEvents: React.FC = () => {
     try {
       const result =
         period === "upcoming"
-          ? await getUpcomingEvents(type, events.cursor, PAGE_SIZE)
-          : await getEndedEvents(type, events.cursor, PAGE_SIZE);
+          ? await getUpcomingEvents(listFilter, events.cursor, PAGE_SIZE)
+          : await getEndedEvents(listFilter, events.cursor, PAGE_SIZE);
       if (current !== generation.current) return;
       const page = toPage(result, PAGE_SIZE);
       setEvents((prev) => ({ ...page, items: [...prev.items, ...page.items] }));
@@ -223,7 +239,7 @@ const AllEvents: React.FC = () => {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [events, loading, period, type]);
+  }, [events, listFilter, loading, period]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -237,7 +253,7 @@ const AllEvents: React.FC = () => {
 
   const items = useMemo<ListItem[]>(() => {
     const now = new Date();
-    const matchesType = (bundle: EventAttendanceBundle) => !type || bundle.event.type === type;
+    const matchesType = (bundle: EventAttendanceBundle) => matchesTypeFilter(bundle, type);
     const mineUpcoming = (myUpcoming ?? []).filter(matchesType);
 
     const ongoing = mineUpcoming.filter((bundle) =>

@@ -2,12 +2,13 @@ import TimeLocationCard from "components/EventDetails/TimeLocationCard";
 import DescriptionCard from "components/EventDetails/DescriptionCard";
 import AttendanceCard from "components/EventDetails/AttendanceCard/AttendanceCard";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   Image,
   LayoutAnimation,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,12 +33,13 @@ import {
   Tag,
   usePanelChromeColors,
 } from "components/Panel";
-import { useEventTypeStyle } from "components/EventCard";
+import { useEventTypeStyle, useInternalTagStyle } from "components/EventCard";
 import { toggleBookmarkWithUndo, useBookmarks } from "utils/bookmarks";
 import { useCurrentUser } from "utils/useCurrentUser";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { EventRules } from "components/EventDetails/AttendanceCard/EventRules";
 import { PaymentExplanationDialog } from "components/EventDetails/AttendanceCard/PaymentExplanationDialog";
+import { EditProfileFieldModal } from "components/Profile/EditProfileFieldModal";
 import { Linking } from "react-native";
 
 const EventDetails: React.FC = () => {
@@ -105,6 +107,8 @@ const EventDetails: React.FC = () => {
 
   const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingDiet, setEditingDiet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [punishment, setPunishment] = useState<Punishment | null>(null);
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
@@ -112,6 +116,7 @@ const EventDetails: React.FC = () => {
 
   const isRegistration = isRegistrationEvent(event);
   const eventType = useEventTypeStyle(event?.event.type);
+  const internalTag = useInternalTagStyle();
 
   // Use shared theme tokens for colors
   const colors = {
@@ -125,49 +130,46 @@ const EventDetails: React.FC = () => {
     setDescriptionExpanded(!descriptionExpanded);
   };
 
-  useEffect(() => {
-    getEvent(eventId)
-      .then((data) => {
-        // keep the exact return type from getEvent (EventAttendanceBundle | null)
-        const eventData = data ?? null;
-        setEvent(eventData);
+  const loadEvent = useCallback(async () => {
+    try {
+      const eventData = (await getEvent(eventId)) ?? null;
+      setEvent(eventData);
+      setError(null);
 
-        if (eventData?.event?.imageUrl) {
-          Image.getSize(
-            eventData.event.imageUrl,
-            (width, height) => setImageAspectRatio(width / height),
-            (error) => console.log("Error getting image size:", error),
-          );
-        }
+      if (eventData?.event?.imageUrl) {
+        Image.getSize(
+          eventData.event.imageUrl,
+          (width, height) => setImageAspectRatio(width / height),
+          (error) => console.log("Error getting image size:", error),
+        );
+      }
 
-        setLoading(false);
-
-        if (eventData != null && eventData.attendance != null) {
-          // getRegistrationAvailability now requires a turnstile token, skip it on page load
-        } else {
-          console.log(
-            eventData == null ? "event is null" : "attendance is null",
-          );
-        }
-
-        // Fetch server-computed punishment for the signed-in user (if any)
-        if (user) {
-          void getExpiryDateForUser(user.id)
-            .then((p) => {
-              setPunishment((p as Punishment) ?? null);
-            })
-            .catch(() => {
-              // ignore errors here; keep punishment null
-            });
-        }
-      })
-      .catch((error) => {
-        setError(error.message);
-        setLoading(false);
-      });
+      // Fetch server-computed punishment for the signed-in user (if any)
+      if (user) {
+        void getExpiryDateForUser(user.id)
+          .then((p) => {
+            setPunishment((p as Punishment) ?? null);
+          })
+          .catch(() => {
+            // ignore errors here; keep punishment null
+          });
+      }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : String(loadError));
+    }
     // Refetch on login/logout so the attendance reflects the signed-in user.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, user?.id]);
+
+  useEffect(() => {
+    void loadEvent().finally(() => setLoading(false));
+  }, [loadEvent]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadEvent();
+    setRefreshing(false);
+  };
 
   if (loading) {
     return (
@@ -178,14 +180,33 @@ const EventDetails: React.FC = () => {
     );
   }
 
-  if (error || !event) {
+  // A failed refresh keeps showing the event we already have.
+  if (!event) {
     return (
-      <View
-        style={[styles.centerContainer, { backgroundColor: colors.background }]}
-      >
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          {error ?? "Could not load event details"}
-        </Text>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView
+          contentContainerStyle={styles.centerContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={chrome.textMuted}
+              colors={[chrome.accent]}
+            />
+          }
+        >
+          <MaterialCommunityIcons name="cloud-alert-outline" size={36} color={chrome.textMuted} />
+          <Text style={[styles.errorTitle, { color: chrome.text }]}>Kunne ikke laste arrangementet</Text>
+          <Text style={[styles.errorText, { color: chrome.textMuted }]}>
+            {error ?? "Arrangementet finnes ikke, eller du har ikke tilgang til det."}
+          </Text>
+          <RaisedButton
+            icon="refresh"
+            label={refreshing ? "Laster…" : "Prøv igjen"}
+            disabled={refreshing}
+            onPress={handleRefresh}
+          />
+        </ScrollView>
         {renderBackButton()}
       </View>
     );
@@ -196,7 +217,18 @@ const EventDetails: React.FC = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={styles.scrollContainer}>
+      <ScrollView
+        style={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={chrome.textMuted}
+            colors={[chrome.accent]}
+            progressViewOffset={insets.top}
+          />
+        }
+      >
         <View
           style={{
             width: screenWidth,
@@ -240,7 +272,12 @@ const EventDetails: React.FC = () => {
         </View>
         <PanelDivider onBackground />
         <View style={styles.titleArea}>
-          <Tag label={eventType.label} color={eventType.color} />
+          <View style={styles.tags}>
+            <Tag label={eventType.label} color={eventType.color} />
+            {event.event.visibility === "COMMITTEE_ONLY" && (
+              <Tag label={internalTag.label} color={internalTag.color} />
+            )}
+          </View>
           <Text style={[styles.eventTitle, { color: chrome.text }]}>
             {event.event.title}
           </Text>
@@ -285,12 +322,21 @@ const EventDetails: React.FC = () => {
             flex
             icon="food-apple-outline"
             label="Allergier"
-            accessibilityLabel="Oppdater matallergier på online.ntnu.no"
-            onPress={() => Linking.openURL("https://online.ntnu.no/innstillinger/profil")}
+            accessibilityLabel="Oppdater kosthold og allergier"
+            onPress={() =>
+              user ? setEditingDiet(true) : Linking.openURL("https://online.ntnu.no/innstillinger/profil")
+            }
           />
           {isRegistration && Boolean(event.attendance?.attendancePrice) && <PaymentExplanationDialog />}
         </View>
         </View>
+        {user && (
+          <EditProfileFieldModal
+            field={editingDiet ? "dietaryRestrictions" : null}
+            user={user}
+            onClose={() => setEditingDiet(false)}
+          />
+        )}
         {/*ikke fjern, navbar på ios blokker bunnen av siden uten denne :p  */}
         <View style={{ height: 104 }} />
       </ScrollView>
@@ -317,19 +363,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bookmarkButton: { left: undefined, right: 16 },
+  tags: { flexDirection: "row", gap: 10 },
   titleArea: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 14, gap: 4 },
   eventTitle: { fontSize: 24, lineHeight: 30, fontWeight: "700", letterSpacing: -0.2 },
   panels: { paddingHorizontal: 16, gap: 14 },
   links: { flexDirection: "row", gap: 8 },
   centerContainer: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: 8,
   },
+  errorTitle: { fontSize: 17, fontWeight: "700", textAlign: "center" },
   errorText: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: "center",
-    marginHorizontal: 20,
+    marginHorizontal: 32,
+    marginBottom: 8,
   },
   noRegistrationContainer: {
     padding: 14,

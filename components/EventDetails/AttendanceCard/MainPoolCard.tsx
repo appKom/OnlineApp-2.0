@@ -23,6 +23,7 @@ import { nb } from "date-fns/locale"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { MeterBar, Tag, usePanelChromeColors } from "../../Panel"
 import type { IconName } from "../../Panel"
+import { blendColors, useTheme } from "../../../utils/theme"
 
 interface MainPoolCardProps {
   attendance: Attendance
@@ -33,6 +34,7 @@ interface MainPoolCardProps {
 
 export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, chargeScheduleDate }) => {
   const chrome = usePanelChromeColors()
+  const theme = useTheme()
   const now = new Date()
   const attendee = getAttendee(attendance, user)
 
@@ -149,26 +151,31 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
       )}
 
       {showPaymentCountdown && attendee?.paymentLink && (
+        // A coloured raised button (lit from above) so the deadline stands out from the grey controls.
         <Pressable
           accessibilityRole="link"
-          accessibilityLabel="Betal nå"
+          accessibilityLabel={`Betal ${attendance.attendancePrice} kr innen ${paymentCountdownText}`}
           onPress={() => attendee.paymentLink && Linking.openURL(attendee.paymentLink)}
           style={({ pressed }) => [
             styles.payment,
             {
-              backgroundColor: pressed ? chrome.raisedPressed : chrome.raised,
+              backgroundColor: pressed
+                ? blendColors(theme.onSecondaryContainer, theme.secondaryContainer, 0.12)
+                : theme.secondaryContainer,
               borderColor: chrome.edge,
-              borderTopColor: chrome.highlight,
+              borderTopColor: blendColors("#FFFFFF", theme.secondaryContainer, 0.35),
             },
           ]}
         >
-          <MaterialCommunityIcons name="alert-circle-outline" size={18} color={chrome.warning} />
+          <MaterialCommunityIcons name="timer-sand" size={22} color={theme.onSecondaryContainer} />
           <View style={styles.paymentCopy}>
-            <Text style={[styles.paymentLabel, { color: chrome.warning }]}>Betal innen</Text>
-            <Text style={[styles.paymentValue, { color: chrome.text }]}>{paymentCountdownText}</Text>
+            <Text style={[styles.paymentLabel, { color: theme.onSecondaryContainer }]}>Betal innen</Text>
+            <Text style={[styles.paymentValue, { color: theme.onSecondaryContainer }]}>{paymentCountdownText}</Text>
           </View>
-          <Text style={[styles.paymentAction, { color: chrome.warning }]}>Betal</Text>
-          <MaterialCommunityIcons name="chevron-right" size={18} color={chrome.warning} />
+          <Text style={[styles.paymentAction, { color: theme.onSecondaryContainer }]}>
+            Betal {attendance.attendancePrice} kr
+          </Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={theme.onSecondaryContainer} />
         </Pressable>
       )}
     </View>
@@ -274,8 +281,8 @@ const styles = StyleSheet.create({
   waitlist: { fontSize: 13, fontVariant: ["tabular-nums"] },
   statusText: { fontSize: 14 },
   payment: {
-    minHeight: 52,
-    paddingHorizontal: 12,
+    minHeight: 60,
+    paddingHorizontal: 14,
     borderWidth: 1,
     borderRadius: 11,
     flexDirection: "row",
@@ -283,9 +290,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   paymentCopy: { flex: 1 },
-  paymentLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
-  paymentValue: { fontSize: 17, fontWeight: "700", fontVariant: ["tabular-nums"] },
-  paymentAction: { fontSize: 14, fontWeight: "600" },
+  paymentLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", opacity: 0.85 },
+  paymentValue: { fontSize: 22, fontWeight: "700", fontVariant: ["tabular-nums"] },
+  paymentAction: { fontSize: 14, fontWeight: "700" },
   textItem: {
     flexDirection: "row",
     alignItems: "center",

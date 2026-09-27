@@ -78,10 +78,7 @@ function RootLayoutInner() {
 
   const initializeAuth = async () => {
     try {
-      Authenticator.initialize(
-        "auth.online.ntnu.no",
-        "EniGfQ4MlcVuS2FWbUMmCjaFB65EqjzZ",
-      );
+      Authenticator.initialize();
 
       const removeListener = Authenticator.addLoginStateListener(setIsLoggedIn);
       const storedCredentials = await Authenticator.fetchStoredCredentials();
