@@ -10,7 +10,7 @@ import ReanimatedSwipeable, {
 import EventCard from "../../../components/EventCard";
 import { ChoiceTrack, PanelDivider, usePanelChromeColors } from "../../../components/Panel";
 import { SectionMenuHeader } from "../../../components/SectionMenuHeader";
-import type { EventAttendanceBundle, EventType } from "../../../types/event";
+import type { EventSummaryBundle, EventType } from "../../../types/event";
 import { removeBookmarks, toggleBookmarkWithUndo, useBookmarks } from "../../../utils/bookmarks";
 import { syncEventReminders } from "../../../utils/reminders";
 import { useTheme } from "../../../utils/theme";
@@ -48,7 +48,7 @@ const toListFilter = (type: TypeFilter): EventListFilter => {
   return type ? { byType: [type] } : {};
 };
 
-const matchesTypeFilter = (bundle: EventAttendanceBundle, type: TypeFilter) => {
+const matchesTypeFilter = (bundle: EventSummaryBundle, type: TypeFilter) => {
   if (!type) return true;
   if (type === "INTERNAL") return bundle.event.visibility === "COMMITTEE_ONLY";
   return bundle.event.type === type;
@@ -59,18 +59,18 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "past", label: "Tidligere" },
 ];
 
-type Paged = { items: EventAttendanceBundle[]; cursor?: string; done: boolean };
+type Paged = { items: EventSummaryBundle[]; cursor?: string; done: boolean };
 const emptyPage: Paged = { items: [], cursor: undefined, done: false };
 
 type SectionMenu = { value: Period; onChange: (value: Period) => void; titles: Record<Period, string> };
 
 type ListItem =
   | { kind: "header"; key: string; title: string; icon?: "bookmark-outline" | "circle"; menu?: SectionMenu }
-  | { kind: "event"; key: string; bundle: EventAttendanceBundle; ongoing?: boolean; swipeable: boolean }
+  | { kind: "event"; key: string; bundle: EventSummaryBundle; ongoing?: boolean; swipeable: boolean }
   | { kind: "message"; key: string; text: string }
   | { kind: "more"; key: string; loading: boolean; onPress: () => void };
 
-const toPage = (result: { items?: EventAttendanceBundle[]; nextCursor?: string }, take: number): Paged => {
+const toPage = (result: { items?: EventSummaryBundle[]; nextCursor?: string }, take: number): Paged => {
   const items = result.items ?? [];
   return { items, cursor: result.nextCursor, done: items.length < take || !result.nextCursor };
 };
@@ -108,10 +108,10 @@ const AllEvents: React.FC = () => {
   const [myPeriod, setMyPeriod] = useState<Period>("upcoming");
 
   // All of the user's upcoming events regardless of type filter: drives "Pågår nå" and reminders.
-  const [myUpcoming, setMyUpcoming] = useState<EventAttendanceBundle[] | null>(null);
+  const [myUpcoming, setMyUpcoming] = useState<EventSummaryBundle[] | null>(null);
   const [myPast, setMyPast] = useState<Paged>(emptyPage);
   const [loadingMyPast, setLoadingMyPast] = useState(false);
-  const [bookmarked, setBookmarked] = useState<{ key: string; items: EventAttendanceBundle[] } | null>(null);
+  const [bookmarked, setBookmarked] = useState<{ key: string; items: EventSummaryBundle[] } | null>(null);
   const [events, setEvents] = useState<Paged>(emptyPage);
 
   const [loading, setLoading] = useState(true);
@@ -253,7 +253,7 @@ const AllEvents: React.FC = () => {
 
   const items = useMemo<ListItem[]>(() => {
     const now = new Date();
-    const matchesType = (bundle: EventAttendanceBundle) => matchesTypeFilter(bundle, type);
+    const matchesType = (bundle: EventSummaryBundle) => matchesTypeFilter(bundle, type);
     const mineUpcoming = (myUpcoming ?? []).filter(matchesType);
 
     const ongoing = mineUpcoming.filter((bundle) =>
@@ -285,7 +285,7 @@ const AllEvents: React.FC = () => {
     const list: ListItem[] = [];
     const header = (key: string, title: string, extra: Partial<Extract<ListItem, { kind: "header" }>> = {}) =>
       list.push({ kind: "header", key: `header-${key}`, title, ...extra });
-    const rows = (key: string, bundles: EventAttendanceBundle[], extra: { ongoing?: boolean; swipeable?: boolean } = {}) =>
+    const rows = (key: string, bundles: EventSummaryBundle[], extra: { ongoing?: boolean; swipeable?: boolean } = {}) =>
       bundles.forEach((bundle) =>
         list.push({
           kind: "event",

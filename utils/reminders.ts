@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { SchedulableTriggerInputTypes } from "expo-notifications";
 import { Platform } from "react-native";
-import type { EventAttendanceBundle } from "../types/event";
+import type { EventListBundle } from "../types/event";
 import type { User } from "../types/user";
 import { getAttendee } from "./attendance";
 
@@ -20,7 +20,7 @@ type Reminder = { id: string; date: Date; title: string; body: string; eventId: 
 
 const reminderId = (eventId: string, kind: "registration" | "start") => `${PREFIX}${eventId}:${kind}`;
 
-function remindersFor(bundle: EventAttendanceBundle, user: User | null, bookmarked: boolean): Reminder[] {
+function remindersFor(bundle: EventListBundle, user: User | null, bookmarked: boolean): Reminder[] {
   const { event, attendance } = bundle;
   const attendee = getAttendee(attendance, user);
   if (!bookmarked && !attendee) return [];
@@ -43,7 +43,7 @@ function remindersFor(bundle: EventAttendanceBundle, user: User | null, bookmark
     }
   }
 
-  if (attendee?.reserved || (bookmarked && !attendance)) {
+  if (attendee?.registered || (bookmarked && !attendance)) {
     const date = new Date(new Date(event.start).getTime() - START_LEAD_MS);
     if (date.getTime() > now) {
       reminders.push({
@@ -95,7 +95,7 @@ async function schedule(reminder: Reminder) {
  * signs up; `askPermission` is only for such direct actions so we never prompt out of the blue.
  */
 export async function updateEventReminders(
-  bundle: EventAttendanceBundle,
+  bundle: EventListBundle,
   user: User | null,
   bookmarked: boolean,
   { askPermission = false } = {},
@@ -120,7 +120,7 @@ export async function updateEventReminders(
  * has bookmarked, since reminders for anything else are cancelled.
  */
 export async function syncEventReminders(
-  bundles: EventAttendanceBundle[],
+  bundles: EventListBundle[],
   user: User | null,
   isBookmarked: (eventId: string) => boolean,
 ) {

@@ -14,7 +14,7 @@ import {
   SectionLabel,
   useProfileChromeColors,
 } from "../../../components/Profile/ProfileSurface";
-import type { EventAttendanceBundle } from "../../../types/event";
+import type { EventSummaryBundle } from "../../../types/event";
 import type { UserGroup } from "../../../types/group";
 import type { User } from "../../../types/user";
 import { useTheme } from "../../../utils/theme";
@@ -24,7 +24,7 @@ import { findActiveMembership } from "../../../utils/user-utils";
 
 const PAST_PAGE_SIZE = 10;
 
-type Paged = { items: EventAttendanceBundle[]; cursor?: string; done: boolean };
+type Paged = { items: EventSummaryBundle[]; cursor?: string; done: boolean };
 
 /**
  * Only what the website shows on someone else's profile. The API hands back the whole user
@@ -42,7 +42,7 @@ const toPublicProfile = ({ id, name, username, imageUrl, biography, createdAt, m
   memberships,
 });
 
-const toPaged = (result: { items?: EventAttendanceBundle[]; nextCursor?: string }, take: number): Paged => {
+const toPaged = (result: { items?: EventSummaryBundle[]; nextCursor?: string }, take: number): Paged => {
   const items = result.items ?? [];
   return { items, cursor: result.nextCursor, done: items.length < take || !result.nextCursor };
 };
@@ -60,7 +60,7 @@ export default function UserProfileScreen() {
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [groups, setGroups] = useState<UserGroup[] | null>(null);
-  const [upcoming, setUpcoming] = useState<EventAttendanceBundle[] | null>(null);
+  const [upcoming, setUpcoming] = useState<EventSummaryBundle[] | null>(null);
   const [past, setPast] = useState<Paged | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

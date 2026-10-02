@@ -47,7 +47,7 @@ const AttendeesBottomSheet: React.FC<AttendeesBottomSheetProps> = ({
 
   //     if (poolIndex === undefined) continue; // TODO: What to do with the user now?
 
-  //     const waitlist = !attendee.reserved;
+  //     const waitlist = !attendee.registered;
 
   //     if (poolIndex !== -1) {
   //       if (waitlist) {

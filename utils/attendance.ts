@@ -2,6 +2,7 @@ import { compareAsc } from "date-fns"
 import { findActiveMembership, getGrade } from "./user-utils"
 import type {
   Attendance,
+  AttendanceSummary,
   AttendancePool,
   Attendee,
 } from "../types/event"
@@ -20,21 +21,21 @@ export const getAttendanceStatus = (
   return "Open"
 }
 
-export const getReservedAttendeeCount = (attendance: Attendance, poolId?: string): number => {
+export const getRegisteredAttendeeCount = (attendance: Attendance, poolId?: string): number => {
   if (poolId) {
-    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && a.reserved).length
+    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && a.registered).length
   }
-  return attendance.attendees.reduce((total, attendee) => total + (attendee.reserved ? 1 : 0), 0)
+  return attendance.attendees.reduce((total, attendee) => total + (attendee.registered ? 1 : 0), 0)
 }
 
-export const getUnreservedAttendeeCount = (attendance: Attendance, poolId?: string): number => {
+export const getQueuedAttendeeCount = (attendance: Attendance, poolId?: string): number => {
   if (poolId) {
-    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && !a.reserved).length
+    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && !a.registered).length
   }
-  return attendance.attendees.reduce((total, attendee) => total + (attendee.reserved ? 0 : 1), 0)
+  return attendance.attendees.reduce((total, attendee) => total + (attendee.registered ? 0 : 1), 0)
 }
 
-export const getAttendanceCapacity = (attendance: Attendance): number => {
+export const getAttendanceCapacity = (attendance: Pick<Attendance, "pools">): number => {
   return attendance.pools.reduce((total, pool) => total + (pool.capacity ?? 0), 0)
 }
 
@@ -50,8 +51,12 @@ export const isAttendable = (user: any, pool: AttendancePool) => {
   return pool.yearCriteria.includes(grade)
 }
 
-export const getAttendee = (attendance: Attendance | null | undefined, user: any | null | undefined) => {
+export const getAttendee = (attendance: Attendance | AttendanceSummary | null | undefined, user: any | null | undefined) => {
   if (!attendance || !user) return null
+  if ("currentUserAttendee" in attendance) {
+    const attendee = attendance.currentUserAttendee
+    return attendee?.userId === user.id ? attendee : null
+  }
   return attendance.attendees?.find((attendee) => attendee.userId === user.id) ?? null
 }
 
@@ -83,17 +88,17 @@ export const getAttendeeQueuePosition = (attendance: Attendance, user: any | nul
 
   if (!attendee || !pool) return null
 
-  const unreservedAttendees = attendance.attendees
-    .filter((a) => a.attendancePoolId === pool.id && !a.reserved)
+  const queuedAttendees = attendance.attendees
+    .filter((a) => a.attendancePoolId === pool.id && !a.registered)
     .sort((a, b) => compareAsc(new Date(a.earliestReservationAt ?? 0), new Date(b.earliestReservationAt ?? 0)))
 
-  const index = unreservedAttendees.indexOf(attendee)
+  const index = queuedAttendees.indexOf(attendee)
   if (index === -1) return null
   return index + 1
 }
 
 export const hasAttendeePaid = (
-  attendance: Attendance,
+  attendance: Pick<Attendance | AttendanceSummary, "attendancePrice">,
   attendee: Attendee | null,
   options?: { excludeReservation?: boolean }
 ): boolean | null => {
@@ -101,18 +106,41 @@ export const hasAttendeePaid = (
   if (!attendee) return false
 
   const hasReserved = options?.excludeReservation ? false : Boolean(attendee.paymentReservedAt)
-  return Boolean(attendee.paymentChargedAt || hasReserved || (attendee.paymentRefundedAt && !attendee.paymentDeadline))
+  return Boolean(attendee.paymentChargedAt || hasReserved || (attendee.paymentRefundedAt && !attendee.completionDeadline))
 }
 
 /** The deadline of a payment the attendee still has to make, or null once paid or past due. */
 export const getPendingPaymentDeadline = (
-  attendance: Attendance,
+  attendance: Pick<Attendance | AttendanceSummary, "attendancePrice">,
   attendee: Attendee | null,
   now = new Date()
 ): Date | null => {
-  if (!attendee?.paymentDeadline || hasAttendeePaid(attendance, attendee) !== false) return null
-  const deadline = new Date(attendee.paymentDeadline)
+  if (!attendee?.completionDeadline || hasAttendeePaid(attendance, attendee) !== false) return null
+  const deadline = new Date(attendee.completionDeadline)
   return deadline > now ? deadline : null
+}
+
+/** QUEUED: on the waitlist. RESERVED: has a place, but must still pay before the deadline. REGISTERED: done. */
+export type AttendeeState = "QUEUED" | "RESERVED" | "REGISTERED"
+
+export type AttendanceCompletionRequirement = "PAYMENT"
+
+/** What a registered attendee still has to do before the completion deadline (same rules as monoweb). */
+export const getMissingCompletionRequirements = (
+  attendance: Pick<Attendance | AttendanceSummary, "attendancePrice">,
+  attendee: Attendee | null
+): AttendanceCompletionRequirement[] => {
+  if (!attendance.attendancePrice || attendance.attendancePrice <= 0) return []
+  return hasAttendeePaid(attendance, attendee) === true ? [] : ["PAYMENT"]
+}
+
+export const getAttendeeState = (
+  attendance: Pick<Attendance | AttendanceSummary, "attendancePrice">,
+  attendee: Attendee | null
+): AttendeeState | null => {
+  if (!attendee) return null
+  if (!attendee.registered) return "QUEUED"
+  return getMissingCompletionRequirements(attendance, attendee).length > 0 ? "RESERVED" : "REGISTERED"
 }
 
 export default {}

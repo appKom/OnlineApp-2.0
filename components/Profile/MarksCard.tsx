@@ -4,7 +4,7 @@ import { nb } from "date-fns/locale";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Linking, Pressable, Share, StyleSheet, Text, View } from "react-native";
-import type { EventAttendanceBundle } from "../../types/event";
+import type { EventSummaryBundle } from "../../types/event";
 import type { MarkType, VisiblePersonalMark } from "../../types/mark";
 import type { Punishment } from "../../types/punishment";
 import { getAttendee, hasAttendeePaid } from "../../utils/attendance";
@@ -376,7 +376,7 @@ function MarkDetails({ info, userId, onClose }: { info: VisiblePersonalMark; use
  * so look for an event the user is signed up to, hasn't paid for and whose title matches.
  */
 function useUnpaidEvent(info: VisiblePersonalMark | null, userId: string) {
-  const [event, setEvent] = useState<EventAttendanceBundle | null>(null);
+  const [event, setEvent] = useState<EventSummaryBundle | null>(null);
   const text = info ? `${info.mark.title} ${info.mark.details ?? ""}` : null;
 
   useEffect(() => {

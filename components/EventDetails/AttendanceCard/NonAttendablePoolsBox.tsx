@@ -4,8 +4,8 @@ import type { Attendance, AttendancePool } from "../../../types/event"
 import {
   getAttendablePool,
   getNonAttendablePools,
-  getReservedAttendeeCount,
-  getUnreservedAttendeeCount,
+  getRegisteredAttendeeCount,
+  getQueuedAttendeeCount,
 } from "../../../utils/attendance"
 import type { User } from "../../../types/user"
 import { DisclosureRow, Tag, usePanelChromeColors } from "../../Panel"
@@ -55,8 +55,8 @@ export const NonAttendablePoolsBox: React.FC<NonAttendablePoolsBoxProps> = ({
 
 const PoolRow = ({ pool, attendance }: { pool: AttendancePool; attendance: Attendance }) => {
   const chrome = usePanelChromeColors()
-  const reservedAttendeeCount = getReservedAttendeeCount(attendance, pool.id)
-  const unreservedAttendeeCount = getUnreservedAttendeeCount(attendance, pool.id)
+  const registeredAttendeeCount = getRegisteredAttendeeCount(attendance, pool.id)
+  const queuedAttendeeCount = getQueuedAttendeeCount(attendance, pool.id)
 
   return (
     <View style={[styles.row, { borderTopColor: chrome.edge }]}>
@@ -65,9 +65,9 @@ const PoolRow = ({ pool, attendance }: { pool: AttendancePool; attendance: Atten
       </Text>
       {pool.mergeDelayHours ? <Tag label={`+${pool.mergeDelayHours}t`} color={chrome.warning} /> : null}
       <Text style={[styles.count, { color: chrome.textMuted }]}>
-        {reservedAttendeeCount}
+        {registeredAttendeeCount}
         {pool.capacity > 0 && `/${pool.capacity}`}
-        {unreservedAttendeeCount > 0 && ` +${unreservedAttendeeCount}`}
+        {queuedAttendeeCount > 0 && ` +${queuedAttendeeCount}`}
       </Text>
     </View>
   )

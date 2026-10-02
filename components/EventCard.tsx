@@ -2,15 +2,16 @@ import { differenceInCalendarDays, format, isPast } from "date-fns";
 import { nb } from "date-fns/locale";
 import React, { useMemo } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { EventAttendanceBundle } from "../types/event";
+import { EventListBundle } from "../types/event";
 import { User } from "../types/user";
 import {
   getAttendanceCapacity,
   getAttendanceStatus,
   getAttendee,
+  getAttendeeState,
   getPendingPaymentDeadline,
-  getReservedAttendeeCount,
-  getUnreservedAttendeeCount,
+  getRegisteredAttendeeCount,
+  getQueuedAttendeeCount,
 } from "../utils/attendance";
 import { useTheme, useThemeMode } from "../utils/theme";
 import { formatTimeLeft, useCountdown, type CountdownFormatterData } from "../utils/use-countdown";
@@ -41,7 +42,7 @@ export function useInternalTagStyle() {
 }
 
 interface EventCardProps {
-  event: EventAttendanceBundle;
+  event: EventListBundle;
   user: User | null;
   onPress: () => void;
   /** Currently running event the user attends: shows the time span and a ticket shortcut. */
@@ -118,7 +119,7 @@ const EventCard: React.FC<EventCardProps> = ({ event: bundle, user, onPress, ong
           </View>
         </View>
 
-        {ongoing && attendee?.reserved && !paymentDeadline ? (
+        {ongoing && attendee?.registered && !paymentDeadline ? (
           <TicketButton attendee={attendee} compact />
         ) : (
           attendance && (
@@ -137,7 +138,7 @@ function AttendanceSummary({
   paymentDeadline,
   ended,
 }: {
-  bundle: EventAttendanceBundle;
+  bundle: EventListBundle;
   attendee: ReturnType<typeof getAttendee>;
   paymentDeadline: Date | null;
   ended: boolean;
@@ -145,9 +146,12 @@ function AttendanceSummary({
   const chrome = usePanelChromeColors();
   const attendance = bundle.attendance!;
   const capacity = getAttendanceCapacity(attendance);
-  const reserved = getReservedAttendeeCount(attendance);
-  const waitlist = getUnreservedAttendeeCount(attendance);
-  const isFull = capacity > 0 && reserved >= capacity;
+  // List endpoints send summaries without attendee lists; only full attendances can be counted here.
+  const hasAttendees = "attendees" in attendance;
+  const registered = hasAttendees ? getRegisteredAttendeeCount(attendance) : attendance.registeredAttendeeCount;
+  // Summaries don't include the total waitlist count. The user's waitlist tag still works.
+  const waitlist = hasAttendees ? getQueuedAttendeeCount(attendance) : 0;
+  const isFull = capacity > 0 && registered >= capacity;
   const status = getAttendanceStatus(attendance);
 
   const light = {
@@ -160,7 +164,7 @@ function AttendanceSummary({
     <View style={styles.summary}>
       <Text style={styles.count}>
         <Text style={{ color: ended ? chrome.textMuted : isFull ? chrome.danger : chrome.text }}>
-          {reserved}
+          {registered}
           {capacity > 0 && `/${capacity}`}
         </Text>
         {waitlist > 0 && !ended && <Text style={{ color: chrome.warning }}>{` +${waitlist}`}</Text>}
@@ -169,10 +173,7 @@ function AttendanceSummary({
       {paymentDeadline ? (
         <PaymentCountdownTag deadline={paymentDeadline} />
       ) : attendee ? (
-        <Tag
-          label={attendee.reserved ? "Påmeldt" : "Venteliste"}
-          color={attendee.reserved ? chrome.success : chrome.warning}
-        />
+        <AttendeeTag state={getAttendeeState(attendance, attendee)} />
       ) : (
         !ended && (
           <View style={styles.status}>
@@ -185,6 +186,14 @@ function AttendanceSummary({
       )}
     </View>
   );
+}
+
+function AttendeeTag({ state }: { state: ReturnType<typeof getAttendeeState> }) {
+  const chrome = usePanelChromeColors();
+  if (state === "REGISTERED") return <Tag label="Påmeldt" color={chrome.success} />;
+  // Reserved but unpaid, once the countdown is no longer shown.
+  if (state === "RESERVED") return <Tag label="Reservert" color={chrome.warning} />;
+  return <Tag label="Venteliste" color={chrome.warning} />;
 }
 
 // Module level so useCountdown's interval isn't reset on every render.

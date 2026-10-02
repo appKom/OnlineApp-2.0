@@ -99,7 +99,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   useEffect(() => {
     void updateEventReminders({ event, attendance }, user, bookmarked)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attendee?.id, attendee?.reserved, bookmarked, user?.id])
+  }, [attendee?.id, attendee?.registered, bookmarked, user?.id])
 
   const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
 
@@ -124,7 +124,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     void fetchAttendance()
 
     const updateCloseToEvent = () => {
-      const attendanceEventDateTimes = [attendee?.paymentDeadline ? new Date(attendee.paymentDeadline) : null]
+      const attendanceEventDateTimes = [attendee?.completionDeadline ? new Date(attendee.completionDeadline) : null]
       setCloseToEvent(
         attendanceEventDateTimes.some((date) => date && Math.abs(differenceInSeconds(date, new Date())) < 60)
       )
@@ -244,7 +244,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     Closed: { label: "Stengt", color: chrome.textMuted },
   }[attendanceStatus]
 
-  const hasSelections = Boolean(attendee?.reserved && (attendance.selections?.length ?? 0) > 0)
+  const hasSelections = Boolean(attendee?.registered && (attendance.selections?.length ?? 0) > 0)
 
   return (
     <Panel>
@@ -283,7 +283,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       <View style={styles.section}>
         <View style={styles.buttonRow}>
-          {attendee?.reserved && <TicketButton attendee={attendee} />}
+          {attendee?.registered && <TicketButton attendee={attendee} />}
           <ViewAttendeesButton attendance={attendance} user={user} />
         </View>
 

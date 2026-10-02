@@ -1,19 +1,27 @@
 import React from "react"
 import { View, Text, Pressable, StyleSheet, Linking } from "react-native"
 import type { Attendance } from "../../../types/event"
-import { getAttendee, hasAttendeePaid, getAttendeeQueuePosition } from "../../../utils/attendance"
+import {
+  getAttendee,
+  getAttendeeQueuePosition,
+  getAttendeeState,
+  getMissingCompletionRequirements,
+  hasAttendeePaid,
+  type AttendeeState,
+} from "../../../utils/attendance"
 import { useCountdown } from "../../../utils/use-countdown"
 import { User } from "../../../types/user"
 import { Attendee } from "../../../types/event"
 import { findActiveMembership } from "../../../utils/user-utils"
 import {getAttendablePool, 
-  getReservedAttendeeCount, 
-  getUnreservedAttendeeCount 
+  getRegisteredAttendeeCount, 
+  getQueuedAttendeeCount 
 } from "../../../utils/attendance"
 import {
   formatDate,
   formatDistanceToNowStrict,
   interval,
+  isAfter,
   isFuture,
   isWithinInterval,
   roundToNearestHours,
@@ -43,14 +51,25 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
   const isWithinRegisterCountdown = isWithinInterval(now, registerCountdownInterval)
   const showRegisterCountdown = isWithinRegisterCountdown && !attendee
 
-  const paymentCountdownText = useCountdown(attendee?.paymentDeadline ?? null)
-  const paymentCountdownInterval =
-    attendee?.createdAt && attendee.paymentDeadline ? interval(attendee.createdAt, attendee.paymentDeadline) : null
-  const isWithinPaymentCountdown =
-    paymentCountdownInterval && hasAttendeePaid(attendance, attendee) === false
-      ? isWithinInterval(now, paymentCountdownInterval)
-      : false
-  const showPaymentCountdown = isWithinPaymentCountdown && attendee?.paymentLink != null
+  // Since monoweb#3870 a registered attendee only has a reserved place until they complete the
+  // requirements (for now just payment) before the completion deadline.
+  const attendeeState = getAttendeeState(attendance, attendee)
+  const missingRequirements = attendee ? getMissingCompletionRequirements(attendance, attendee) : []
+  const paymentIsMissing = missingRequirements.includes("PAYMENT")
+  const completionDeadline = attendee?.completionDeadline ? new Date(attendee.completionDeadline) : null
+
+  const completionCountdownText = useCountdown(completionDeadline)
+  const completionCountdownInterval =
+    attendee?.createdAt && completionDeadline ? interval(attendee.createdAt, completionDeadline) : null
+  const isWithinCompletionCountdown = completionCountdownInterval
+    ? isWithinInterval(now, completionCountdownInterval)
+    : false
+  const completionDeadlineHasPassed = completionDeadline !== null && isAfter(now, completionDeadline)
+  const showCompletionPanel =
+    missingRequirements.length > 0 &&
+    completionDeadline !== null &&
+    (isWithinCompletionCountdown || completionDeadlineHasPassed)
+  const paymentLink = paymentIsMissing ? attendee?.paymentLink ?? null : null
 
   if (!user) {
     return (
@@ -83,10 +102,10 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
     )
   }
 
-  const unreservedAttendeeCount = getUnreservedAttendeeCount(attendance, pool.id)
-  const reservedAttendeeCount = getReservedAttendeeCount(attendance, pool.id)
-  const hasWaitlist = unreservedAttendeeCount > 0
-  const isFull = pool.capacity > 0 && reservedAttendeeCount >= pool.capacity
+  const queuedAttendeeCount = getQueuedAttendeeCount(attendance, pool.id)
+  const registeredAttendeeCount = getRegisteredAttendeeCount(attendance, pool.id)
+  const hasWaitlist = queuedAttendeeCount > 0
+  const isFull = pool.capacity > 0 && registeredAttendeeCount >= pool.capacity
 
   const servingPunishment = attendee?.earliestReservationAt && isFuture(attendee.earliestReservationAt)
 
@@ -104,7 +123,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
 
         {!showRegisterCountdown && (
           <Text style={[styles.count, { color: isFull ? chrome.warning : chrome.text }]}>
-            {reservedAttendeeCount}
+            {registeredAttendeeCount}
             {/* Don't show capacity for merge pools (capacity = 0) */}
             {pool.capacity > 0 && <Text style={{ color: chrome.textMuted }}>/{pool.capacity}</Text>}
           </Text>
@@ -127,7 +146,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
         <>
           {pool.capacity > 0 && (
             <MeterBar
-              value={reservedAttendeeCount / pool.capacity}
+              value={registeredAttendeeCount / pool.capacity}
               color={isFull ? chrome.warning : chrome.accent}
             />
           )}
@@ -140,43 +159,28 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
                 text={`${formatDistanceToNowStrict(attendee!.earliestReservationAt, { locale: nb })} utsettelse`}
               />
             ) : (
-              <AttendanceStatus attendance={attendance} attendee={attendee} />
+              <AttendanceStatus attendance={attendance} attendee={attendee} state={attendeeState} />
             )}
             {hasWaitlist && (
-              <Text style={[styles.waitlist, { color: chrome.textMuted }]}>{unreservedAttendeeCount} i kø</Text>
+              <Text style={[styles.waitlist, { color: chrome.textMuted }]}>{queuedAttendeeCount} i kø</Text>
             )}
           </View>
-          <PaymentStatus attendance={attendance} attendee={attendee} chargeScheduleDate={chargeScheduleDate} />
+          <PaymentStatus
+            attendance={attendance}
+            attendee={attendee}
+            chargeScheduleDate={chargeScheduleDate}
+            hideUnpaidStatus={showCompletionPanel && paymentIsMissing}
+          />
         </>
       )}
 
-      {showPaymentCountdown && attendee?.paymentLink && (
-        // A coloured raised button (lit from above) so the deadline stands out from the grey controls.
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel={`Betal ${attendance.attendancePrice} kr innen ${paymentCountdownText}`}
-          onPress={() => attendee.paymentLink && Linking.openURL(attendee.paymentLink)}
-          style={({ pressed }) => [
-            styles.payment,
-            {
-              backgroundColor: pressed
-                ? blendColors(theme.onSecondaryContainer, theme.secondaryContainer, 0.12)
-                : theme.secondaryContainer,
-              borderColor: chrome.edge,
-              borderTopColor: blendColors("#FFFFFF", theme.secondaryContainer, 0.35),
-            },
-          ]}
-        >
-          <MaterialCommunityIcons name="timer-sand" size={22} color={theme.onSecondaryContainer} />
-          <View style={styles.paymentCopy}>
-            <Text style={[styles.paymentLabel, { color: theme.onSecondaryContainer }]}>Betal innen</Text>
-            <Text style={[styles.paymentValue, { color: theme.onSecondaryContainer }]}>{paymentCountdownText}</Text>
-          </View>
-          <Text style={[styles.paymentAction, { color: theme.onSecondaryContainer }]}>
-            Betal {attendance.attendancePrice} kr
-          </Text>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={theme.onSecondaryContainer} />
-        </Pressable>
+      {showCompletionPanel && (
+        <CompletionPanel
+          countdownText={completionDeadlineHasPassed ? null : completionCountdownText}
+          paymentIsMissing={paymentIsMissing}
+          paymentLink={paymentLink}
+          price={attendance.attendancePrice ?? null}
+        />
       )}
     </View>
   )
@@ -192,19 +196,95 @@ const StatusLine = ({ icon, text, color }: { icon: IconName; text: string; color
   )
 }
 
+/**
+ * Mirrors the website's completion card: a coloured raised surface (lit from above) with the deadline,
+ * what is missing, and a way to pay when that is what's missing.
+ */
+const CompletionPanel = ({
+  countdownText,
+  paymentIsMissing,
+  paymentLink,
+  price,
+}: {
+  /** Null once the deadline has passed. */
+  countdownText: string | null
+  paymentIsMissing: boolean
+  paymentLink: string | null
+  price: number | null
+}) => {
+  const chrome = usePanelChromeColors()
+  const theme = useTheme()
+  const color = theme.onSecondaryContainer
+  const surface = {
+    backgroundColor: theme.secondaryContainer,
+    borderColor: chrome.edge,
+    borderTopColor: blendColors("#FFFFFF", theme.secondaryContainer, 0.35),
+  }
+
+  const content = (
+    <>
+      <MaterialCommunityIcons name="timer-sand" size={22} color={color} />
+      <View style={styles.paymentCopy}>
+        <Text style={[styles.paymentLabel, { color }]}>
+          {countdownText ? "Fullfør innen" : "Fristen for å fullføre er ute"}
+        </Text>
+        {countdownText ? <Text style={[styles.paymentValue, { color }]}>{countdownText}</Text> : null}
+        {paymentIsMissing && (
+          <View style={styles.textItem}>
+            <MaterialCommunityIcons name="close" size={15} color={color} />
+            <Text style={[styles.statusText, { color }]}>Du har ikke betalt</Text>
+          </View>
+        )}
+      </View>
+      {paymentLink && (
+        <>
+          <Text style={[styles.paymentAction, { color }]}>{price ? `Betal ${price} kr` : "Betal"}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={color} />
+        </>
+      )}
+    </>
+  )
+
+  if (!paymentLink) {
+    return <View style={[styles.payment, surface]}>{content}</View>
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={
+        countdownText ? `Fullfør påmeldingen innen ${countdownText}. Gå til betaling` : "Gå til betaling"
+      }
+      onPress={() => Linking.openURL(paymentLink)}
+      style={({ pressed }) => [
+        styles.payment,
+        surface,
+        pressed && { backgroundColor: blendColors(color, theme.secondaryContainer, 0.12) },
+      ]}
+    >
+      {content}
+    </Pressable>
+  )
+}
+
 interface AttendanceStatusProps {
   attendance: Attendance
   attendee: Attendee | null
+  state: AttendeeState | null
 }
 
-const AttendanceStatus = ({ attendance, attendee }: AttendanceStatusProps) => {
+const AttendanceStatus = ({ attendance, attendee, state }: AttendanceStatusProps) => {
   const chrome = usePanelChromeColors()
 
   if (!attendee) {
     return <StatusLine icon="account-outline" text="Du er ikke påmeldt" />
   }
 
-  if (attendee.reserved === true) {
+  if (state === "RESERVED") {
+    return <StatusLine icon="account-clock" color={chrome.warning} text="Du har reservert plass" />
+  }
+
+  if (state === "REGISTERED") {
     return <StatusLine icon="account-check" color={chrome.success} text="Du er påmeldt" />
   }
 
@@ -223,9 +303,11 @@ interface PaymentStatusProps {
   attendance: Attendance
   attendee: Attendee | null
   chargeScheduleDate?: Date | null
+  /** The completion panel already says the payment is missing. */
+  hideUnpaidStatus?: boolean
 }
 
-const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStatusProps) => {
+const PaymentStatus = ({ attendance, attendee, chargeScheduleDate, hideUnpaidStatus = false }: PaymentStatusProps) => {
   const chrome = usePanelChromeColors()
   const hasPaid = hasAttendeePaid(attendance, attendee)
 
@@ -237,7 +319,13 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate }: PaymentStat
     return <StatusLine icon="cash" text={`${attendance.attendancePrice} kr`} />
   }
 
+  // Queued attendees don't pay until they get a place.
+  if (!attendee.registered) {
+    return null
+  }
+
   if (!hasPaid) {
+    if (hideUnpaidStatus) return null
     return <StatusLine icon="cash-remove" color={chrome.danger} text={`${attendance.attendancePrice} kr ubetalt`} />
   }
 
@@ -283,6 +371,7 @@ const styles = StyleSheet.create({
   payment: {
     minHeight: 60,
     paddingHorizontal: 14,
+    paddingVertical: 10,
     borderWidth: 1,
     borderRadius: 11,
     flexDirection: "row",

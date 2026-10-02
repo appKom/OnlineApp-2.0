@@ -6,7 +6,7 @@ import type { Attendance, Attendee, Event } from "../../../types/event"
 import type Punishment from "../../../types/punishment"
 import type { User } from "../../../types/user"
 import type { AttendanceStatus } from "../../../types/attendanceStatus"
-import { getAttendee, getAttendablePool, getAttendanceStatus, getReservedAttendeeCount } from "../../../utils/attendance"
+import { getAttendee, getAttendablePool, getAttendanceStatus, getRegisteredAttendeeCount } from "../../../utils/attendance"
 import { findActiveMembership } from "../../../utils/user-utils"
 import { DeregisterModal, type DeregisterReasonFormResult } from "../DeregisterModal"
 import { RaisedButton, usePanelChromeColors } from "../../Panel"
@@ -33,14 +33,14 @@ const getDisabledText = (
   hasMembership: boolean,
   isSuspended: boolean,
   registeredToParentEvent: boolean | null,
-  reservedToParentEvent: boolean | null
+  hasPlaceOnParentEvent: boolean | null
 ) => {
   if (!isLoggedIn) {
     return "Du må være innlogget for å melde deg på"
   }
 
   if (attendee) {
-    if (isPastDeregisterDeadline && attendee.reserved) {
+    if (isPastDeregisterDeadline && attendee.registered) {
       return "Avmeldingsfristen har utløpt"
     }
     if (hasBeenCharged) {
@@ -68,7 +68,7 @@ const getDisabledText = (
   if (registeredToParentEvent === false) {
     return "Du er ikke påmeldt foreldrearrangementet"
   }
-  if (reservedToParentEvent === false && registeredToParentEvent === true) {
+  if (hasPlaceOnParentEvent === false && registeredToParentEvent === true) {
     return "Du er i kø på foreldrearrangementet"
   }
 
@@ -117,12 +117,12 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
   const isSuspended = punishment?.suspended ?? false
   const hasPunishment = punishment ? punishment.delay > 0 || isSuspended : false
   const isPoolFull = pool
-    ? pool.capacity !== 0 && getReservedAttendeeCount(attendance, pool?.id) >= pool.capacity
+    ? pool.capacity !== 0 && getRegisteredAttendeeCount(attendance, pool?.id) >= pool.capacity
     : false
 
   const parentAttendanceAttendee = parentAttendance && getAttendee(parentAttendance, user)
   const registeredToParentEvent = parentAttendance ? Boolean(parentAttendanceAttendee) : null
-  const reservedToParentEvent = parentAttendance && parentAttendanceAttendee ? parentAttendanceAttendee.reserved : null
+  const hasPlaceOnParentEvent = parentAttendance && parentAttendanceAttendee ? parentAttendanceAttendee.registered : null
 
   const buttonText = attendee ? "Meld meg av" : "Meld meg på"
 
@@ -136,7 +136,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
     hasMembership,
     isSuspended,
     registeredToParentEvent,
-    reservedToParentEvent
+    hasPlaceOnParentEvent
   )
   
   // Disable if there's an existing reason OR if trying to register and not verified

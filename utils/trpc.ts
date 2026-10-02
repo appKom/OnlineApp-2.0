@@ -9,6 +9,7 @@ import type { VisiblePersonalMark } from "types/mark";
 import {
   RegistrationAvailabilityResult,
   EventAttendanceBundle,
+  EventSummaryBundle,
   AttendanceSelectionResponse,
   EventFilterParams,
 } from "types/event";
@@ -48,12 +49,9 @@ const client = createTRPCUntypedClient({
       async headers() {
         const accessToken = await Authenticator.getAccessToken();
 
-        if (!accessToken) {
-          return {};
-        }
-
         return {
-          Authorization: `Bearer ${accessToken}`,
+          "X-Request-Source": "online-app",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         };
       },
     }),
@@ -67,7 +65,7 @@ export async function getAllEvents(
   cursor?: string,
   orderBy: order = "desc",
   filter?: EventFilterParams,
-): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
+): Promise<EventPage> {
   const params = {
     take,
     cursor,
@@ -93,15 +91,15 @@ export async function getAllEvents(
     },
   };
 
-  const result = await client.query("event.all", params);
-  return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
+  const result = await client.query("event.allSummaries", params);
+  return result as EventPage;
 }
 
 export async function getAllPastEvents(
   take: number = 20,
   cursor?: string,
   orderBy: order = "desc",
-): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
+): Promise<EventPage> {
   return getAllEvents(take, cursor, orderBy, {
     byStartDate: {
       min: null,
@@ -114,7 +112,7 @@ export async function getAllFutureEvents(
   take: number = 20,
   cursor?: string,
   orderBy: order = "asc",
-): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string }> {
+): Promise<EventPage> {
   return getAllEvents(take, cursor, orderBy, {
     byStartDate: {
       min: new Date().toISOString(),
@@ -129,10 +127,11 @@ export async function getAllEventsByAttendingUserId(
   cursor?: string,
   orderBy: order = "desc",
   filter?: EventFilterParams,
-): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
-  const params: any = { 
-    id: userId, 
+): Promise<EventPage> {
+  const params = {
+    id: userId,
     take: limit,
+    cursor,
     filter: {
       byStartDate: filter?.byStartDate ?? {
         max: null,
@@ -149,12 +148,8 @@ export async function getAllEventsByAttendingUserId(
       orderBy,
     },
   };
-  if (cursor) {
-    params.cursor = cursor;
-  }
-
-  const result = await client.query("event.allByAttendingUserId", params);
-  return result as { items?: EventAttendanceBundle[]; nextCursor?: string };
+  const result = await client.query("event.allSummariesByAttendingUserId", params);
+  return result as EventPage;
 }
 
 export async function getAllPastEventsByAttendingUserId(
@@ -162,7 +157,7 @@ export async function getAllPastEventsByAttendingUserId(
   limit: number = 20,
   cursor?: string,
   orderBy: order = "desc",
-): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
+): Promise<EventPage> {
   return getAllEventsByAttendingUserId(userId, limit, cursor, orderBy, {
     byStartDate: {
       min: null,
@@ -176,7 +171,7 @@ export async function getAllFutureEventsByAttendingUserId(
   limit: number = 20,
   cursor?: string,
   orderBy: order = "asc",
-): Promise<{ items?: EventAttendanceBundle[]; nextCursor?: string } | null> {
+): Promise<EventPage> {
   return getAllEventsByAttendingUserId(userId, limit, cursor, orderBy, {
     byStartDate: {
       min: new Date().toISOString(),
@@ -185,7 +180,7 @@ export async function getAllFutureEventsByAttendingUserId(
   });
 }
 
-type EventPage = { items?: EventAttendanceBundle[]; nextCursor?: string };
+type EventPage = { items?: EventSummaryBundle[]; nextCursor?: string };
 
 /** The list filter chips: a type or visibility restriction on top of the date range. */
 export type EventListFilter = Pick<EventFilterParams, "byType" | "byVisibility">;
@@ -199,7 +194,22 @@ export async function getUpcomingEvents(
   cursor?: string,
   take: number = 20,
 ): Promise<EventPage> {
-  return getAllEvents(take, cursor, "asc", { ...filter, byEndDate: upcomingRange() });
+  // Featured pagination uses a numeric offset; expose it as a string to the list's page state.
+  const offset = cursor === undefined ? 0 : Number(cursor);
+  const items = await client.query("event.findFeaturedEvents", {
+    offset,
+    limit: take,
+    filter: {
+      ...filter,
+      byEndDate: upcomingRange(),
+      excludingType: [],
+      excludingVisibility: [],
+    },
+  }) as EventSummaryBundle[];
+  return {
+    items,
+    nextCursor: items.length < take ? undefined : String(offset + items.length),
+  };
 }
 
 export async function getEndedEvents(
@@ -221,10 +231,10 @@ export async function getMyEvents(
     ...filter,
     byEndDate: ended ? endedRange() : upcomingRange(),
   });
-  return result ?? {};
+  return result;
 }
 
-export async function getEventsByIds(ids: string[]): Promise<EventAttendanceBundle[]> {
+export async function getEventsByIds(ids: string[]): Promise<EventSummaryBundle[]> {
   if (ids.length === 0) return [];
   const result = await getAllEvents(ids.length, undefined, "asc", { byId: ids });
   return result.items ?? [];
@@ -283,32 +293,14 @@ export async function getUserById(userId: string): Promise<User> {
   return result as User;
 }
 
-/**
- * Events someone is signed up to, as summaries (no attendee lists). The attendance part is dropped so
- * rows render without the capacity column, which needs the full attendee list.
- */
+/** Events someone is signed up to; attendance describes the current viewer's registration. */
 export async function getEventSummariesByAttendingUserId(
   userId: string,
   ended: boolean,
   cursor?: string,
   take: number = 10,
 ): Promise<EventPage> {
-  const result = (await client.query("event.allSummariesByAttendingUserId", {
-    id: userId,
-    take,
-    cursor,
-    filter: {
-      byEndDate: ended ? endedRange() : upcomingRange(),
-      excludingType: [],
-      // The API still hides committee-only events unless you're staff or looking at your own events.
-      excludingVisibility: [],
-      orderBy: ended ? "desc" : "asc",
-    },
-  })) as { items?: { event: EventAttendanceBundle["event"] }[]; nextCursor?: string };
-  return {
-    items: (result.items ?? []).map(({ event }) => ({ event })),
-    nextCursor: result.nextCursor,
-  };
+  return getMyEvents(userId, {}, ended, cursor, take);
 }
 
 export async function getGroupsByMember(userId: string): Promise<UserGroup[]> {

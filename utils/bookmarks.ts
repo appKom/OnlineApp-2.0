@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useSyncExternalStore } from "react";
-import type { EventAttendanceBundle } from "../types/event";
+import type { EventListBundle } from "../types/event";
 import Authenticator from "./authenticator";
 import { updateEventReminders } from "./reminders";
 import { showToast } from "./toast";
@@ -62,7 +62,7 @@ export function toggleBookmark(eventId: string) {
 /**
  * Bookmark toggle for user actions: updates the event's reminders and shows a toast with undo.
  */
-export function toggleBookmarkWithUndo(bundle: EventAttendanceBundle) {
+export function toggleBookmarkWithUndo(bundle: EventListBundle) {
   const apply = () => {
     toggleBookmark(bundle.event.id);
     const bookmarked = bookmarkIds.includes(bundle.event.id);

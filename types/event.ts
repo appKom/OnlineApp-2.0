@@ -7,6 +7,34 @@ export interface EventAttendanceBundle {
   parentAttendance?: Attendance | null;
 }
 
+// List endpoints omit event relations and replace attendee lists with a summary.
+export interface EventSummary {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  type: EventType;
+  visibility: EventVisibility;
+  status: "DRAFT" | "PUBLIC" | "DELETED";
+  imageUrl: string | null;
+  parentId: string | null;
+  attendanceId: string | null;
+  locationTitle: string | null;
+}
+
+export interface AttendanceSummary extends Omit<Attendance, "attendees" | "attendancePrice"> {
+  attendancePrice: number | null;
+  currentUserAttendee: Attendee | null;
+  registeredAttendeeCount: number;
+}
+
+export interface EventSummaryBundle {
+  event: EventSummary;
+  attendance: AttendanceSummary | null;
+}
+
+export type EventListBundle = EventSummaryBundle | EventAttendanceBundle;
+
 export interface Event {
   status?: string;
   type?: string;
@@ -101,12 +129,12 @@ export interface Attendee {
   userGrade: number | null;
   attendancePoolId: string;
   selections: AttendanceSelectionResponse[];
-  reserved: boolean;
+  registered: boolean;
   earliestReservationAt: Date;
   attendedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  paymentDeadline: Date | null;
+  completionDeadline: Date | null;
   paymentLink: string | null;
   paymentId: string | null;
   paymentReservedAt: Date | null;

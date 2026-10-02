@@ -32,7 +32,7 @@ import {
 } from "../../../components/Profile/EditProfileFieldModal";
 import { RaisedButton } from "../../../components/Panel";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
-import { EventAttendanceBundle } from "../../../types/event";
+import { EventSummaryBundle } from "../../../types/event";
 import type { VisiblePersonalMark } from "../../../types/mark";
 import type { Punishment } from "../../../types/punishment";
 import { Membership, User } from "../../../types/user";
@@ -58,7 +58,7 @@ import {
 
 type ProfileOverview = {
   groupCount: number | null;
-  nextEvent: EventAttendanceBundle | null;
+  nextEvent: EventSummaryBundle | null;
   /** Null until loaded, or if the marks couldn't be fetched. */
   marks: VisiblePersonalMark[] | null;
   punishment: Punishment | null;

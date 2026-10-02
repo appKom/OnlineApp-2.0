@@ -63,19 +63,19 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
         new Date(b.earliestReservationAt).getTime()
       )
 
-    const reserved = sorted.filter(a => a.reserved)
-    const waitlist = sorted.filter(a => !a.reserved)
+    const registered = sorted.filter(a => a.registered)
+    const waitlist = sorted.filter(a => !a.registered)
 
     const data: ListItem[] = []
 
-    if (reserved.length > 0) {
+    if (registered.length > 0) {
       data.push({
         type: "header",
-        id: "header-reserved",
-        title: `Påmeldte (${reserved.length})`,
+        id: "header-registered",
+        title: `Påmeldte (${registered.length})`,
       })
 
-      reserved.forEach(a =>
+      registered.forEach(a =>
         data.push({
           type: "attendee",
           id: a.id,
