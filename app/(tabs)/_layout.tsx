@@ -58,3 +58,5 @@ export default function TabLayout() {
     </NativeTabs>
   );
 }
+
+export { FullScreenErrorBoundary as ErrorBoundary } from "../../components/ScreenErrorBoundary";

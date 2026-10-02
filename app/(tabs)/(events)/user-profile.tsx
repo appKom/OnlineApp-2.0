@@ -366,3 +366,5 @@ const styles = StyleSheet.create({
   messageTitle: { marginTop: 4, fontSize: 17, fontWeight: "700", textAlign: "center" },
   messageText: { fontSize: 14, lineHeight: 20, textAlign: "center", marginBottom: 8 },
 });
+
+export { DetailErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

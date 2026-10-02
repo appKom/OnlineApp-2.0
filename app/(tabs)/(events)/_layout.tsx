@@ -26,3 +26,5 @@ export default function HomeLayout() {
     </>
   );
 }
+
+export { FullScreenErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

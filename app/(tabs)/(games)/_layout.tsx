@@ -23,3 +23,5 @@ export default function GamesLayout() {
     </Stack>
   );
 }
+
+export { FullScreenErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

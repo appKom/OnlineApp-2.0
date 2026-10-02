@@ -930,3 +930,5 @@ const styles = StyleSheet.create({
   loadingCard: { minHeight: 180, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { fontSize: 14 },
 });
+
+export { ErrorBoundary } from "../../../components/ScreenErrorBoundary";

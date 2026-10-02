@@ -678,3 +678,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+export { DetailErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

@@ -787,3 +787,5 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
 });
+
+export { FullScreenErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

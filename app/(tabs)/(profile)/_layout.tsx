@@ -26,3 +26,5 @@ export default function ProfileLayout() {
     </>
   );
 }
+
+export { FullScreenErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

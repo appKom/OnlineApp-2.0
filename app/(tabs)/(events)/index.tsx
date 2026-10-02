@@ -533,3 +533,5 @@ const styles = StyleSheet.create({
 });
 
 export default AllEvents;
+
+export { ErrorBoundary } from "../../../components/ScreenErrorBoundary";

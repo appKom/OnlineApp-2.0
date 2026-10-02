@@ -314,3 +314,5 @@ const styles = StyleSheet.create({
 });
 
 export default DiceRoll;
+
+export { DetailErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

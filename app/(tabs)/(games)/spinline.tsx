@@ -391,3 +391,5 @@ const styles = StyleSheet.create({
 });
 
 export default SpinLine;
+
+export { DetailErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";

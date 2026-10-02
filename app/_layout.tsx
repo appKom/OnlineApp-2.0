@@ -15,6 +15,7 @@ import { ThemeProvider, useTheme, useThemeMode } from "../utils/theme";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { Platform } from "react-native";
 import { ToastHost } from "../components/ToastHost";
+import { installCrashGuard } from "../utils/crash-guard";
 
 SystemUI.setBackgroundColorAsync("#0F1417");
 
@@ -37,6 +38,8 @@ function RootLayoutInner() {
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  useEffect(() => installCrashGuard(), []);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
@@ -122,3 +125,5 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+export { FullScreenErrorBoundary as ErrorBoundary } from "../components/ScreenErrorBoundary";

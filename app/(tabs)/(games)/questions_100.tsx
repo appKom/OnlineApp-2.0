@@ -631,3 +631,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
+export { DetailErrorBoundary as ErrorBoundary } from "../../../components/ScreenErrorBoundary";
