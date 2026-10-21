@@ -16,6 +16,7 @@ import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { Platform } from "react-native";
 import { ToastHost } from "../components/ToastHost";
 import { installCrashGuard } from "../utils/crash-guard";
+import { reconcileLiveEvent, setLiveEventAppearance, watchLiveEvent } from "../utils/live-event-activity";
 
 SystemUI.setBackgroundColorAsync("#0F1417");
 
@@ -40,6 +41,22 @@ function RootLayoutInner() {
   }, []);
 
   useEffect(() => installCrashGuard(), []);
+
+  useEffect(() => {
+    void setLiveEventAppearance({ backgroundColor: theme.background, textColor: theme.onBackground, mutedColor: theme.onSurfaceVariant, accentColor: theme.primary, isDark: mode === "dark" })
+      .catch((error) => console.warn("Live-banner:", error));
+  }, [theme, mode]);
+
+  useEffect(() => watchLiveEvent(
+    (error) => console.warn("Live-banner:", error),
+    () => isAuthReady ? Authenticator.user?.id ?? null : undefined,
+  ), [isAuthReady]);
+
+  useEffect(() => {
+    if (isAuthReady) {
+      void reconcileLiveEvent(Authenticator.user?.id ?? null).catch((error) => console.warn("Live-banner:", error));
+    }
+  }, [isAuthReady, isLoggedIn]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(

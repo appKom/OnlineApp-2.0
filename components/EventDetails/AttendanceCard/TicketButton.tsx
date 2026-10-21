@@ -1,4 +1,5 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { View, Text, StyleSheet, useWindowDimensions } from "react-native"
 import QRCode from "react-native-qrcode-svg"
 import type { Attendee } from "../../../types/event"
@@ -16,6 +17,15 @@ export const TicketButton: React.FC<TicketButtonProps> = ({ attendee, compact = 
   const { width } = useWindowDimensions()
   const qrSize = Math.min(240, width * 0.9 - 80)
   const [modalVisible, setModalVisible] = useState(false)
+  const { showTicket } = useLocalSearchParams<{ showTicket?: string }>()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (showTicket === "1") {
+      setModalVisible(true)
+      router.setParams({ showTicket: "" })
+    }
+  }, [showTicket, router])
 
   return (
     <>

@@ -4,6 +4,8 @@ import { Platform } from "react-native";
 import type { EventListBundle } from "../types/event";
 import type { User } from "../types/user";
 import { getAttendee } from "./attendance";
+import { EVENT_START_LEAD_MS } from "./event-timing";
+import { getLiveEventSession } from "./live-event-activity";
 
 // Local reminders for events the user cares about (bookmarked or signed up to):
 // - 15 min before registration opens, while they are not signed up
@@ -14,7 +16,6 @@ const LEGACY_PREFIX = "registration-reminder-";
 const CHANNEL_ID = "event_reminders";
 
 const REGISTRATION_LEAD_MS = 15 * 60 * 1000;
-const START_LEAD_MS = 60 * 60 * 1000;
 
 type Reminder = { id: string; date: Date; title: string; body: string; eventId: string; eventTitle: string };
 
@@ -44,8 +45,9 @@ function remindersFor(bundle: EventListBundle, user: User | null, bookmarked: bo
   }
 
   if (attendee?.registered || (bookmarked && !attendance)) {
-    const date = new Date(new Date(event.start).getTime() - START_LEAD_MS);
-    if (date.getTime() > now) {
+    const date = new Date(new Date(event.start).getTime() - EVENT_START_LEAD_MS);
+    const scheduledActivity = getLiveEventSession();
+    if (date.getTime() > now && !(scheduledActivity?.event.eventId === event.id && scheduledActivity.phase === "upcoming")) {
       reminders.push({
         id: reminderId(event.id, "start"),
         date,

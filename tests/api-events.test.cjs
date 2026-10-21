@@ -212,6 +212,7 @@ test("attendee state follows monoweb's completion rules", () => {
 
 test("reminders reconcile both full events and summaries without confusing profile owners with viewers", async () => {
   const scheduled = [];
+  let liveSession = null;
   const notifications = {
     SchedulableTriggerInputTypes: { DATE: "date" },
     getPermissionsAsync: async () => ({ status: "granted" }),
@@ -223,6 +224,8 @@ test("reminders reconcile both full events and summaries without confusing profi
     "expo-notifications": notifications,
     "react-native": { Platform: { OS: "ios" } },
     "./attendance": attendance,
+    "./event-timing": { EVENT_START_LEAD_MS: 60 * 60 * 1000 },
+    "./live-event-activity": { getLiveEventSession: () => liveSession },
   });
   const bookmarked = {
     event: { ...summary.event, id: "bookmark" },
@@ -242,4 +245,10 @@ test("reminders reconcile both full events and summaries without confusing profi
   const count = scheduled.length;
   await reminders.updateEventReminders(summary, { id: "profile-owner" }, false);
   assert.equal(scheduled.length, count);
+  liveSession = { event: { eventId: summary.event.id }, phase: "upcoming" };
+  await reminders.updateEventReminders(summary, user, false);
+  assert.equal(scheduled.length, count, "ActivityKit's scheduled alert replaces the local start reminder");
+  liveSession = null;
+  await reminders.updateEventReminders(summary, user, false);
+  assert.equal(scheduled.length, count + 1, "Cancelling the scheduled banner restores the local reminder");
 });

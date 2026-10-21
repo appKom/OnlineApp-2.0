@@ -55,6 +55,7 @@
         }
       ],
       "./withAuth0SceneLinking",
+      "./withEventLiveActivityScheduling",
       [
         "expo-build-properties",
         {
@@ -92,6 +93,13 @@
           "photosPermission": "Online trenger tilgang til bildene dine for å endre profilbildet ditt.",
           "cameraPermission": "Online trenger tilgang til kameraet for å ta et nytt profilbilde.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.ntnu.online.app",
+          "enablePushNotifications": false
         }
       ]
     ],
