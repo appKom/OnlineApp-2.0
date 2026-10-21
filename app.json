@@ -51,6 +51,7 @@
         }
       ],
       "./withAuth0SceneLinking",
+      "./withEventLiveActivityScheduling",
       [
         "expo-build-properties",
         {
@@ -89,7 +90,15 @@
           "cameraPermission": "Online trenger tilgang til kameraet for å ta et nytt profilbilde.",
           "microphonePermission": false
         }
-      ]
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.ntnu.online.app",
+          "enablePushNotifications": false
+        }
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true

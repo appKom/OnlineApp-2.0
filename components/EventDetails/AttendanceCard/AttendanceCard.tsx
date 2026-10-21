@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef, useSyncExternalStore } from "react"
 import { View, StyleSheet } from "react-native"
 import type {
   Attendance,
@@ -21,12 +21,14 @@ import { TurnstileBox } from "../../TurnstileModal"
 import { getAttendanceStatus } from "../../../types/attendanceStatus"
 import * as trpc from "../../../utils/trpc"
 import type { DeregisterReasonType } from "../../../utils/trpc"
-import { getAttendee, hasAttendeePaid } from "../../../utils/attendance"
+import { getAttendee, getAttendeeState, hasAttendeePaid } from "../../../utils/attendance"
 import { updateEventReminders } from "../../../utils/reminders"
 import { useBookmarks } from "../../../utils/bookmarks"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
 import { FieldLabel, Panel, PanelDivider, PanelHeader, usePanelChromeColors } from "../../Panel"
+import { getLiveEventSessions, stopLiveEvent, subscribeLiveEvent, updateLiveEventRegistration } from "../../../utils/live-event-activity"
+import { requestEventSync } from "../../../utils/event-sync"
 
 interface AttendanceCardProps {
   user: User | null
@@ -92,6 +94,19 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   }, [user])
 
   const attendee = getAttendee(attendance, user)
+  const liveRegistrationStatus = getAttendeeState(attendance, attendee)
+  const liveSessions = useSyncExternalStore(subscribeLiveEvent, getLiveEventSessions, () => [])
+  const liveSession = liveSessions.find((session) => session.event.eventId === event.id && session.event.ownerId === user?.id)
+  // Reflect a change in this event's attendance right away; EventSync handles the rest.
+  useEffect(() => {
+    if (!user) return
+    if (liveSession && !attendee) {
+      void stopLiveEvent(event.id).catch((error) => console.warn("Live-banner:", error))
+    } else if (liveSession && liveRegistrationStatus) {
+      void updateLiveEventRegistration(event.id, user.id, liveRegistrationStatus).catch((error) => console.warn("Live-banner:", error))
+    }
+    requestEventSync()
+  }, [event.id, user?.id, attendee?.id, liveRegistrationStatus])
   const { isBookmarked } = useBookmarks()
   const bookmarked = isBookmarked(event.id)
 
@@ -283,7 +298,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
       <View style={styles.section}>
         <View style={styles.buttonRow}>
-          {attendee?.registered && <TicketButton attendee={attendee} />}
+          {attendee && <TicketButton attendee={attendee} />}
           <ViewAttendeesButton attendance={attendance} user={user} />
         </View>
 
