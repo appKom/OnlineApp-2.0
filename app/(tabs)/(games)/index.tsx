@@ -34,7 +34,7 @@ import { useThemeMode } from "../../../utils/theme";
 const TABLE_GREEN_LIGHT = "#07523A";
 const TABLE_GREEN_DARK = "#043728";
 
-type GamePieceType = "chip" | "dice" | "roulette" | "questions" | "deck";
+type GamePieceType = "chip" | "dice" | "roulette" | "questions" | "deck" | "bits";
 
 type Game = {
   id: string;
@@ -79,6 +79,13 @@ const games: Game[] = [
     description: "Ring of fire, uten ringen",
     route: "/bunken",
     piece: "deck",
+  },
+  {
+    id: "bits",
+    title: "BITS",
+    description: "Hele vorset i én bunke",
+    route: "/bits",
+    piece: "bits",
   },
 ];
 
@@ -225,6 +232,17 @@ function GamePiece({ type }: { type: GamePieceType }) {
       return <QuestionsPiece />;
     case "deck":
       return <DeckPiece />;
+    case "bits":
+      return (
+        <View style={styles.stackPiece}>
+          <View style={[styles.stackCard, styles.stackCardBack]} />
+          <View style={[styles.stackCard, styles.stackCardMiddle]} />
+          <View style={[styles.stackCard, styles.stackCardFront, { backgroundColor: CASINO_COLORS.red }]}>
+            <MaterialCommunityIcons name="account-group-outline" size={29} color={CASINO_COLORS.goldLight} />
+            <Text style={[styles.stackNumber, { fontSize: 14 }]}>BITS</Text>
+          </View>
+        </View>
+      );
   }
 }
 

@@ -20,6 +20,7 @@ export default function GamesLayout() {
       <Stack.Screen name="roulette" />
       <Stack.Screen name="questions_100" />
       <Stack.Screen name="bunken" />
+      <Stack.Screen name="bits" />
     </Stack>
   );
 }
