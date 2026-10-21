@@ -2,7 +2,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const MARKER = "// Online: scheduled event Live Activities (iOS 26+)";
-const SCHEDULE_FUNCTION = `    ${MARKER}
+// Bump when the bridge changes, so an already patched node_modules is updated.
+const SCHEDULE_MARKER = `${MARKER} v3`;
+const SCHEDULE_FUNCTION = `    ${SCHEDULE_MARKER}
+    // ActivityKit requires an alert for a scheduled start; it stands in for the event's local reminder.
     Function("scheduleEventLiveActivity") { (name: String, props: String, url: URL?, startDate: Date, staleDate: Date?, title: String, body: String) in
       guard #available(iOS 26.0, *) else { throw LiveActivitiesNotSupportedException() }
       guard ActivityAuthorizationInfo().areActivitiesEnabled else { throw LiveActivitiesNotSupportedException() }
@@ -21,9 +24,12 @@ const SCHEDULE_FUNCTION = `    ${MARKER}
 `;
 
 function patchModule(source) {
-  if (source.includes(MARKER)) return source;
+  if (source.includes(SCHEDULE_MARKER)) return source;
   const anchor = '    Function("reloadAllWidgets") {';
   if (!source.includes(anchor)) throw new Error("Expo Widgets module changed; review the scheduling bridge patch.");
+  // Replace an older version of the bridge in place.
+  const previous = source.indexOf(`    ${MARKER}`);
+  if (previous >= 0) source = source.slice(0, previous) + source.slice(source.indexOf(anchor));
   return source.replace(anchor, SCHEDULE_FUNCTION + anchor);
 }
 

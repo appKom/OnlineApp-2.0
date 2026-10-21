@@ -212,7 +212,7 @@ test("attendee state follows monoweb's completion rules", () => {
 
 test("reminders reconcile both full events and summaries without confusing profile owners with viewers", async () => {
   const scheduled = [];
-  let liveSession = null;
+  let sessions = [];
   const notifications = {
     SchedulableTriggerInputTypes: { DATE: "date" },
     getPermissionsAsync: async () => ({ status: "granted" }),
@@ -224,8 +224,8 @@ test("reminders reconcile both full events and summaries without confusing profi
     "expo-notifications": notifications,
     "react-native": { Platform: { OS: "ios" } },
     "./attendance": attendance,
-    "./event-timing": { EVENT_START_LEAD_MS: 60 * 60 * 1000 },
-    "./live-event-activity": { getLiveEventSession: () => liveSession },
+    "./event-timing": loadAppModule("utils/event-timing.ts"),
+    "./live-event-activity": { getLiveEventSessions: () => sessions },
   });
   const bookmarked = {
     event: { ...summary.event, id: "bookmark" },
@@ -245,10 +245,34 @@ test("reminders reconcile both full events and summaries without confusing profi
   const count = scheduled.length;
   await reminders.updateEventReminders(summary, { id: "profile-owner" }, false);
   assert.equal(scheduled.length, count);
-  liveSession = { event: { eventId: summary.event.id }, phase: "upcoming" };
+  sessions = [{ event: { eventId: summary.event.id }, phase: "upcoming" }];
   await reminders.updateEventReminders(summary, user, false);
-  assert.equal(scheduled.length, count, "ActivityKit's scheduled alert replaces the local start reminder");
-  liveSession = null;
+  assert.equal(scheduled.length, count, "A scheduled banner's alert replaces the local start reminder");
+  sessions = [{ event: { eventId: summary.event.id }, phase: "ongoing" }, { event: { eventId: "other" }, phase: "upcoming" }];
   await reminders.updateEventReminders(summary, user, false);
-  assert.equal(scheduled.length, count + 1, "Cancelling the scheduled banner restores the local reminder");
+  assert.equal(scheduled.length, count + 1, "Without a pending banner for the event, the reminder is back");
+});
+
+test("the event sync reads every attended page and bookmarks it does not already have", async () => {
+  const pages = { undefined: { items: Array.from({ length: 50 }, (_, i) => ({ event: { id: `a${i}` } })), nextCursor: "2" }, 2: { items: [{ event: { id: "last" } }] } };
+  const requestedIds = [];
+  const sync = loadAppModule("utils/event-sync.ts", {
+    "@react-native-async-storage/async-storage": {},
+    "expo-notifications": {},
+    "react-native": { Alert: {} },
+    "./bookmarks": { getBookmarkIds: async () => ["last", "bookmark"] },
+    "./reminders": {},
+    "./trpc": {
+      getMyEvents: async (userId, filter, ended, cursor, take) => {
+        assert.deepEqual([userId, ended, take], ["user", false, 50]);
+        return pages[cursor];
+      },
+      getEventsByIds: async (ids) => { requestedIds.push(...ids); return ids.map((id) => ({ event: { id } })); },
+    },
+  });
+  const { attending, bookmarked } = await sync.loadSyncedEvents("user");
+  assert.equal(attending.length, 51);
+  assert.deepEqual(requestedIds, ["bookmark"]);
+  assert.deepEqual(bookmarked.map(({ event }) => event.id), ["bookmark"]);
+  assert.deepEqual((await sync.loadSyncedEvents(null)).attending, []);
 });

@@ -12,12 +12,10 @@ export interface LiveEvent {
   endsAt: number;
   eventURL: string;
   ticketURL: string;
-  /** Null for the local demo; real tickets belong to the signed-in user. */
-  ownerId: string | null;
+  /** The signed-in user the ticket belongs to. */
+  ownerId: string;
   /** Same registration/payment state used by the event page; absent in older saved banners. */
   registrationStatus?: AttendeeState;
-  /** Only the accelerated scheduled demo overrides the normal one-hour lead. */
-  demoLiveStartsAt?: number;
 }
 
 export type LiveEventBranding = { logoLightURI: string; logoDarkURI: string; markURI: string };
@@ -31,7 +29,7 @@ export interface LiveEventSession {
 }
 
 export function liveEventStartsAt(event: LiveEvent) {
-  return event.ownerId === null && event.demoLiveStartsAt !== undefined ? event.demoLiveStartsAt : event.startsAt - EVENT_START_LEAD_MS;
+  return event.startsAt - EVENT_START_LEAD_MS;
 }
 
 export function nextLiveEventBoundary(event: LiveEvent, phase: LiveEventPhase) {
@@ -46,9 +44,6 @@ export function validateLiveEvent(event: LiveEvent) {
       event.doorsOpenAt > event.startsAt || event.startsAt >= event.endsAt) {
     throw new Error("Arrangementet har ugyldige tidspunkter.");
   }
-  if (event.demoLiveStartsAt !== undefined && (event.ownerId !== null || !Number.isFinite(event.demoLiveStartsAt) || event.demoLiveStartsAt > event.doorsOpenAt)) {
-    throw new Error("Testarrangementet har ugyldig starttid for Live-banner.");
-  }
 }
 
 export function getLiveEventPhase(event: LiveEvent, now = Date.now()): LiveEventPhase {
@@ -59,24 +54,54 @@ export function getLiveEventPhase(event: LiveEvent, now = Date.now()): LiveEvent
   return "starting-soon";
 }
 
-export function makeDemoEvent(phase: "starting-soon" | "doors-open" | "ongoing", now = Date.now(), accelerated = false): LiveEvent {
-  const startsAt = phase === "ongoing" ? now - (accelerated ? 60_000 : 60 * 60_000) : now + (accelerated ? 20_000 : phase === "starting-soon" ? EVENT_START_LEAD_MS : 15 * 60_000);
-  return {
-    eventId: "local-live-banner-demo",
-    title: "Online-kveld · test",
-    location: "Kontoret · A4",
-    doorsOpenAt: phase === "starting-soon" || phase === "ongoing" ? startsAt - 15 * 60_000 : now - 1000,
-    startsAt,
-    endsAt: accelerated ? startsAt + 90_000 : phase === "starting-soon" ? startsAt + 60 * 60_000 : now + 60 * 60_000,
-    eventURL: "ntnu.online.app://live-banner-test",
-    ticketURL: "ntnu.online.app://live-banner-test?showTicket=1",
-    ownerId: null,
-    registrationStatus: "REGISTERED",
-  };
+/** An event the signed-in user is attending, with the QR payload of their ticket. */
+export interface LiveEventCandidate {
+  event: LiveEvent;
+  ticketValue: string;
 }
 
-export function makeScheduledDemoEvent(now = Date.now()): LiveEvent {
-  return { ...makeDemoEvent("starting-soon", now), demoLiveStartsAt: now + 30_000, doorsOpenAt: now + 60_000, startsAt: now + 90_000, endsAt: now + 180_000 };
+/** iOS caps concurrent Live Activities per app; stay well below it. */
+export const MAX_LIVE_EVENTS = 3;
+
+export interface LiveEventPlan {
+  /** New banners to start or schedule, soonest first. */
+  start: LiveEventCandidate[];
+  /** Existing banners whose registration badge may need refreshing. */
+  update: LiveEventCandidate[];
+  /** Event IDs whose banner should end: no longer attended, or pushed out by sooner events. */
+  stop: string[];
+  /** When the next banner can start, if it can't be scheduled ahead (iOS 18–25). */
+  retryAt?: number;
+}
+
+/**
+ * Banners for the user's next attended events, soonest first. Events the user
+ * swiped away are skipped. Without advance scheduling, only events inside their
+ * one-hour window can get a banner.
+ */
+export function planLiveEvents(
+  candidates: LiveEventCandidate[],
+  sessions: LiveEventSession[],
+  dismissedEventIds: string[],
+  canSchedule: boolean,
+  now = Date.now(),
+  max = MAX_LIVE_EVENTS,
+): LiveEventPlan {
+  const eligible = candidates
+    .filter(({ event }) => getLiveEventPhase(event, now) !== "ended" && !dismissedEventIds.includes(event.eventId))
+    .sort((a, b) => a.event.startsAt - b.event.startsAt);
+  const waiting = canSchedule ? [] : eligible.filter(({ event }) => getLiveEventPhase(event, now) === "upcoming");
+  const wanted = eligible.filter((candidate) => !waiting.includes(candidate)).slice(0, max);
+  const isRunning = ({ event }: LiveEventCandidate) =>
+    sessions.some((current) => current.event.eventId === event.eventId && current.event.ownerId === event.ownerId);
+  return {
+    start: wanted.filter((candidate) => !isRunning(candidate)),
+    update: wanted.filter(isRunning),
+    stop: sessions
+      .filter((current) => !wanted.some(({ event }) => event.eventId === current.event.eventId && event.ownerId === current.event.ownerId))
+      .map((current) => current.event.eventId),
+    retryAt: waiting.length ? Math.min(...waiting.map(({ event }) => liveEventStartsAt(event))) : undefined,
+  };
 }
 
 export function liveEventLinks(eventId: string) {

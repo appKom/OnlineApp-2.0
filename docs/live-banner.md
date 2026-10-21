@@ -16,66 +16,76 @@ The ticket uses the
 same attendee-ID QR payload as the existing app ticket. The QR PNG lives in the
 shared app group, so the extension can read it while the app is suspended.
 
-## Try it
+## Reminders and banners: the device-side backfill
+
+The events API has no push notifications, so the app backfills them. `EventSync`
+(mounted in the root layout, logic in `utils/event-sync.ts`) reads every upcoming
+event the user attends, wherever they signed up, plus bookmarked events. It runs
+on launch, return to the foreground, login, and after (de)registration on an event
+page. Each run:
+
+1. Plans banners for the next three attended events (`planLiveEvents`): signed up,
+   reserved or waitlisted. Banners for events no longer attended, or pushed out by
+   sooner ones, end. Existing banners get their registration badge refreshed.
+2. Schedules a local reminder one hour before every attended or bookmarked event,
+   and cancels the rest (`syncEventReminders`).
+3. Renders each new ticket's QR off-screen and starts its banner:
+   - On iOS 26+, ActivityKit schedules it for one hour before start, even while
+     the app is closed. iOS requires an alert for a scheduled start, so that
+     alert, with the reminder's text, replaces that event's local reminder. If a
+     banner ends or fails to schedule, the next reminder pass restores the local
+     reminder, so each event gets exactly one alert.
+   - On iOS 18–25, the banner starts when the app runs inside that hour, and the
+     local reminder is the alert.
+
+Swiping a banner away is remembered for that event; it is never started again,
+and its local reminder still fires. Banners advance from starts-soon to doors-open
+15 minutes before start, then ongoing at start, while the app runs. Doors-open is
+still an assumption because the event contract has no explicit time for it.
+Tapping the QR opens the event's ticket modal; tapping elsewhere opens the event.
+Logout ends every banner.
+
+After login the app asks once for notification permission, with a short
+explanation, so users who only sign up on the website still get reminders. It
+waits until the App Tracking Transparency prompt has been answered.
+
+`utils/background-sync.ts` registers a background task (`expo-background-task`).
+iOS runs it now and then, at times it chooses and never after a force-quit, to
+backfill reminders for website sign-ups without opening the app. ActivityKit only
+starts banners from the foreground, so banners wait for the next app launch. The
+task skips the run if it cannot read the signed-in user (for example while the
+keychain is locked), so it never cancels reminders by mistake.
+
+What still needs the backend: an instant confirmation after signing up on the
+website, and banners that start or update while the app has not been opened.
+Both need the events backend to send APNs pushes.
+
+## Testing
 
 1. Rebuild the native app after installing dependencies: `npx expo run:ios`.
-   Expo Go and previously installed builds do not include the new extension.
-   Use Node 22.13 or newer. If Xcode picks an older Node installation, point
-   `ios/.xcode.env.local` at the same Node executable used by your terminal.
-2. In a development build, open **Profil → Test Live-banner**. Login is optional.
-   The route also opens with `ntnu.online.app://live-banner-test`.
-3. Choose **Dørene er åpne** or **Arrangementet pågår**. The screen confirms
-   **Live Activity startet**; the in-app QR is a test ticket preview.
-   In Simulator / Device Hub, use **Controls → Lock** for the Lock Screen and
-   **Controls → Home** for the Dynamic Island. If Lock puts the display into
-   its dim always-on state, use Lock again to wake it. Choose **Allow**, then
-   **Always Allow** if iOS asks whether Online may show Live Activities.
-4. Long-press the Dynamic Island to inspect its expanded view. Scan the QR and
-   check it equals `ONLINE-LIVE-BANNER-TEST-NOT-A-VALID-TICKET`. This is a dummy
-   ticket and must not be accepted by a real event scanner.
-5. Tap the QR to open the app ticket; tap elsewhere on the banner for the event
-   page. Return to the test screen to switch states on the same activity.
-6. **Kjør demo** counts down 20 seconds to start, then runs for 90 seconds. Keep
-   the app in the foreground for phase changes and automatic dismissal. The
-   native countdown and ongoing progress bar continue with the screen locked. Reopening the app reconciles
-   the phase or removes an expired banner.
-   **Planlegg demo** schedules the native banner to appear after 30 seconds;
-   lock the screen and terminate the app to verify it starts without JavaScript.
-   This test event opens its doors after 60 seconds, starts after 90 seconds and
-   ends after 180 seconds. Reopen the app to reconcile those later phases.
-7. Test dismissal, force-quit/relaunch, Live Activities disabled in iOS settings,
-   and long titles on a physical iPhone. Native rendering and scanning require
-   device validation. The iPhone 18 Pro simulator was visually checked for
-   both event states, the Lock Screen QR and compact Dynamic Island. The
-   shared PNG was decoded with Apple's Vision API to verify its dummy payload.
-   The smaller QR in its rounded card was also decoded from the rendered
-   Lock Screen screenshot, and tapping the banner was checked separately.
-   Native advance scheduling was also verified: the Lock Screen was empty
-   before the scheduled start, then the branded banner appeared after the
-   app was terminated. The ongoing progress bar was checked at two different
-   positions after terminating the app, confirming it keeps advancing natively.
-   Build with normal simulator signing so the app and
+   Expo Go and previously installed builds do not include the extension or the
+   background task. Use Node 22.13 or newer. If Xcode picks an older Node
+   installation, point `ios/.xcode.env.local` at the same Node executable used by
+   your terminal. If `pod install` fails with an encoding error, run it with
+   `LANG=en_US.UTF-8`. Build with normal simulator signing so the app and
    extension can access their shared image container.
-
-For an event you have a place at or are waitlisted for, enable **Planlegg Live-banner · 1 time før start**
-in its attendance card. On iOS 26+, ActivityKit schedules the start for exactly
-one hour before the event, even while the app is closed. Its system alert replaces
-the local one-hour reminder to avoid duplicate alerts. Cancelling the scheduled
-banner on the event page restores the local reminder. On iOS 18–25, start it
-manually within the one-hour window. Internally, the initial starts-soon state changes
-to doors-open 15 minutes before start, then ongoing at start. The design shows one
-countdown without a caption or repeated pre-event status. Doors-open is still
-an assumption because the event contract has no explicit time for it.
-
-Only one event is enabled at a time; enabling another replaces the previous
-active or scheduled banner. Tapping the QR opens the event's ticket modal.
-Foreground reconciliation ends the banner at the event end, on logout, or after
-deregistration is observed on the event page. User dismissal is respected.
-Waitlisted and reserved attendees can also enable it and open their QR ticket.
-Refreshing attendance on the event page updates the badge on the existing
-active or pending banner without replacing its QR or scheduled start. Changes
-while the app is closed need server pushes, like other background updates.
-The test screen includes **Påmeldt** and **Venteliste** preview controls.
+2. Sign up for an event that starts within a few hours, then reopen the app.
+   In Simulator / Device Hub, use **Controls → Lock** for the Lock Screen and
+   **Controls → Home** for the Dynamic Island. Choose **Allow**, then
+   **Always Allow** if iOS asks whether Online may show Live Activities.
+3. To try it without real upcoming events, temporarily shift past attended
+   events' times in `loadSyncedEvents` and do not commit the change. The iPhone 18
+   Pro simulator was checked this way with real tickets: three events got two
+   scheduled banners and one local reminder (for the event whose banner had been
+   swiped away), the nearest banner started on time with the app terminated, its
+   QR decoded to the same attendee ID as the in-app ticket, and removing the
+   events ended both banners on the next sync.
+4. The background task only runs on a physical device; the simulator has no
+   background task scheduler. In a debug build on a device, trigger it with
+   `BackgroundTask.triggerTaskWorkerForTestingAsync()` after sending the app to
+   the background.
+5. Test long titles, Live Activities disabled in iOS settings, and scanning on a
+   physical iPhone.
 
 ## Scope and production follow-up
 
@@ -99,7 +109,7 @@ limits activity duration, so long events need a defined product policy.
 
 The missing Expo scheduling bridge and timed progress node are patched in
 `scripts/patch-expo-widgets.cjs`, applied by postinstall and the iOS config plugin.
-It adds Apple's iOS 26 scheduling request and includes pending activities in
+It adds Apple's iOS 26 scheduling request (whose alert is mandatory) and includes pending activities in
 instance recovery/cancellation. The native progress view source is maintained in
 `widgets/native/EventProgressView.swift` and added to Expo's native node dispatcher.
 The patch is guarded against Expo Widgets version or
@@ -109,9 +119,10 @@ See [Expo Widgets](https://docs.expo.dev/versions/latest/sdk/widgets/),
 [Apple's timed progress view](https://developer.apple.com/documentation/swiftui/progressview/init(timerinterval:countsdown:)) and
 [Apple's scheduled ActivityKit request](https://developer.apple.com/documentation/activitykit/activity/request(attributes:content:pushtype:style:alertconfiguration:start:)).
 
-`npm test` covers phase boundaries, serialized native lifecycle operations,
-manual updates, relaunch recovery, QR write ordering, logout, user dismissal,
-rollback after storage failure, and unsupported runtimes. It also builds Expo's
+`npm test` covers phase boundaries, planning several banners, serialized native
+lifecycle operations, the reminder hand-off, relaunch recovery and migration from
+the single-banner storage, QR write ordering, logout, user dismissal, rollback
+after storage failure, paging through attended events, and unsupported runtimes. It also builds Expo's
 isolated widget runtime and checks every region emits supported native view nodes.
 
 The pinned SDK 58 canary overwrites the SwiftUI `Image` global with React Native's

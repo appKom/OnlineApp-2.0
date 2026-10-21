@@ -97,7 +97,8 @@
           "groupIdentifier": "group.ntnu.online.app",
           "enablePushNotifications": false
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true

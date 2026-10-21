@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActionSheetIOS,
@@ -80,7 +79,6 @@ const emptyOverview: ProfileOverview = {
 };
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const theme = useTheme();
   const chrome = useProfileChromeColors();
   const { selectedMode, setMode } = useThemeMode();
@@ -384,7 +382,6 @@ export default function ProfileScreen() {
             <SectionLabel>Utseende</SectionLabel>
             <ThemeSelector selectedMode={selectedMode} onChange={setMode} />
           </View>
-          {__DEV__ && <RaisedButton icon="calendar-clock" label="Test Live-banner" onPress={() => router.push("/live-banner-test")} />}
         </ScrollView>
       </TabScreenContainer>
     );
@@ -547,7 +544,6 @@ export default function ProfileScreen() {
               <SectionLabel>Utseende</SectionLabel>
               <ThemeSelector selectedMode={selectedMode} onChange={setMode} />
             </View>
-            {__DEV__ && <RaisedButton icon="calendar-clock" label="Test Live-banner" onPress={() => router.push("/live-banner-test")} />}
 
             <TouchableOpacity
               accessibilityRole="button"

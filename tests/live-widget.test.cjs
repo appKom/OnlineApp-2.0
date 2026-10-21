@@ -42,7 +42,7 @@ test("every Live Activity region emits supported native nodes in Expo's isolated
             title: "Test event", location: "Kontoret", phase,
             intervalStart: Date.now(), intervalEnd: Date.now() + 900000,
             qrImageURI: "file:///shared/ticket.png", ticketURL: "ntnu.online.app://ticket",
-            eventURL: "ntnu.online.app://event", isDemo: true, registrationStatus,
+            eventURL: "ntnu.online.app://event", registrationStatus,
             logoURI: "file:///shared/logo.png", markURI: "file:///shared/mark.png",
             backgroundColor: "#0F1417", textColor: "#DFE3E7", mutedColor: "#C1C7CE", accentColor: "#91CEF5", isDark: true,
           }, { isLuminanceReduced });

@@ -27,10 +27,8 @@ import { useBookmarks } from "../../../utils/bookmarks"
 import { differenceInSeconds, isBefore, secondsToMilliseconds } from "date-fns"
 import { TURNSTILE_SITE_KEY } from "../../../utils/turnstile"
 import { FieldLabel, Panel, PanelDivider, PanelHeader, usePanelChromeColors } from "../../Panel"
-import { LiveBannerControls } from "../../LiveBannerControls"
-import { getLiveEventPhase, liveEventLinks, type LiveEvent } from "../../../utils/live-event-model"
-import { getLiveEventSession, stopLiveEvent, subscribeLiveEvent, updateLiveEventRegistration } from "../../../utils/live-event-activity"
-import { EVENT_START_LEAD_MS } from "../../../utils/event-timing"
+import { getLiveEventSessions, stopLiveEvent, subscribeLiveEvent, updateLiveEventRegistration } from "../../../utils/live-event-activity"
+import { requestEventSync } from "../../../utils/event-sync"
 
 interface AttendanceCardProps {
   user: User | null
@@ -97,43 +95,18 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
 
   const attendee = getAttendee(attendance, user)
   const liveRegistrationStatus = getAttendeeState(attendance, attendee)
-  const liveStartsAt = new Date(event.start).getTime()
-  const liveEndsAt = new Date(event.end).getTime()
-  const liveDoorsOpenAt = liveStartsAt - 15 * 60_000
-  const liveBannerStartsAt = liveStartsAt - EVENT_START_LEAD_MS
-  const liveSession = useSyncExternalStore(subscribeLiveEvent, getLiveEventSession, () => null)
-  const [liveNow, setLiveNow] = useState(Date.now())
+  const liveSessions = useSyncExternalStore(subscribeLiveEvent, getLiveEventSessions, () => [])
+  const liveSession = liveSessions.find((session) => session.event.eventId === event.id && session.event.ownerId === user?.id)
+  // Reflect a change in this event's attendance right away; EventSync handles the rest.
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const update = () => {
-      const now = Date.now()
-      setLiveNow(now)
-      const next = [liveBannerStartsAt, liveDoorsOpenAt, liveStartsAt, liveEndsAt].find((time) => time > now)
-      if (next) timer = setTimeout(update, Math.min(next - now, 2_147_483_647))
-    }
-    update()
-    return () => clearTimeout(timer)
-  }, [liveBannerStartsAt, liveDoorsOpenAt, liveStartsAt, liveEndsAt])
-  useEffect(() => {
-    if (!user || liveSession?.event.eventId !== event.id || liveSession.event.ownerId !== user.id) return
-    if (!attendee) {
-      void stopLiveEvent().catch((error) => console.warn("Live-banner:", error))
-    } else if (liveRegistrationStatus) {
+    if (!user) return
+    if (liveSession && !attendee) {
+      void stopLiveEvent(event.id).catch((error) => console.warn("Live-banner:", error))
+    } else if (liveSession && liveRegistrationStatus) {
       void updateLiveEventRegistration(event.id, user.id, liveRegistrationStatus).catch((error) => console.warn("Live-banner:", error))
     }
-  }, [event.id, user?.id, attendee?.id, liveRegistrationStatus, liveSession?.activityId])
-  const liveEvent: LiveEvent = {
-    eventId: event.id,
-    title: event.title,
-    location: event.locationTitle || "Sted ikke oppgitt",
-    doorsOpenAt: liveDoorsOpenAt,
-    startsAt: liveStartsAt,
-    endsAt: liveEndsAt,
-    ...liveEventLinks(event.id),
-    ownerId: user?.id ?? null,
-    registrationStatus: liveRegistrationStatus ?? undefined,
-  }
-  const livePhase = getLiveEventPhase(liveEvent, liveNow)
+    requestEventSync()
+  }, [event.id, user?.id, attendee?.id, liveRegistrationStatus])
   const { isBookmarked } = useBookmarks()
   const bookmarked = isBookmarked(event.id)
 
@@ -141,7 +114,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   useEffect(() => {
     void updateEventReminders({ event, attendance }, user, bookmarked)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attendee?.id, attendee?.registered, bookmarked, user?.id, liveSession?.activityId, liveSession?.phase])
+  }, [attendee?.id, attendee?.registered, bookmarked, user?.id])
 
   const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
 
@@ -328,10 +301,6 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
           {attendee && <TicketButton attendee={attendee} />}
           <ViewAttendeesButton attendance={attendance} user={user} />
         </View>
-
-        {user && attendee && livePhase !== "ended" && (
-          <LiveBannerControls event={liveEvent} ticketValue={attendee.id} />
-        )}
 
         <RegistrationButton
           registerForAttendance={registerForAttendance}

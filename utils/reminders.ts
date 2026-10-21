@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 import type { EventListBundle } from "../types/event";
 import type { User } from "../types/user";
 import { getAttendee } from "./attendance";
-import { EVENT_START_LEAD_MS } from "./event-timing";
-import { getLiveEventSession } from "./live-event-activity";
+import { EVENT_START_LEAD_MS, eventStartAlert, eventStartReminderId } from "./event-timing";
+import { getLiveEventSessions } from "./live-event-activity";
 
 // Local reminders for events the user cares about (bookmarked or signed up to):
 // - 15 min before registration opens, while they are not signed up
@@ -19,7 +19,12 @@ const REGISTRATION_LEAD_MS = 15 * 60 * 1000;
 
 type Reminder = { id: string; date: Date; title: string; body: string; eventId: string; eventTitle: string };
 
-const reminderId = (eventId: string, kind: "registration" | "start") => `${PREFIX}${eventId}:${kind}`;
+const reminderId = (eventId: string, kind: "registration" | "start") =>
+  kind === "start" ? eventStartReminderId(eventId) : `${PREFIX}${eventId}:${kind}`;
+
+/** iOS requires an alert when a Live Activity is scheduled ahead, so that alert replaces the reminder. */
+const hasScheduledBanner = (eventId: string) =>
+  getLiveEventSessions().some((session) => session.event.eventId === eventId && session.phase === "upcoming");
 
 function remindersFor(bundle: EventListBundle, user: User | null, bookmarked: boolean): Reminder[] {
   const { event, attendance } = bundle;
@@ -46,13 +51,11 @@ function remindersFor(bundle: EventListBundle, user: User | null, bookmarked: bo
 
   if (attendee?.registered || (bookmarked && !attendance)) {
     const date = new Date(new Date(event.start).getTime() - EVENT_START_LEAD_MS);
-    const scheduledActivity = getLiveEventSession();
-    if (date.getTime() > now && !(scheduledActivity?.event.eventId === event.id && scheduledActivity.phase === "upcoming")) {
+    if (date.getTime() > now && !hasScheduledBanner(event.id)) {
       reminders.push({
         id: reminderId(event.id, "start"),
         date,
-        title: "Starter om en time",
-        body: event.locationTitle ? `${title} · ${event.locationTitle}` : title,
+        ...eventStartAlert(title, event.locationTitle),
         eventId: event.id,
         eventTitle: title,
       });

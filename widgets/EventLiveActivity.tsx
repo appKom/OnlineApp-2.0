@@ -12,7 +12,6 @@ export interface EventActivityProps {
   qrImageURI: string;
   eventURL: string;
   ticketURL: string;
-  isDemo: boolean;
   registrationStatus?: LiveEvent["registrationStatus"];
   logoURI?: string;
   markURI?: string;
@@ -40,7 +39,7 @@ const EventActivity = (props: EventActivityProps, environment: LiveActivityEnvir
     ? <WidgetImage uiImage={props.markURI} modifiers={[resizable(), frame({ width: 20, height: 20 })]} />
     : <Text modifiers={[font({ size: 16, weight: "bold" }), foregroundStyle("#FFFFFF")]}>O</Text>;
   const ticket = (
-    <Link destination={props.ticketURL} modifiers={[accessibilityLabel(props.isDemo ? "Testbillett, QR-kode" : "Billett, QR-kode")]}>
+    <Link destination={props.ticketURL} modifiers={[accessibilityLabel("Billett, QR-kode")]}>
       <WidgetImage uiImage={props.qrImageURI} modifiers={[
         resizable(), frame({ width: 96, height: 96 }),
         // Round the white card, keeping padding around the QR's existing quiet zone.
