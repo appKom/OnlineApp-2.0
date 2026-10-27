@@ -49,7 +49,7 @@ function remindersFor(bundle: EventListBundle, user: User | null, bookmarked: bo
     }
   }
 
-  if (attendee?.registered || (bookmarked && !attendance)) {
+  if (attendee?.registeredAt != null || (bookmarked && !attendance)) {
     const date = new Date(new Date(event.start).getTime() - EVENT_START_LEAD_MS);
     if (date.getTime() > now && !hasScheduledBanner(event.id)) {
       reminders.push({

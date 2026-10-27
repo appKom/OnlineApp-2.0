@@ -114,7 +114,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   useEffect(() => {
     void updateEventReminders({ event, attendance }, user, bookmarked)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attendee?.id, attendee?.registered, bookmarked, user?.id])
+  }, [attendee?.id, attendee?.registeredAt, bookmarked, user?.id])
 
   const [chargeScheduleDate, setChargeScheduleDate] = useState<Date | null>(null)
 
@@ -259,7 +259,7 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     Closed: { label: "Stengt", color: chrome.textMuted },
   }[attendanceStatus]
 
-  const hasSelections = Boolean(attendee?.registered && (attendance.selections?.length ?? 0) > 0)
+  const hasSelections = Boolean(attendee?.registeredAt != null && (attendance.selections?.length ?? 0) > 0)
 
   return (
     <Panel>

@@ -51,7 +51,7 @@ const eventStart = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
 const attendee = {
   id: "ticket-id",
   userId: user.id,
-  registered: true,
+  registeredAt: new Date(),
   completionDeadline: new Date(Date.now() + 60 * 60 * 1000),
   paymentChargedAt: null,
   paymentReservedAt: null,
@@ -200,7 +200,7 @@ test("summary attendance supports capacity, viewer identity and payment deadline
 
 test("attendee state follows monoweb's completion rules", () => {
   const paid = { ...attendee, paymentChargedAt: new Date() };
-  const queued = { ...attendee, registered: false };
+  const queued = { ...attendee, registeredAt: null };
   assert.equal(attendance.getAttendeeState(summary.attendance, null), null);
   assert.equal(attendance.getAttendeeState(summary.attendance, queued), "QUEUED");
   assert.equal(attendance.getAttendeeState(summary.attendance, attendee), "RESERVED");

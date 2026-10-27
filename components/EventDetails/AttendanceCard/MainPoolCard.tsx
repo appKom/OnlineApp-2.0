@@ -107,7 +107,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
   const hasWaitlist = queuedAttendeeCount > 0
   const isFull = pool.capacity > 0 && registeredAttendeeCount >= pool.capacity
 
-  const servingPunishment = attendee?.earliestReservationAt && isFuture(attendee.earliestReservationAt)
+  const servingPunishment = attendee?.registrationEligibleAt && isFuture(attendee.registrationEligibleAt)
 
   return (
     <View style={styles.poolSection}>
@@ -156,7 +156,7 @@ export const MainPoolCard: React.FC<MainPoolCardProps> = ({ attendance, user, ch
               <StatusLine
                 icon="timer-sand"
                 color={chrome.warning}
-                text={`${formatDistanceToNowStrict(attendee!.earliestReservationAt, { locale: nb })} utsettelse`}
+                text={`${formatDistanceToNowStrict(attendee!.registrationEligibleAt, { locale: nb })} utsettelse`}
               />
             ) : (
               <AttendanceStatus attendance={attendance} attendee={attendee} state={attendeeState} />
@@ -320,7 +320,7 @@ const PaymentStatus = ({ attendance, attendee, chargeScheduleDate, hideUnpaidSta
   }
 
   // Queued attendees don't pay until they get a place.
-  if (!attendee.registered) {
+  if (attendee.registeredAt == null) {
     return null
   }
 

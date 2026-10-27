@@ -59,12 +59,12 @@ export const ViewAttendeesButton: React.FC<ViewAttendeesButtonProps> = ({
       .filter(a => selectedGrade === null || a.userGrade === selectedGrade)
       .sort(
       (a, b) =>
-        new Date(a.earliestReservationAt).getTime() -
-        new Date(b.earliestReservationAt).getTime()
+        new Date(a.registrationEligibleAt).getTime() -
+        new Date(b.registrationEligibleAt).getTime()
       )
 
-    const registered = sorted.filter(a => a.registered)
-    const waitlist = sorted.filter(a => !a.registered)
+    const registered = sorted.filter(a => a.registeredAt != null)
+    const waitlist = sorted.filter(a => a.registeredAt == null)
 
     const data: ListItem[] = []
 
