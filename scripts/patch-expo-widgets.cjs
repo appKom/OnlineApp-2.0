@@ -66,6 +66,16 @@ ${anchor}`);
   return (index < 0 ? source.trimEnd() + "\n\n" : source.slice(0, index)) + viewMarker + view;
 }
 
+// The config file is only written when Android widgets are enabled, but Gradle rejects a missing
+// `.optional()` input file, so the Android build fails for iOS-only widget setups.
+function patchGradle(source) {
+  const anchor = "  inputs.file(expoWidgetsLayoutRegistryConfigFile).optional()";
+  const replacement = "  if (expoWidgetsLayoutRegistryConfigFile.exists()) inputs.file(expoWidgetsLayoutRegistryConfigFile)";
+  if (source.includes(replacement)) return source;
+  if (!source.includes(anchor)) throw new Error("Expo Widgets build.gradle changed; review the layout registry input patch.");
+  return source.replace(anchor, replacement);
+}
+
 function applyPatch(root = path.resolve(__dirname, "..")) {
   const packageRoot = path.dirname(require.resolve("expo-widgets/package.json", { paths: [root] }));
   const version = JSON.parse(fs.readFileSync(path.join(packageRoot, "package.json"))).version;
@@ -76,7 +86,11 @@ function applyPatch(root = path.resolve(__dirname, "..")) {
     const updated = patch(source);
     if (updated !== source) fs.writeFileSync(file, updated);
   }
+  const gradleFile = path.join(packageRoot, "android", "build.gradle");
+  const gradleSource = fs.readFileSync(gradleFile, "utf8");
+  const gradleUpdated = patchGradle(gradleSource);
+  if (gradleUpdated !== gradleSource) fs.writeFileSync(gradleFile, gradleUpdated);
 }
 
-module.exports = { applyPatch, patchModule, patchFactory, patchProgress };
+module.exports = { applyPatch, patchModule, patchFactory, patchProgress, patchGradle };
 if (require.main === module) applyPatch();
