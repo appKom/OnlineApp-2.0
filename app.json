@@ -59,7 +59,9 @@
             "deploymentTarget": "18.0",
             "useFrameworks": "static"
           },
-          "android": {}
+          "android": {
+            "extraProguardRules": "# Room 2.5's consumer rule keeps RoomDatabase subclasses but not their constructors, which current R8\n# strips, so WorkManager crashes on startup when it instantiates WorkDatabase_Impl by reflection.\n-keep class * extends androidx.room.RoomDatabase { <init>(); }"
+          }
         }
       ],
       [
@@ -80,6 +82,7 @@
       "expo-router",
       "expo-font",
       "./withCustomDrawables",
+      "./withReleaseSigning",
       "expo-image",
       "expo-tracking-transparency",
       "expo-status-bar",
