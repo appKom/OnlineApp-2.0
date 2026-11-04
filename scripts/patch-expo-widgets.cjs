@@ -71,6 +71,9 @@ ${anchor}`);
 function patchGradle(source) {
   const anchor = "  inputs.file(expoWidgetsLayoutRegistryConfigFile).optional()";
   const replacement = "  if (expoWidgetsLayoutRegistryConfigFile.exists()) inputs.file(expoWidgetsLayoutRegistryConfigFile)";
+  // Older local patches use a file tree, which also accepts an absent config file.
+  const fileTreeInput = /inputs\.files\(project\.fileTree\(expoWidgetsLayoutRegistryConfigFile\.parentFile\)\s*\{\s*include expoWidgetsLayoutRegistryConfigFile\.name\s*\}\)/;
+  if (fileTreeInput.test(source)) return source;
   if (source.includes(replacement)) return source;
   if (!source.includes(anchor)) throw new Error("Expo Widgets build.gradle changed; review the layout registry input patch.");
   return source.replace(anchor, replacement);
