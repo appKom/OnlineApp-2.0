@@ -12,7 +12,6 @@ import { ChoiceTrack, PanelDivider, usePanelChromeColors } from "../../../compon
 import { SectionMenuHeader } from "../../../components/SectionMenuHeader";
 import type { EventSummaryBundle, EventType } from "../../../types/event";
 import { removeBookmarks, toggleBookmarkWithUndo, useBookmarks } from "../../../utils/bookmarks";
-import { syncEventReminders } from "../../../utils/reminders";
 import { useTheme } from "../../../utils/theme";
 import {
   getEndedEvents,
@@ -100,7 +99,7 @@ const AllEvents: React.FC = () => {
   const chrome = usePanelChromeColors();
   const user = useCurrentUser();
   const isCommitteeMember = useIsCommitteeMember(user?.id);
-  const { bookmarkIds, ready: bookmarksReady, isBookmarked } = useBookmarks();
+  const { bookmarkIds, isBookmarked } = useBookmarks();
 
   const [type, setType] = useState<TypeFilter>(null);
   const listFilter = useMemo(() => toListFilter(type), [type]);
@@ -209,14 +208,6 @@ const AllEvents: React.FC = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookmarkKey]);
-
-  // Keep scheduled reminders in line with what the user has signed up to or bookmarked,
-  // including changes made on the website.
-  const bookmarksCurrent = bookmarksReady && bookmarked?.key === bookmarkKey;
-  useEffect(() => {
-    if (!myUpcoming || !bookmarksCurrent || !bookmarked) return;
-    void syncEventReminders([...myUpcoming, ...bookmarked.items], user, isBookmarked);
-  }, [bookmarked, bookmarksCurrent, isBookmarked, myUpcoming, user]);
 
   const loadMore = useCallback(async () => {
     if (loading || loadingMoreRef.current || events.done) return;

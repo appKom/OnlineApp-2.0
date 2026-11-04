@@ -129,8 +129,12 @@ export interface Attendee {
   userGrade: number | null;
   attendancePoolId: string;
   selections: AttendanceSelectionResponse[];
-  registered: boolean;
-  earliestReservationAt: Date;
+  /** `null` means the attendee is in the queue */
+  registeredAt: Date | null;
+  registrationPoolDelayHours: number | null;
+  registrationMarkDelayHours: number | null;
+  /** Computed by the API from createdAt + registration delays */
+  registrationEligibleAt: Date;
   attendedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -141,7 +145,8 @@ export interface Attendee {
   paymentChargeDeadline: Date | null;
   paymentChargedAt: Date | null;
   paymentRefundedAt: Date | null;
-  paymentRefundedById: string | null;
+  paymentRefundedByUserId: string | null;
+  adminRegisteredByUserId: string | null;
   user: User;
 }
 

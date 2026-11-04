@@ -23,16 +23,16 @@ export const getAttendanceStatus = (
 
 export const getRegisteredAttendeeCount = (attendance: Attendance, poolId?: string): number => {
   if (poolId) {
-    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && a.registered).length
+    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && a.registeredAt != null).length
   }
-  return attendance.attendees.reduce((total, attendee) => total + (attendee.registered ? 1 : 0), 0)
+  return attendance.attendees.reduce((total, attendee) => total + (attendee.registeredAt != null ? 1 : 0), 0)
 }
 
 export const getQueuedAttendeeCount = (attendance: Attendance, poolId?: string): number => {
   if (poolId) {
-    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && !a.registered).length
+    return attendance.attendees.filter((a) => a.attendancePoolId === poolId && a.registeredAt == null).length
   }
-  return attendance.attendees.reduce((total, attendee) => total + (attendee.registered ? 0 : 1), 0)
+  return attendance.attendees.reduce((total, attendee) => total + (attendee.registeredAt != null ? 0 : 1), 0)
 }
 
 export const getAttendanceCapacity = (attendance: Pick<Attendance, "pools">): number => {
@@ -89,8 +89,8 @@ export const getAttendeeQueuePosition = (attendance: Attendance, user: any | nul
   if (!attendee || !pool) return null
 
   const queuedAttendees = attendance.attendees
-    .filter((a) => a.attendancePoolId === pool.id && !a.registered)
-    .sort((a, b) => compareAsc(new Date(a.earliestReservationAt ?? 0), new Date(b.earliestReservationAt ?? 0)))
+    .filter((a) => a.attendancePoolId === pool.id && a.registeredAt == null)
+    .sort((a, b) => compareAsc(new Date(a.registrationEligibleAt ?? 0), new Date(b.registrationEligibleAt ?? 0)))
 
   const index = queuedAttendees.indexOf(attendee)
   if (index === -1) return null
@@ -139,7 +139,7 @@ export const getAttendeeState = (
   attendee: Attendee | null
 ): AttendeeState | null => {
   if (!attendee) return null
-  if (!attendee.registered) return "QUEUED"
+  if (attendee.registeredAt == null) return "QUEUED"
   return getMissingCompletionRequirements(attendance, attendee).length > 0 ? "RESERVED" : "REGISTERED"
 }
 

@@ -10,7 +10,7 @@ import { showToast } from "./toast";
 const STORAGE_KEY = "bookmarkedEventIds";
 
 let bookmarkIds: string[] = [];
-let loaded = false;
+let loading: Promise<void> | null = null;
 let ready = false;
 const listeners = new Set<() => void>();
 
@@ -24,9 +24,13 @@ function persist() {
   );
 }
 
-async function load() {
-  if (loaded) return;
-  loaded = true;
+function load() {
+  // Shared, so callers that await it (getBookmarkIds) never see a half-loaded list.
+  loading ??= read();
+  return loading;
+}
+
+async function read() {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
     const parsed: unknown = stored ? JSON.parse(stored) : [];
@@ -39,6 +43,12 @@ async function load() {
   }
   ready = true;
   emit();
+}
+
+/** The stored bookmarks, for code outside React (e.g. the reminder sync). */
+export async function getBookmarkIds() {
+  await load();
+  return bookmarkIds;
 }
 
 function subscribe(listener: () => void) {

@@ -60,7 +60,7 @@ export const sortAttendeesByPool = (
   event.attendance.attendees.forEach((attendee) => {
     if (userPoolIndex === null || userPoolIndex === undefined) return;
 
-    const isWaitlist = !attendee.registered;
+    const isWaitlist = attendee.registeredAt == null;
 
     if (userPoolIndex !== -1) {
       if (isWaitlist) {

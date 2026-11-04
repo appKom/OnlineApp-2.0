@@ -40,7 +40,7 @@ const getDisabledText = (
   }
 
   if (attendee) {
-    if (isPastDeregisterDeadline && attendee.registered) {
+    if (isPastDeregisterDeadline && attendee.registeredAt != null) {
       return "Avmeldingsfristen har utløpt"
     }
     if (hasBeenCharged) {
@@ -122,7 +122,7 @@ export const RegistrationButton: React.FC<RegistrationButtonProps> = ({
 
   const parentAttendanceAttendee = parentAttendance && getAttendee(parentAttendance, user)
   const registeredToParentEvent = parentAttendance ? Boolean(parentAttendanceAttendee) : null
-  const hasPlaceOnParentEvent = parentAttendance && parentAttendanceAttendee ? parentAttendanceAttendee.registered : null
+  const hasPlaceOnParentEvent = parentAttendance && parentAttendanceAttendee ? parentAttendanceAttendee.registeredAt != null : null
 
   const buttonText = attendee ? "Meld meg av" : "Meld meg på"
 

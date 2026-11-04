@@ -1,6 +1,6 @@
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
@@ -16,6 +16,9 @@ import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { Platform } from "react-native";
 import { ToastHost } from "../components/ToastHost";
 import { installCrashGuard } from "../utils/crash-guard";
+import { EventSync } from "../components/EventSync";
+import { registerBackgroundEventSync } from "../utils/background-sync";
+import { setLiveEventAppearance, watchLiveEvent } from "../utils/live-event-activity";
 
 SystemUI.setBackgroundColorAsync("#0F1417");
 
@@ -40,6 +43,23 @@ function RootLayoutInner() {
   }, []);
 
   useEffect(() => installCrashGuard(), []);
+
+  useEffect(() => { void registerBackgroundEventSync(); }, []);
+
+  useEffect(() => {
+    void setLiveEventAppearance({ backgroundColor: theme.background, textColor: theme.onBackground, mutedColor: theme.onSurfaceVariant, accentColor: theme.primary, isDark: mode === "dark" })
+      .catch((error) => console.warn("Live-banner:", error));
+  }, [theme, mode]);
+
+  // Undefined while unknown, including a session whose user could not be loaded yet.
+  const liveEventOwnerId = !isAuthReady ? undefined : Authenticator.user?.id ?? (isLoggedIn ? undefined : null);
+  const liveEventOwnerRef = useRef(liveEventOwnerId);
+  liveEventOwnerRef.current = liveEventOwnerId;
+
+  useEffect(() => watchLiveEvent(
+    (error) => console.warn("Live-banner:", error),
+    () => liveEventOwnerRef.current,
+  ), []);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
@@ -111,6 +131,7 @@ function RootLayoutInner() {
             <Stack.Screen name="(tabs)" />
           </Stack>
           <ToastHost />
+          <EventSync userId={liveEventOwnerId} />
           <StatusBar style={mode === "dark" ? "light" : "dark"} />
         </SafeAreaProvider>
       </GestureHandlerRootView>

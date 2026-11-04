@@ -119,7 +119,7 @@ const EventCard: React.FC<EventCardProps> = ({ event: bundle, user, onPress, ong
           </View>
         </View>
 
-        {ongoing && attendee?.registered && !paymentDeadline ? (
+        {ongoing && attendee?.registeredAt != null && !paymentDeadline ? (
           <TicketButton attendee={attendee} compact />
         ) : (
           attendance && (
