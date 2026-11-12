@@ -83,7 +83,7 @@ const games: Game[] = [
   {
     id: "bits",
     title: "BITS",
-    description: "Hele vorset i én bunke",
+    description: "Leker for hele vorset",
     route: "/bits",
     piece: "bits",
   },
@@ -220,6 +220,19 @@ function DeckPiece() {
   );
 }
 
+function BitsPiece() {
+  return (
+    <View style={styles.stackPiece}>
+      <View style={[styles.stackCard, styles.stackCardBack]} />
+      <View style={[styles.stackCard, styles.stackCardMiddle]} />
+      <View style={[styles.stackCard, styles.stackCardFront, { backgroundColor: CASINO_COLORS.red }]}>
+        <MaterialCommunityIcons name="account-group-outline" size={29} color={CASINO_COLORS.goldLight} />
+        <Text style={[styles.stackNumber, { fontSize: 14 }]}>BITS</Text>
+      </View>
+    </View>
+  );
+}
+
 function GamePiece({ type }: { type: GamePieceType }) {
   switch (type) {
     case "chip":
@@ -233,16 +246,7 @@ function GamePiece({ type }: { type: GamePieceType }) {
     case "deck":
       return <DeckPiece />;
     case "bits":
-      return (
-        <View style={styles.stackPiece}>
-          <View style={[styles.stackCard, styles.stackCardBack]} />
-          <View style={[styles.stackCard, styles.stackCardMiddle]} />
-          <View style={[styles.stackCard, styles.stackCardFront, { backgroundColor: CASINO_COLORS.red }]}>
-            <MaterialCommunityIcons name="account-group-outline" size={29} color={CASINO_COLORS.goldLight} />
-            <Text style={[styles.stackNumber, { fontSize: 14 }]}>BITS</Text>
-          </View>
-        </View>
-      );
+      return <BitsPiece />;
   }
 }
 

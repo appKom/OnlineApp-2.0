@@ -9,7 +9,8 @@ import {
   StyleSheet, Text, TextInput, View, type ScrollViewInstance,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BitsPlayingCard } from "../../../components/GamesHub/BitsPlayingCard";
+import { SafeAreaView as NativeSafeAreaView } from "react-native-screens/experimental";
+import { BitsPrompt } from "../../../components/GamesHub/BitsPrompt";
 import { CasinoFeltBackground, FELT_BASE_DARK, FELT_BASE_LIGHT } from "../../../components/GamesHub/CasinoFeltBackground";
 import { CASINO_COLORS as C } from "../../../components/GamesHub/SongPlayingCard";
 import { TabScreenContainer } from "../../../components/TabScreenContainer";
@@ -47,24 +48,34 @@ export default function BitsScreen() {
   const [length, setLength] = useState<BitsRoundLength>(35);
   const [error, setError] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const leaveDialogOpen = useRef(false);
   const [session, dispatch] = useReducer(bitsReducer, null);
   const finished = session !== null && session.index >= session.deck.length;
   const current = session?.deck[session.index];
+  const playing = Boolean(session && current && !finished);
   const score = session ? getBitsScore(session) : { pair: 0, audience: 0 };
   const opponent = session?.players.length === 2 ? "Spillet" : "Publikum";
   const displayCard = current?.stage === "result" ? {
     ...current,
     title: score.pair + score.audience === 0 ? "Ingen poeng denne gangen" : score.pair === score.audience ? "Helt likt!" : score.pair > score.audience ? "Paret vinner!" : `${opponent} vinner!`,
-    body: score.pair + score.audience === 0 ? "Alle spørsmålene ble hoppet over. Vi fortsetter rundt bordet." : current.body,
+    body: current.body,
   } : current;
   const rules = session && !finished ? getBitsActiveRules(session) : [];
   const backgroundColor = mode === "dark" ? FELT_BASE_DARK : FELT_BASE_LIGHT;
 
-  usePreventRemove(session !== null && !finished, ({ data }) => {
+  const disableExitPrevention = usePreventRemove(session !== null && !finished && !leaving, ({ data }) => {
+    if (leaveDialogOpen.current) return;
+    leaveDialogOpen.current = true;
     Alert.alert("Forlate BITS?", "Denne runden blir avsluttet hvis du går tilbake til spillbordet.", [
-      { text: "Fortsett å spille", style: "cancel" },
-      { text: "Forlat spillet", style: "destructive", onPress: () => navigation.dispatch(data.action) },
-    ]);
+      { text: "Fortsett å spille", style: "cancel", onPress: () => { leaveDialogOpen.current = false; } },
+      { text: "Forlat spillet", style: "destructive", onPress: () => {
+        setLeaving(true);
+        // Expo Router's removal guard must be disabled synchronously before retrying the action.
+        disableExitPrevention();
+        navigation.dispatch(data.action);
+      } },
+    ], { onDismiss: () => { leaveDialogOpen.current = false; } });
   });
 
   const start = () => {
@@ -73,6 +84,8 @@ export default function BitsScreen() {
     setError(validation);
     if (validation) return;
     Keyboard.dismiss();
+    setLeaving(false);
+    leaveDialogOpen.current = false;
     lastAdvance.current = Date.now();
     dispatch({ type: "start", session: createBitsSession(names, length) });
     scroll.current?.scrollTo({ y: 0, animated: false });
@@ -85,18 +98,25 @@ export default function BitsScreen() {
     scroll.current?.scrollTo({ y: 0, animated: true });
     void haptic();
   };
+  const replaceTask = () => {
+    if (!current || Date.now() - lastAdvance.current < 300) return;
+    lastAdvance.current = Date.now();
+    dispatch({ type: "replace", cardId: current.id });
+    scroll.current?.scrollTo({ y: 0, animated: true });
+    void haptic();
+  };
   const reset = () => {
     dispatch({ type: "setup" });
     scroll.current?.scrollTo({ y: 0, animated: false });
   };
-  const completed = session ? Object.values(session.outcomes).filter(outcome => outcome !== "skipped").length : 0;
-  const skipped = session ? Object.values(session.outcomes).filter(outcome => outcome === "skipped").length : 0;
+  const completed = session ? Object.keys(session.outcomes).length : 0;
   const miniPlayed = session?.deck.some(card => card.stage === "question" && ["pair", "audience"].includes(session.outcomes[card.id]));
 
   return (
     <TabScreenContainer backgroundColor={backgroundColor}>
       <StatusBar style="light" />
       <CasinoFeltBackground darkMode={mode === "dark"} />
+      <NativeSafeAreaView style={styles.screen} edges={{ bottom: playing }}>
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Tilbake til spillbordet" hitSlop={4} onPress={() => router.back()} style={styles.iconButton}>
@@ -104,7 +124,6 @@ export default function BitsScreen() {
           </Pressable>
           <View style={styles.headerTitle}>
             <Text style={styles.brand}>BITS</Text>
-            <Text style={styles.headerSubtitle}>ET HELT VORS I ÉN BUNKE</Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Slik spiller dere BITS" onPress={() => setHelpOpen(true)} style={styles.iconButton}>
             <MaterialCommunityIcons name="help-circle-outline" size={25} color={C.goldLight} />
@@ -112,19 +131,19 @@ export default function BitsScreen() {
         </View>
         <ScrollView ref={scroll} style={styles.screen} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           contentInsetAdjustmentBehavior="never" showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 110 }]}>
-          <View style={styles.content}>
+          contentContainerStyle={[styles.scrollContent, playing ? styles.gameScrollContent : { paddingBottom: Math.max(insets.bottom, 16) + 110 }]}>
+          <View style={[styles.content, playing && styles.gameContent]}>
             {!session ? (
               <>
                 <View style={styles.intro}>
-                  <View style={styles.chip}><MaterialCommunityIcons name="cards-playing-outline" size={34} color={C.goldLight} /></View>
+                  <View style={styles.chip}><MaterialCommunityIcons name="account-group-outline" size={34} color={C.goldLight} /></View>
                   <Text style={styles.heading}>Samle gjengen.</Text>
-                  <Text style={styles.subtitle}>Pekelek, dilemmaer og utfordringer med en dose Online. Én mobil, hele bordet.</Text>
+                  <Text style={styles.subtitle}>Pekelek, lynrunder, ordleker og utfordringer med en dose Online. Én mobil, hele bordet.</Text>
                 </View>
                 <View style={styles.panel}>
                   <View style={styles.rowBetween}>
                     <Text style={styles.eyebrow}>RUNDT BORDET</Text>
-                    <Text style={styles.muted}>{players.length} / 11 spillere</Text>
+                    <Text style={styles.muted}>{players.length} spillere</Text>
                   </View>
                   {players.map((player, index) => (
                     <View style={styles.playerRow} key={player.id}>
@@ -139,34 +158,34 @@ export default function BitsScreen() {
                       </Pressable>}
                     </View>
                   ))}
-                  {players.length < 11 && <Pressable accessibilityRole="button" onPress={() => {
+                  <Pressable accessibilityRole="button" onPress={() => {
                     const id = nextPlayerId.current++;
-                    setPlayers(previous => previous.length < 11 ? [...previous, { id, name: "" }] : previous);
+                    setPlayers(previous => [...previous, { id, name: "" }]);
                     setError(null);
                   }} style={styles.addPlayer}>
                     <MaterialCommunityIcons name="plus-circle-outline" size={20} color={C.goldLight} />
                     <Text style={styles.link}>Legg til spiller</Text>
-                  </Pressable>}
+                  </Pressable>
                 </View>
                 <Text style={[styles.eyebrow, styles.sectionLabel]}>HVOR LANG ER KVELDEN?</Text>
                 <View style={styles.lengthOptions}>
                   {BITS_ROUND_LENGTHS.map(option => <Pressable key={option} accessibilityRole="button" accessibilityState={{ selected: option === length }}
-                    accessibilityLabel={`${option} kort. ${ROUND_LABELS[option]}`} onPress={() => setLength(option)}
+                    accessibilityLabel={`${option} oppgaver. ${ROUND_LABELS[option]}`} onPress={() => setLength(option)}
                     style={[styles.lengthOption, option === length && styles.lengthSelected]}>
                     <Text style={[styles.lengthNumber, option === length && styles.selectedText]}>{option}</Text>
                     <Text style={[styles.lengthLabel, option === length && styles.selectedText]}>{ROUND_LABELS[option]}</Text>
                   </Pressable>)}
                 </View>
                 {error && <Text style={styles.error} accessibilityRole="alert">{error}</Text>}
-                <Action label="Del ut kortene" onPress={start} />
-                <Text style={styles.footnote}>2–11 spillere · Spill uten nett · Hopp over når dere vil</Text>
+                <Action label="Start runden" onPress={start} />
+                <Text style={styles.footnote}>Minst 2 spillere · Spill uten nett · Hopp over når dere vil</Text>
               </>
             ) : finished ? (
               <View style={styles.finish}>
-                <View style={styles.chip}><MaterialCommunityIcons name="cards-playing-outline" size={34} color={C.goldLight} /></View>
-                <Text style={styles.eyebrow}>SISTE KORT ER SPILT</Text>
+                <View style={styles.chip}><MaterialCommunityIcons name="account-group-outline" size={34} color={C.goldLight} /></View>
+                <Text style={styles.eyebrow}>RUNDEN ER FULLFØRT</Text>
                 <Text style={styles.heading}>Takk for runden!</Text>
-                <Text style={styles.subtitle}>{session.players.length} rundt bordet. {completed} kort spilt, {skipped} hoppet over.</Text>
+                <Text style={styles.subtitle}>{session.players.length} rundt bordet. {completed} oppgaver fullført og {session.replacements} byttet ut.</Text>
                 {miniPlayed && <View style={[styles.panel, styles.summary]}>
                   <Text style={styles.eyebrow}>RYGG TIL RYGG</Text>
                   <Text style={styles.summaryScore}>{score.pair} – {score.audience}</Text>
@@ -179,14 +198,15 @@ export default function BitsScreen() {
             ) : current ? (
               <>
                 <View style={[styles.rowBetween, styles.progressHeader]} accessibilityLiveRegion="polite">
-                  <Text style={styles.eyebrow}>{current.category === "back-to-back" ? "MINIRUNDE" : "NESTE TREKK"}</Text>
+                  <Text style={styles.eyebrow}>{current.category === "back-to-back" ? "MINIRUNDE" : "RUNDEN"}</Text>
                   <Text style={styles.progressText}>{session.index + 1} / {session.deck.length}</Text>
                 </View>
                 <View accessibilityRole="progressbar" accessibilityLabel="Fremdrift i runden"
                   accessibilityValue={{ min: 0, max: session.deck.length, now: session.index }} style={styles.progressTrack}>
                   <View style={[styles.progressFill, { width: `${session.index / session.deck.length * 100}%` }]} />
                 </View>
-                <BitsPlayingCard key={current.id} card={displayCard ?? current} number={session.index + 1}
+                <View style={styles.taskArea}>
+                <BitsPrompt key={current.id} task={displayCard ?? current}
                   onNext={current.stage === "question" ? undefined : () => advance()} />
                 {current.category === "back-to-back" && current.stage !== "intro" && (
                   <View style={styles.scoreboard} accessibilityLiveRegion="polite">
@@ -195,13 +215,36 @@ export default function BitsScreen() {
                     <Text style={styles.muted}>{opponent} <Text style={styles.scoreValue}>{score.audience}</Text></Text>
                   </View>
                 )}
+                </View>
+              </>
+            ) : null}
+          </View>
+        </ScrollView>
+        {session && current && !finished && (
+          <View style={styles.bottomArea}>
+            <View style={styles.content}>
+                {rules.length > 0 && <ScrollView style={styles.ruleScroller} showsVerticalScrollIndicator nestedScrollEnabled>
+                <View style={styles.activeRules} accessibilityLiveRegion="polite">
+                  {rules.map(rule => <View key={rule.id} style={styles.rule}>
+                    <View style={styles.ruleHeader}>
+                      <View style={styles.rulePin}><MaterialCommunityIcons name="pin-outline" size={23} color={C.goldLight} /></View>
+                      <View style={styles.ruleHeading}>
+                        <Text style={styles.eyebrow}>AKTIV REGEL</Text>
+                        <Text style={styles.ruleTitle}>{rule.title}</Text>
+                      </View>
+                      <Text style={styles.ruleRemaining}>{rule.remaining} igjen</Text>
+                    </View>
+                    <Text style={styles.ruleBody}>{rule.body}</Text>
+                  </View>)}
+                </View>
+                </ScrollView>}
                 {current.stage === "question" ? (
                   <View style={styles.answerButtons}>
                     <Action label="Kun én hånd oppe" onPress={() => advance("pair")} />
                     <Action label="Begge eller ingen" onPress={() => advance("audience")} secondary />
                   </View>
                 ) : (
-                  <Action label={current.stage === "intro" ? "Vi er klare!" : current.stage === "result" ? "Fortsett rundt bordet" : session.index === session.deck.length - 1 ? "Avslutt runden" : current.category === "rule" ? "Regelen gjelder!" : "Neste kort"} onPress={() => advance()} />
+                  <Action label={current.stage === "intro" ? "Vi er klare!" : current.stage === "result" ? "Fortsett rundt bordet" : session.index === session.deck.length - 1 ? "Avslutt runden" : current.category === "rule" ? "Regelen gjelder!" : "Neste oppgave"} onPress={() => advance()} />
                 )}
                 <View style={styles.navigationRow}>
                   <Pressable accessibilityRole="button" accessibilityState={{ disabled: session.index === 0 }} disabled={session.index === 0}
@@ -209,23 +252,17 @@ export default function BitsScreen() {
                     style={[styles.textButton, session.index === 0 && styles.dimmed]}>
                     <MaterialCommunityIcons name="arrow-left" size={17} color={C.creamDark} /><Text style={styles.textButtonLabel}>Forrige</Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button" onPress={() => advance("skipped")} style={styles.textButton}>
-                    <Text style={styles.textButtonLabel}>{current.stage === "intro" ? "Hopp over minirunden" : "Hopp over"}</Text>
+                  {(!current.stage || current.stage === "question") && <Pressable accessibilityRole="button" onPress={replaceTask} style={styles.textButton}
+                    accessibilityHint="Gir en ny oppgave til samme spiller eller gruppe uten å øke fremdriften.">
+                    <Text style={styles.textButtonLabel}>{current.stage === "question" ? "Bytt spørsmål" : "Hopp over"}</Text>
                     <MaterialCommunityIcons name="skip-next-outline" size={20} color={C.creamDark} />
-                  </Pressable>
+                  </Pressable>}
                 </View>
-                {rules.length > 0 && <View style={styles.panel} accessibilityLiveRegion="polite">
-                  <Text style={styles.eyebrow}>REGLER SOM GJELDER NÅ</Text>
-                  {rules.map(rule => <View key={rule.id} style={styles.rule}>
-                    <View style={styles.rowBetween}><Text style={styles.ruleTitle}>{rule.title}</Text><Text style={styles.muted}>{rule.remaining} kort igjen</Text></View>
-                    <Text style={styles.ruleBody}>{rule.body}</Text>
-                  </View>)}
-                </View>}
-              </>
-            ) : null}
+            </View>
           </View>
-        </ScrollView>
+        )}
       </KeyboardAvoidingView>
+      </NativeSafeAreaView>
       <Modal visible={helpOpen} transparent animationType="fade" onRequestClose={() => setHelpOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.helpSheet, { paddingTop: insets.top + 24, paddingBottom: Math.max(insets.bottom, 24) }]}>
@@ -235,15 +272,17 @@ export default function BitsScreen() {
             <ScrollView contentContainerStyle={styles.helpContent}>
               <Text style={styles.eyebrow}>BITS · SPILLEREGLER</Text>
               <Text style={styles.heading}>Slik spiller dere</Text>
-              <Text style={styles.helpText}>Legg inn navn, velg antall kort og samle dere rundt én mobil. Les kortet høyt, gjør oppgaven og trykk eller sveip videre.</Text>
+              <Text style={styles.helpText}>Legg inn minst to spillere, velg antall oppgaver og samle dere rundt én mobil. Les oppgaven høyt, gjør den og trykk eller sveip videre.</Text>
               <Text style={styles.ruleTitle}>Litt av alt</Text>
-              <Text style={styles.helpText}>Dere møter Online-oppgaver, pekelek, «jeg har aldri», dilemmaer, kategorier og utfordringer. Instruksjonene står på hvert kort.</Text>
+              <Text style={styles.helpText}>Den lille linjen over tittelen forteller spilltypen og hvem oppgaven gjelder, for eksempel «Utfordring · Nora» eller «Pekelek · Alle». Den store tittelen gir oppgaven et tema, som «Fadderuke».</Text>
+              <Text style={styles.ruleTitle}>Små leker underveis</Text>
+              <Text style={styles.helpText}>Lynrunder, ordleker, huskeleker, dueller og sannhetsspørsmål dukker opp mellom de andre oppgavene. Hele leken forklares på skjermen. Bruk en annen mobil hvis dere vil ta tiden. Trykk videre når leken er ferdig, eller hopp over for å bytte den ut.</Text>
               <Text style={styles.ruleTitle}>Regler som varer litt</Text>
-              <Text style={styles.helpText}>Nye regler gjelder i de neste fem kortene. Dere ser regelen og hvor lenge den varer under kortet. Hoppede kort teller også ned.</Text>
+              <Text style={styles.helpText}>Nye regler gjelder i de neste fem oppgavene. Under oppgaven ser dere hele forklaringen og hvor lenge regelen varer. «Hopp over» bytter bare oppgaven og teller ikke ned regelen.</Text>
               <Text style={styles.ruleTitle}>Rygg til rygg</Text>
               <Text style={styles.helpText}>Samme par spiller fire spørsmål mot publikum. Paret står rygg mot rygg og rekker opp hånda når en påstand passer best på dem selv. Kun én hånd gir paret poeng; begge eller ingen gir publikum poeng. Er dere bare to, spiller dere mot spillet. Registrer svaret med knappene.</Text>
               <Text style={styles.ruleTitle}>Dere bestemmer</Text>
-              <Text style={styles.helpText}>Hopp over et kort uten straff. Slurker kan være med valgfri drikke. «Forrige» lar dere lese et kort igjen eller endre et svar. Det gir aldri doble poeng.</Text>
+              <Text style={styles.helpText}>«Neste oppgave» fullfører oppgaven og øker fremdriften. «Hopp over» gir en ny oppgave til samme spiller, par eller hele bordet, uten å bruke en plass i runden. I «rygg til rygg» bytter dere bare spørsmålet; instruksjonen og resultatet beholdes. Slurker kan være med valgfri drikke. «Forrige» lar dere lese en oppgave igjen eller endre et svar uten doble poeng.</Text>
               <Action label="Skjønner, vi er klare" onPress={() => setHelpOpen(false)} />
             </ScrollView>
           </View>
@@ -258,9 +297,13 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingBottom: 14, gap: 8 },
   headerTitle: { flex: 1, alignItems: "center" },
   brand: { color: C.goldLight, fontSize: 26, fontWeight: "900", letterSpacing: 4 },
-  headerSubtitle: { color: C.creamDark, fontSize: 9, fontWeight: "700", letterSpacing: 1.6, marginTop: 2 },
   iconButton: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   scrollContent: { paddingHorizontal: 20, paddingTop: 8 },
+  gameScrollContent: { flexGrow: 1, paddingBottom: 12 },
+  gameContent: { flexGrow: 1 },
+  taskArea: { flexGrow: 1, justifyContent: "center" },
+  bottomArea: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
+  ruleScroller: { maxHeight: 220, flexGrow: 0 },
   content: { width: "100%", maxWidth: 460, alignSelf: "center" },
   intro: { alignItems: "center", paddingTop: 12, paddingBottom: 24, gap: 10 },
   chip: { width: 72, height: 72, borderRadius: 36, borderWidth: 3, borderStyle: "dashed", borderColor: C.gold, backgroundColor: C.navy, justifyContent: "center", alignItems: "center", alignSelf: "center", marginBottom: 10 },
@@ -296,9 +339,14 @@ const styles = StyleSheet.create({
   navigationRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 8, marginVertical: 10 },
   textButton: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 5 },
   textButtonLabel: { color: C.creamDark, fontSize: 13 },
-  rule: { marginTop: 10, gap: 5 },
+  activeRules: { padding: 18, borderRadius: 18, borderWidth: 1, borderColor: "rgba(217,191,106,0.4)", backgroundColor: "rgba(1,24,18,0.55)", gap: 18, marginBottom: 18 },
+  rule: { gap: 12 },
+  ruleHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  rulePin: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 20, backgroundColor: "rgba(217,191,106,0.13)" },
+  ruleHeading: { flex: 1, gap: 2 },
+  ruleRemaining: { color: C.goldLight, fontSize: 13, fontWeight: "700" },
   ruleTitle: { color: C.goldLight, fontSize: 16, fontWeight: "800", flexShrink: 1 },
-  ruleBody: { color: C.creamDark, fontSize: 14, lineHeight: 21 },
+  ruleBody: { color: C.cream, fontSize: 15, lineHeight: 23 },
   scoreboard: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 18, paddingVertical: 7 },
   scoreValue: { color: C.goldLight, fontSize: 21, fontWeight: "800" },
   scoreSeparator: { color: C.gold, fontSize: 15 },

@@ -1,4 +1,5 @@
-export type BitsCategory = "online" | "point" | "never" | "dilemma" | "challenge" | "category" | "rule" | "back-to-back";
+export type BitsCategory = "round" | "point" | "never" | "dilemma" | "challenge" | "category" | "rule"
+  | "quickfire" | "wordplay" | "memory" | "duel" | "truth" | "back-to-back";
 
 export type BitsTemplate = {
   id: string;
@@ -8,30 +9,34 @@ export type BitsTemplate = {
 };
 
 export const BITS_CATEGORY_LABELS: Record<BitsCategory, string> = {
-  online: "Online", point: "Pekelek", never: "Jeg har aldri", dilemma: "Dilemma",
+  round: "Bordrunde", point: "Pekelek", never: "Jeg har aldri", dilemma: "Dilemma",
   challenge: "Utfordring", category: "Kategori", rule: "Ny regel", "back-to-back": "Rygg til rygg",
+  quickfire: "Lynrunde", wordplay: "Ordlek", memory: "Huskelek", duel: "Duell", truth: "Sannhet",
 };
 
 // Original BITS themes, adapted for short rounds, plus new party-game prompts.
 // Player placeholders are resolved once when dealing, so going back never changes names.
+// New text is written for BITS, inspired by familiar party-game formats:
+// https://www.annesdrikkeleker.no/index.html/alle.html (duo, compliments, karaoke, truth)
+// https://play.google.com/store/apps/details?hl=no&id=com.borst (mixed party-game rounds)
 export const BITS_TEMPLATES: readonly BitsTemplate[] = [
-  { id: "fadderuke", category: "online", title: "Fadderuke", body: "{player}, fortell en funfact om to andre rundt bordet. De får rette på deg etterpå." },
+  { id: "fadderuke", category: "challenge", title: "Fadderuke", body: "{player}, presenter en av de andre rundt bordet med en funfact, som på første dag i fadderuka. Personen får rette på deg etterpå." },
   { id: "toga", category: "challenge", title: "Togafest", body: "{player}, presenter et valgfritt plagg som om det var årets store mote. Du har 20 sekunder." },
-  { id: "micro", category: "online", title: "Kontoret", body: "{player}, forsvar hvorfor du glemte lokk i mikroen. Bordet avgjør om unnskyldningen holder. Hvis ikke: én slurk." },
+  { id: "micro", category: "challenge", title: "Kontoret", body: "{player}, forsvar hvorfor du glemte lokk i mikroen. Bordet avgjør om unnskyldningen holder. Hvis ikke: én slurk." },
   { id: "interview", category: "challenge", title: "Jobbintervju", body: "{other} intervjuer {player} til jobben som sjef for vorset. Still to spørsmål og avgjør om kandidaten får jobben." },
-  { id: "blatur", category: "online", title: "Blåtur", body: "{player}, beskriv drømmedestinasjonen for neste blåtur uten å si navnet. Første som gjetter får dele ut én slurk." },
+  { id: "blatur", category: "challenge", title: "Blåtur", body: "{player}, beskriv drømmedestinasjonen for neste blåtur uten å si navnet. Første som gjetter får dele ut én slurk." },
   { id: "surf", category: "challenge", title: "Surfetur med X-sport", body: "{player}, vis hvordan du surfer. {other} lager lydeffektene. Hold showet gående i 15 sekunder." },
-  { id: "bedpres", category: "online", title: "Bedpres", body: "{player}, selg bordet en helt ubrukelig app på 20 sekunder. De som ville lastet den ned, rekker opp hånda." },
-  { id: "julebord", category: "online", title: "Julebord", body: "{player}, hold en 30 sekunders tale om hvorfor {other} fortjener å bli årets nisse." },
-  { id: "oktober", category: "online", title: "Oktoberfest", body: "Alle skåler med personen de har kjent kortest. Fortell hverandre hvor dere møttes." },
-  { id: "ow", category: "online", title: "OW er nede", body: "{player}, forklar hvorfor OW er nede uten å bruke ordene «server», «bug» eller «kode». Bordet tar tiden: 20 sekunder." },
-  { id: "swap", category: "challenge", title: "Swap", body: "{player} og {other} bytter måte å snakke på fram til neste kort. Resten av bordet får gjette hvem som er hvem." },
+  { id: "bedpres", category: "challenge", title: "Bedpres", body: "{player}, selg bordet en helt ubrukelig app på 20 sekunder. De som ville lastet den ned, rekker opp hånda." },
+  { id: "julebord", category: "challenge", title: "Julebord", body: "{player}, hold en 30 sekunders tale om hvorfor {other} fortjener å bli årets nisse." },
+  { id: "oktober", category: "round", title: "Oktoberfest", body: "Alle skåler med personen de har kjent kortest. Fortell hverandre hvor dere møttes." },
+  { id: "ow", category: "challenge", title: "OW er nede", body: "{player}, forklar hvorfor OW er nede uten å bruke ordene «server», «bug» eller «kode». Bordet tar tiden: 20 sekunder." },
+  { id: "swap", category: "challenge", title: "Swap", body: "{player} og {other} bytter måte å snakke på fram til neste oppgave. Resten av bordet får gjette hvem som er hvem." },
   { id: "ol", category: "challenge", title: "Vinter-OL", body: "{player}, vis en vintersport uten lyd. Den første som gjetter velger neste sport for {other}." },
-  { id: "old-young", category: "online", title: "Gammel og ung", body: "Den eldste og yngste forteller hver sin ting de andre kanskje ikke vet om studietiden deres." },
-  { id: "kok", category: "online", title: "Kok", body: "{player}, forklar et oppdiktet fagbegrep med full selvtillit. {other} finner på begrepet." },
-  { id: "exam", category: "online", title: "Eksamensfest", body: "Alle sier ett ord som beskriver siste eksamensperiode. Like svar? Dere skåler sammen." },
+  { id: "old-young", category: "round", title: "Gammel og ung", body: "Den eldste og yngste forteller hver sin ting de andre kanskje ikke vet om studietiden deres." },
+  { id: "kok", category: "challenge", title: "Kok", body: "{player}, forklar et oppdiktet fagbegrep med full selvtillit. {other} finner på begrepet." },
+  { id: "exam", category: "round", title: "Eksamensfest", body: "Alle sier ett ord som beskriver siste eksamensperiode. Like svar? Dere skåler sammen." },
   { id: "rizz", category: "challenge", title: "Har du rizz?", body: "{player}, prøv å selge {other} en date med en fiktiv robot. Bordet gir sjekkereplikken terningkast." },
-  { id: "immball", category: "online", title: "Immball", body: "{player}, finn på kveldens mest høytidelige pris og del den ut til noen ved bordet. Hold en kort begrunnelse." },
+  { id: "immball", category: "challenge", title: "Immball", body: "{player}, finn på kveldens mest høytidelige pris og del den ut til noen ved bordet. Hold en kort begrunnelse." },
   { id: "kiosk", category: "point", title: "Kioskkongen", body: "Hvem burde hatt eget klippekort i kiosken? Tell ned fra tre og pek samtidig. Flest pek tar én slurk." },
   { id: "late", category: "point", title: "Akademisk kvarter", body: "Hvem skriver «er der om fem» før de har gått hjemmefra? Pek samtidig. Den utpekte må holde forsvarstale." },
   { id: "aux", category: "point", title: "Hvem får AUX?", body: "Hvem stoler dere minst på med musikken? Pek samtidig. Den utpekte får velge én sang som forsvar." },
@@ -71,6 +76,59 @@ export const BITS_TEMPLATES: readonly BitsTemplate[] = [
   { id: "rule-thumb", category: "rule", title: "Tommelmester", body: "{player} er tommelmester. Når tommelen deres ligger på bordet, må alle følge etter. Sistemann tar én slurk." },
   { id: "rule-question", category: "rule", title: "Godt spørsmål", body: "Hver gang noen stiller et spørsmål, begynner svaret med «godt spørsmål». Glemmer du deg, tar du én slurk." },
   { id: "rule-title", category: "rule", title: "Deres majestet", body: "{player} skal tiltales «Deres majestet». Glemmer du tittelen, gir du en overdreven unnskyldning." },
+  { id: "quickfire-bag", category: "quickfire", title: "Hva er i sekken?", body: "{player}, nevn tre ting du kan finne i en studentsekk på fem sekunder. En annen teller rolig ned. Klarer du det, får du applaus; ellers tar du én slurk." },
+  { id: "quickfire-excuse", category: "quickfire", title: "Panikksvar", body: "{player}, finn på tre grunner til at øvingen ikke er levert. Du har fem sekunder fra bordet sier «nå». Ingen gjentakelser." },
+  { id: "quickfire-toast", category: "quickfire", title: "Skål for hva?", body: "{player}, finn på tre ting det er verdt å skåle for på fem sekunder. Alle velger sin favoritt og tar en felles skål." },
+  { id: "quickfire-campus", category: "quickfire", title: "Campus på fem", body: "{player}, nevn tre steder på campus på fem sekunder. Resten teller ned med fingrene. Står du fast, tar du én slurk." },
+  { id: "quickfire-product", category: "quickfire", title: "Dårlig oppfinner", body: "{player}, finn på tre ubrukelige funksjoner til en smartklokke på ti sekunder. Bordet velger den aller dårligste." },
+  { id: "quickfire-party", category: "quickfire", title: "Vorset reddes", body: "{player}, strømmen har gått. Nevn tre måter å redde vorset på uten strøm. Du får fem sekunder etter at oppgaven er lest." },
+
+  { id: "wordplay-chain", category: "wordplay", title: "Siste bokstav", body: "{player} starter med «fest». Gå med klokka: Neste ord må begynne på siste bokstav i forrige ord. Spill én runde uten navn eller gjentakelser. Maks fem sekunder per svar." },
+  { id: "wordplay-letter", category: "wordplay", title: "Uten E", body: "{player} starter. Si én hel setning hver om studentlivet uten bokstaven E. Gå én runde med klokka. Bordet følger med; sier du E, prøver du en ny setning." },
+  { id: "wordplay-questions", category: "wordplay", title: "Bare spørsmål", body: "{player} og {other} skal ha en samtale der alt må være spørsmål. Tema: Dere har gått dere bort på campus. Første påstand eller pause over fem sekunder taper. Stopp etter ti replikker hvis ingen ryker." },
+  { id: "wordplay-alphabet", category: "wordplay", title: "Alfabetvors", body: "{player} starter en historie med en setning på A. Neste fortsetter med en setning på B, så C. Gå én runde med klokka. Dere kan hoppe over en bokstav hvis hele bordet er enige." },
+  { id: "wordplay-taboo", category: "wordplay", title: "Si det på en annen måte", body: "{player}, forklar «gruppeprosjekt» uten å si «gruppe», «prosjekt», «samarbeid» eller «frist». Resten gjetter. Du får 20 sekunder fra dere er klare." },
+  { id: "wordplay-compound", category: "wordplay", title: "Ord på ord", body: "{player} starter med «studentliv». Neste lager et sammensatt ord som begynner med «liv», og så fortsetter dere fra siste ledd. Én runde, maks ti sekunder hver. Bordet må godta ordet." },
+
+  { id: "memory-packing", category: "memory", title: "Pakk til blåtur", body: "{player} sier «Jeg pakker en tannbørste». Neste gjentar hele pakkelisten og legger til én ting. Fortsett med klokka i to runder. Glemmer noen listen, hjelper bordet og dere starter på nytt." },
+  { id: "memory-moves", category: "memory", title: "Danseminnet", body: "{player} lager en liten håndbevegelse. Neste gjentar den og legger til en ny. Fortsett i én runde med klokka. Hele bordet prøver til slutt å gjøre hele rekken samtidig." },
+  { id: "memory-menu", category: "memory", title: "Nattmatbestillingen", body: "{player} bestiller én ting fra en tenkt nattmatmeny. Neste gjentar bestillingen og legger til én ting. Spill to runder med klokka. Første som glemmer noe, tar én slurk." },
+  { id: "memory-sound", category: "memory", title: "Lyd på lyd", body: "{player} lager en kort lyd. Neste gjentar lyden og legger til sin egen. Gå én runde med klokka uten ord. Til slutt fremfører alle hele lydrekken sammen." },
+  { id: "memory-observe", category: "memory", title: "Hva forandret seg?", body: "{player} ser på {other} i ti sekunder og snur seg så bort. Den andre endrer én synlig detalj, som ermet eller frisyren. Snu tilbake og gjett hva som ble endret. Dere får ett forsøk hver, og bytter så roller." },
+  { id: "memory-names", category: "memory", title: "Rare yrker", body: "{player} sier sitt eget navn og et oppdiktet yrke. Neste gjentar alle navn og yrker hittil, før sitt eget legges til. Gå én runde. Bordet hjelper hvis noen står fast." },
+
+  { id: "duel-laugh", category: "duel", title: "Steinansikt", body: "{player} og {other} prøver å få hverandre til å smile med en høytidelig værmelding. Bytt på å si én setning, uten berøring. Første smil taper. Etter seks setninger uten smil blir det uavgjort." },
+  { id: "duel-same-word", category: "duel", title: "På bølgelengde", body: "{player} og {other}: Tell til tre og si et valgfritt ord samtidig. Tell igjen og prøv å finne et ord som knytter de to første sammen. Klarer dere å si samme ord på fem forsøk? Da får dere applaus." },
+  { id: "duel-pitch", category: "duel", title: "Selg det uselgelige", body: "{player} og {other} får 15 sekunder hver til å selge bordet en paraply med hull. Resten stemmer på beste salgstale. Er dere bare to, velger dere hverandres beste argument og kaller det uavgjort." },
+  { id: "duel-count", category: "duel", title: "Ti uten avtale", body: "{player} og {other} skal sammen telle til ti uten å avtale hvem som sier neste tall. Begge må bidra. Snakker dere samtidig, starter dere på én igjen. Dere har tre forsøk." },
+  { id: "duel-drawing", category: "duel", title: "Usynlig tegnebrett", body: "{player} tegner et enkelt dyr i lufta med én finger. {other} får tre gjetninger. Bytt roller og prøv et nytt dyr. En vellykket gjetning gir paret en felles skål." },
+  { id: "duel-sync", category: "duel", title: "Samme svar?", body: "{player} og {other} teller til tre og svarer samtidig: en farge, deretter en frukt, så en by. Ett poeng for hvert likt svar. Ved to eller tre poeng får paret velge neste sang." },
+
+  { id: "truth-two-lies", category: "truth", title: "To sanne, én falsk", body: "{player}, fortell tre korte ting om deg selv: To er sanne, én er oppdiktet. Alle gjetter den falske før du avslører svaret. Du bestemmer selv hvor personlig du vil være." },
+  { id: "truth-small-hill", category: "truth", title: "Din minste hjertesak", body: "{player}, hvilken helt uviktig mening forsvarer du altfor sterkt? Hold et forsvar på 20 sekunder. Bordet får stille ett spørsmål etterpå." },
+  { id: "truth-first-impression", category: "truth", title: "Førsteinntrykket", body: "{player}, fortell om et førsteinntrykk du hadde av noen her som viste seg å være feil. Velg noe hyggelig eller morsomt. Den det gjelder får svare." },
+  { id: "truth-draft", category: "truth", title: "Aldri sendt", body: "{player}, fortell om en melding du er glad du aldri sendte. Beskriv situasjonen uten navn og uten å vise fram mobilen. Velg selv hvor mye du vil fortelle." },
+  { id: "truth-habit", category: "truth", title: "Liten tilståelse", body: "{player}, hvilken litt rar hverdagsvane har du? Resten rekker opp hånda hvis de gjør det samme. Finn ut hvem du deler vanen med." },
+  { id: "truth-alternate", category: "truth", title: "Et annet studieliv", body: "{player}, hva ville du studert hvis ditt nåværende studium ikke fantes? Forklar valget. Resten foreslår én overraskende jobb du kunne passet til." },
+
+  { id: "point-escape", category: "point", title: "Siste ledige billett", body: "Hvem ville bestilt en spontan helgetur før de sjekket kalenderen? Tell ned fra tre og pek. Den utpekte velger reisemål og gir sitt beste salgsargument." },
+  { id: "point-detective", category: "point", title: "Bordets detektiv", body: "Hvem hadde løst et mysterium bare ved å følge med i gruppechatten? Pek samtidig. Den utpekte velger hvem som skulle vært medhjelper." },
+  { id: "point-talent", category: "point", title: "Skjult talent", body: "Hvem tror dere har det mest overraskende talentet? Pek samtidig. Den utpekte får fortelle om et talent eller finne på ett de skulle ønske de hadde." },
+  { id: "never-draft", category: "never", title: "Vedlegget mangler", body: "Jeg har aldri sendt en melding eller e-post om et vedlegg og glemt å legge det ved. De som har gjort det, tar én slurk." },
+  { id: "never-route", category: "never", title: "Feil retning", body: "Jeg har aldri tatt riktig buss i feil retning. De som har gjort det, tar én slurk. Den lengste omveien får applaus." },
+  { id: "never-cooking", category: "never", title: "Kokkens hemmelighet", body: "Jeg har aldri googlet hvordan jeg lager en helt vanlig matrett etter at jeg hadde begynt. De som har gjort det, forteller hva som sto på menyen." },
+  { id: "dilemma-chat", category: "dilemma", title: "Gruppechatten", body: "A: Alle meldinger sendes som talemelding. B: Alle meldinger må rime. Velg samtidig. Mindretallet demonstrerer sitt valg med en kort hilsen." },
+  { id: "dilemma-skill", category: "dilemma", title: "Én nyttig evne", body: "A: Kunne snakke alle språk. B: Kunne spille alle instrumenter. Velg samtidig og forklar hva du ville brukt evnen til først." },
+  { id: "dilemma-weekend", category: "dilemma", title: "Plan for helga", body: "A: En gratis helgetur uten å vite reisemålet. B: En perfekt helg hjemme som du må planlegge selv. Velg og finn én som ville valgt motsatt." },
+  { id: "round-compliment", category: "round", title: "Send det videre", body: "Alle gir personen til venstre et konkret kompliment som ikke handler om utseende. Ta én runde. Er dere to, gir dere ett hver." },
+  { id: "round-karaoke", category: "round", title: "Ti sekunder stjerne", body: "Bordet velger en sang de fleste kjenner. Hver person får synge eller nynne ti sekunder av den. De som vil være publikum, holder takten. Avslutt med applaus til alle." },
+  { id: "round-duo", category: "round", title: "Drømmeduoen", body: "Alle tenker ut to personer her som ville drevet den morsomste kafeen sammen. Del forslagene og begrunn valget. Er dere to, velger dere navn og spesialitet til deres egen kafé." },
+  { id: "category-letter", category: "category", title: "Bare på S", body: "{player} starter. Nevn noe man kan kjøpe i en butikk som begynner på S. Gå med klokka uten gjentakelser, maks fem sekunder hver. Første som står fast, tar én slurk." },
+  { id: "category-film", category: "category", title: "Filmhylla", body: "{player} starter. Nevn en film eller serie hver, uten gjentakelser. Maks fem sekunder å tenke. Står noen fast, avslutter dere med en anbefaling fra hver." },
+  { id: "category-sound", category: "category", title: "Lyden av dyreriket", body: "{player} starter med en dyrelyd. Gå med klokka og lag en ny dyrelyd hver, uten å si dyrets navn. Bordet må kunne gjette dyret. Stopp når noen gjentar en lyd eller står fast." },
+  { id: "rule-broadcast", category: "rule", title: "Direkte fra vorset", body: "Når noen sier et spillernavn, må den personen svare «direkte fra vorset». Glemmer noen det, hjelper bordet med en felles TV-intro." },
+  { id: "rule-pinkie", category: "rule", title: "Lillefingerklubben", body: "Hver gang dere skåler, skal lillefingeren være ute. Glemmer noen det, gjentas skålen med ekstra høytidelig mine." },
+  { id: "rule-applause", category: "rule", title: "Stående ovasjon", body: "Etter hver fullført oppgave gir bordet to korte klapp. Glemmer dere det, får neste deltaker en ekstra stor applaus." },
 ];
 
 export const BITS_BACK_TO_BACK_QUESTIONS = [
@@ -78,4 +136,10 @@ export const BITS_BACK_TO_BACK_QUESTIONS = [
   "Hvem bruker lengst tid på å gjøre seg klar?", "Hvem hadde klart seg best uten mobil?",
   "Hvem tar oftest kontroll over musikken?", "Hvem forteller de lengste historiene?",
   "Hvem er mest på A4?", "Hvem synes selv de er morsomst?",
+  "Hvem ville startet en spontan allsang?", "Hvem er best til å holde på en hemmelighet?",
+  "Hvem pakker mest for en helgetur?", "Hvem gir de beste gavene?",
+  "Hvem ville klart seg lengst på en øde øy?", "Hvem svarer tregest i gruppechatten?",
+  "Hvem hadde passet best som quizvert?", "Hvem følger en oppskrift mest nøyaktig?",
+  "Hvem blir lettest revet med i et nytt prosjekt?", "Hvem ville vunnet en mimrekonkurranse?",
+  "Hvem har flest uleste varsler?", "Hvem finner på de beste unnskyldningene?",
 ] as const;
